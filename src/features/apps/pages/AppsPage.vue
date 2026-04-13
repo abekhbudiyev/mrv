@@ -17,6 +17,8 @@ const modules = computed(() => appModules.filter((module) => module.enabled))
     />
 
     <SectionBlock
+      class="xl:min-h-0 xl:flex-1"
+      content-class="space-y-4 xl:h-full"
       title="Modullar"
       description="Modul tanlangandan keyin uning ichki navigatsiyasi va alohida sahifalari o‘sha modul konteksida ishlaydi."
     >

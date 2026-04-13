@@ -17,13 +17,14 @@
     "reka-ui": "^2.3.1",
     "tailwind-merge": "^3.3.1",
     "vue": "^3.5.21",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
-    "@vue/tsconfig": "^0.8.1",
     "@types/node": "^24.6.0",
     "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.3",
     "vite": "^8.0.0",

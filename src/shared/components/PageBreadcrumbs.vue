@@ -7,14 +7,17 @@ defineProps<{
 <template>
   <nav
     aria-label="Breadcrumb"
-    class="flex items-center gap-2 text-xs text-muted-foreground"
+    class="flex min-w-0 items-center gap-2 overflow-hidden text-xs text-muted-foreground"
   >
     <template
       v-for="(item, index) in items"
       :key="`${item}-${index}`"
     >
-      <span>{{ item }}</span>
-      <span v-if="index < items.length - 1">/</span>
+      <span class="truncate">{{ item }}</span>
+      <span
+        v-if="index < items.length - 1"
+        class="shrink-0"
+      >/</span>
     </template>
   </nav>
 </template>
