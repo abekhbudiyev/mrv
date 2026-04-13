@@ -1,9 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import { APP_TITLE } from '@/core/constants/app'
 import { routes } from './routes'
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: import.meta.env.PROD
+    ? createWebHashHistory(import.meta.env.BASE_URL)
+    : createWebHistory(),
   routes,
   scrollBehavior() {
     return {
