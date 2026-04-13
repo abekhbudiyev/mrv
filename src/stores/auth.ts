@@ -35,17 +35,26 @@ export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<CurrentUser | null>(null)
   const isAuthenticated = computed(() => currentUser.value !== null)
 
-  function persistSession() {
+  function clearPersistedSession() {
+    localStorage.removeItem(STORAGE_KEYS.authSession)
+    sessionStorage.removeItem(STORAGE_KEYS.authSession)
+  }
+
+  function persistSession(remember = true) {
     if (!currentUser.value) {
-      localStorage.removeItem(STORAGE_KEYS.authSession)
+      clearPersistedSession()
       return
     }
 
-    localStorage.setItem(STORAGE_KEYS.authSession, JSON.stringify(currentUser.value))
+    clearPersistedSession()
+
+    const storage = remember ? localStorage : sessionStorage
+    storage.setItem(STORAGE_KEYS.authSession, JSON.stringify(currentUser.value))
   }
 
   function restoreSession() {
     const session = localStorage.getItem(STORAGE_KEYS.authSession)
+      ?? sessionStorage.getItem(STORAGE_KEYS.authSession)
 
     if (!session) {
       currentUser.value = null
@@ -57,13 +66,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
     catch {
       currentUser.value = null
-      localStorage.removeItem(STORAGE_KEYS.authSession)
+      clearPersistedSession()
     }
   }
 
   async function login(payload: LoginPayload) {
     currentUser.value = buildMockUser(payload.username)
-    persistSession()
+    persistSession(payload.remember ?? true)
   }
 
   function logout() {

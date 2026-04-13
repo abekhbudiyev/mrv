@@ -1014,8 +1014,12 @@ onUnmounted(() => {
       </div>
 
       <SectionBlock
-        class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
-        content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-hidden p-5"
+        :class="isApplicationsListPage
+          ? 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible'
+          : 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden'"
+        :content-class="isApplicationsListPage
+          ? 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5'
+          : 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-hidden p-5'"
         :title="page.sectionTitle ?? ''"
         :description="page.sectionDescription ?? ''"
       >
@@ -1091,9 +1095,9 @@ onUnmounted(() => {
 
                 <div
                   v-if="isFiltersOpen"
-                  class="fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none lg:absolute lg:inset-auto lg:right-0 lg:top-[calc(100%+0.5rem)] lg:max-h-[min(36rem,calc(100vh-10rem))] lg:w-[min(92vw,22rem)]"
+                  class="fixed inset-x-3 top-24 bottom-3 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none lg:inset-x-auto lg:right-6 lg:top-24 lg:bottom-6 lg:w-[min(92vw,22rem)]"
                 >
-                  <div class="flex max-h-[calc(100vh-7rem)] flex-col gap-4 overflow-y-auto p-4 lg:max-h-[min(36rem,calc(100vh-10rem))]">
+                  <div class="flex h-full flex-col gap-4 overflow-y-auto p-4">
                     <div class="flex items-start justify-between gap-2">
                       <p class="text-sm font-semibold text-foreground">
                         Filterlar
@@ -1893,4 +1897,3 @@ onUnmounted(() => {
 
   </PageContainer>
 </template>
-

@@ -11,4 +11,5 @@ export interface CurrentUser {
 export interface LoginPayload {
   username: string
   password: string
+  remember?: boolean
 }
