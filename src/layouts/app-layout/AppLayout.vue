@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { STORAGE_KEYS } from '@/core/constants/storage'
 import AppShell from './AppShell.vue'
@@ -7,11 +7,15 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 
 const LAPTOP_SIDEBAR_COLLAPSE_WIDTH = 1440
+const DESKTOP_SIDEBAR_BREAKPOINT = 1024
 
 const route = useRoute()
+const viewportWidth = ref(typeof window === 'undefined' ? DESKTOP_SIDEBAR_BREAKPOINT : window.innerWidth)
 const sidebarOpen = ref(false)
 const sidebarCollapsed = ref(false)
 const showSidebar = computed(() => route.path !== '/apps')
+const enableSidebarCollapse = computed(() => viewportWidth.value >= DESKTOP_SIDEBAR_BREAKPOINT)
+const effectiveSidebarCollapsed = computed(() => enableSidebarCollapse.value && sidebarCollapsed.value)
 
 const storedSidebarCollapsed = localStorage.getItem(STORAGE_KEYS.sidebarCollapsed)
 const hasStoredSidebarPreference = storedSidebarCollapsed === 'true' || storedSidebarCollapsed === 'false'
@@ -20,10 +24,22 @@ if (storedSidebarCollapsed === 'true') {
   sidebarCollapsed.value = true
 }
 
+function syncViewportWidth() {
+  viewportWidth.value = window.innerWidth
+}
+
 onMounted(() => {
+  syncViewportWidth()
+
   if (!hasStoredSidebarPreference) {
     sidebarCollapsed.value = window.innerWidth < LAPTOP_SIDEBAR_COLLAPSE_WIDTH
   }
+
+  window.addEventListener('resize', syncViewportWidth)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', syncViewportWidth)
 })
 
 function toggleSidebar() {
@@ -58,7 +74,7 @@ watch(showSidebar, (visible) => {
   <AppShell
     :sidebar-open="sidebarOpen"
     :show-sidebar="showSidebar"
-    :sidebar-collapsed="sidebarCollapsed"
+    :sidebar-collapsed="effectiveSidebarCollapsed"
     @close-sidebar="closeSidebar"
   >
     <template
@@ -66,7 +82,7 @@ watch(showSidebar, (visible) => {
       #sidebar
     >
       <AppSidebar
-        :collapsed="sidebarCollapsed"
+        :collapsed="effectiveSidebarCollapsed"
         @toggle-collapse="toggleSidebarCollapse"
       />
     </template>
@@ -74,7 +90,7 @@ watch(showSidebar, (visible) => {
     <template #header>
       <AppHeader
         :show-sidebar="showSidebar"
-        :sidebar-collapsed="sidebarCollapsed"
+        :sidebar-collapsed="effectiveSidebarCollapsed"
         @toggle-sidebar="toggleSidebar"
         @toggle-sidebar-collapse="toggleSidebarCollapse"
       />

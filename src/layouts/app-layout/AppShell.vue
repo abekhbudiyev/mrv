@@ -21,8 +21,8 @@ defineEmits<{
     <aside
       v-if="showSidebar"
       :class="[
-        'fixed inset-y-3 left-3 z-40 overflow-hidden rounded-2xl border border-border bg-sidebar transition-[width,transform] duration-200 lg:translate-x-0',
-        sidebarCollapsed ? 'w-20' : 'w-72',
+        'fixed inset-y-3 left-3 z-40 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-sidebar transition-[width,transform] duration-200 lg:translate-x-0',
+        sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
     >
