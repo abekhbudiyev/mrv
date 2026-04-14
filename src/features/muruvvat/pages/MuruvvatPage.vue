@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Plus, Search, Trash2, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
@@ -35,6 +35,29 @@ type ApplicationRow = {
   district: string
   status: ApplicationStatus
   statusClass: string
+}
+
+type ApplicantLookupResult = {
+  fullName: string
+  pinfl: string
+  region: string
+  district: string
+  mfy: string
+  address: string
+}
+
+type MedicalDocumentField = {
+  id: string
+  label: string
+}
+
+type OrganizationOption = {
+  id: string
+  name: string
+  capacity: number
+  occupied: number
+  available: number
+  queue: number
 }
 
 type PageNotification = {
@@ -114,6 +137,49 @@ const demoRegions = [
 ] as const
 
 const demoStatuses = ['Jarayonda', 'Tasdiqlangan', 'Rad etilgan'] as const
+const demoMahallas = [
+  'Navbahor MFY',
+  'Mustaqillik MFY',
+  'Yangi hayot MFY',
+  'Do‘stlik MFY',
+  'Saxovat MFY',
+  'Bog‘zor MFY',
+  'Istiqlol MFY',
+  'Madadkor MFY',
+  'Bunyodkor MFY',
+  'Yoshlik MFY',
+] as const
+const medicalDocumentFields: MedicalDocumentField[] = [
+  {
+    id: 'ambulatory',
+    label: "Ambulator kartadan yoki kasallik tarixidan ko‘chirma (qon va siydik tahlili, qonning Avstraliya antigeniga tahlili, ko‘krak qafasi flyuorografiyasi)",
+  },
+  {
+    id: 'mental-health',
+    label: 'Ruhiy-asab kasalliklari dispanseri Tibbiy-maslahat komissiyasi xulosasi',
+  },
+  {
+    id: 'tuberculosis',
+    label: 'Silga qarshi kurashish dispanseri xulosasi',
+  },
+  {
+    id: 'oncology',
+    label: 'Onkologik dispanser xulosasi',
+  },
+  {
+    id: 'skin',
+    label: 'Teri-tanosil kasalliklari dispanseri xulosasi',
+  },
+  {
+    id: 'aids',
+    label: 'OITS markazining xulosasi',
+  },
+]
+const organizationOptions: OrganizationOption[] = [
+  { id: 'org-1', name: 'Muruvvat internat uyi 1', capacity: 120, occupied: 95, available: 25, queue: 8 },
+  { id: 'org-2', name: 'Muruvvat internat uyi 2', capacity: 80, occupied: 78, available: 2, queue: 14 },
+  { id: 'org-3', name: 'Saxovat uyi markazi', capacity: 150, occupied: 133, available: 17, queue: 5 },
+]
 const monthNames = [
   'Yanvar',
   'Fevral',
@@ -178,6 +244,22 @@ const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
+const filterAnchorRef = ref<HTMLElement | null>(null)
+const paginationRef = ref<HTMLElement | null>(null)
+const desktopFilterMaxHeight = ref<number | null>(null)
+const isCreateDialogOpen = ref(false)
+const applicantPinflInput = ref('')
+const applicantLookupResult = ref<ApplicantLookupResult | null>(null)
+const applicantLookupError = ref('')
+const isApplicantLookupLoading = ref(false)
+const serviceRecipientPinflInput = ref('')
+const serviceRecipientLookupResult = ref<ApplicantLookupResult | null>(null)
+const serviceRecipientLookupError = ref('')
+const isServiceRecipientLookupLoading = ref(false)
+const uploadedMedicalDocuments = ref<Record<string, string>>({})
+const selectedOrganizationId = ref('')
+const smsCodeInput = ref('')
+const isSmsCodeSent = ref(false)
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let notificationTimer: ReturnType<typeof setTimeout> | null = null
@@ -241,6 +323,63 @@ const activeFilterCount = computed(() => {
     Boolean(appliedStartDateFilter.value),
     Boolean(appliedEndDateFilter.value),
   ].filter(Boolean).length
+})
+const applicantLookupRows = computed(() => {
+  if (!applicantLookupResult.value) {
+    return []
+  }
+
+  return [
+    ['FIO', applicantLookupResult.value.fullName],
+    ['JSHSHIR', applicantLookupResult.value.pinfl],
+    ['Hudud', applicantLookupResult.value.region],
+    ['Tuman', applicantLookupResult.value.district],
+    ['MFY', applicantLookupResult.value.mfy],
+    ["To'liq manzil", applicantLookupResult.value.address],
+  ] as const
+})
+const applicantInitials = computed(() => {
+  if (!applicantLookupResult.value) {
+    return ''
+  }
+
+  return applicantLookupResult.value.fullName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+})
+const serviceRecipientLookupRows = computed(() => {
+  if (!serviceRecipientLookupResult.value) {
+    return []
+  }
+
+  return [
+    ['FIO', serviceRecipientLookupResult.value.fullName],
+    ['JSHSHIR', serviceRecipientLookupResult.value.pinfl],
+    ['Hudud', serviceRecipientLookupResult.value.region],
+    ['Tuman', serviceRecipientLookupResult.value.district],
+    ['MFY', serviceRecipientLookupResult.value.mfy],
+    ["To'liq manzil", serviceRecipientLookupResult.value.address],
+  ] as const
+})
+const serviceRecipientInitials = computed(() => {
+  if (!serviceRecipientLookupResult.value) {
+    return ''
+  }
+
+  return serviceRecipientLookupResult.value.fullName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+})
+const selectedOrganization = computed(() => {
+  return organizationOptions.find((organization) => organization.id === selectedOrganizationId.value) ?? null
 })
 
 const hasPendingFilterChanges = computed(() => {
@@ -563,6 +702,123 @@ function clearAppliedFilters() {
   })
 }
 
+function openCreateDialog() {
+  isCreateDialogOpen.value = true
+  applicantPinflInput.value = ''
+  applicantLookupResult.value = null
+  applicantLookupError.value = ''
+  serviceRecipientPinflInput.value = ''
+  serviceRecipientLookupResult.value = null
+  serviceRecipientLookupError.value = ''
+  uploadedMedicalDocuments.value = {}
+  selectedOrganizationId.value = ''
+  smsCodeInput.value = ''
+  isSmsCodeSent.value = false
+}
+
+function closeCreateDialog() {
+  isCreateDialogOpen.value = false
+  applicantLookupResult.value = null
+  applicantLookupError.value = ''
+  applicantPinflInput.value = ''
+  isApplicantLookupLoading.value = false
+  serviceRecipientLookupResult.value = null
+  serviceRecipientLookupError.value = ''
+  serviceRecipientPinflInput.value = ''
+  isServiceRecipientLookupLoading.value = false
+  uploadedMedicalDocuments.value = {}
+  selectedOrganizationId.value = ''
+  smsCodeInput.value = ''
+  isSmsCodeSent.value = false
+}
+
+async function lookupPerson(
+  pinflInput: typeof applicantPinflInput,
+  resultTarget: typeof applicantLookupResult,
+  errorTarget: typeof applicantLookupError,
+  loadingTarget: typeof isApplicantLookupLoading,
+) {
+  const normalizedPinfl = pinflInput.value.replace(/\D/g, '')
+  pinflInput.value = normalizedPinfl
+  resultTarget.value = null
+  errorTarget.value = ''
+
+  if (normalizedPinfl.length !== 14) {
+    errorTarget.value = 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak.'
+    return
+  }
+
+  loadingTarget.value = true
+
+  await new Promise((resolve) => setTimeout(resolve, 350))
+
+  const matchedRow = applicationRows.value.find((row) => row.pinfl === normalizedPinfl)
+
+  const addressIndex = matchedRow
+    ? applicationRows.value.findIndex((row) => row.pinfl === normalizedPinfl)
+    : Number(normalizedPinfl.slice(-2)) % demoRegions.length
+
+  const fallbackRegionEntry = demoRegions[addressIndex % demoRegions.length] ?? demoRegions[0]
+  const [fallbackRegion, fallbackDistrict] = fallbackRegionEntry
+  const mfy = demoMahallas[addressIndex % demoMahallas.length] ?? demoMahallas[0]
+
+  resultTarget.value = {
+    fullName: matchedRow?.fullName ?? "Demo foydalanuvchi",
+    pinfl: matchedRow?.pinfl ?? normalizedPinfl,
+    region: matchedRow?.region ?? fallbackRegion,
+    district: matchedRow?.district ?? fallbackDistrict,
+    mfy,
+    address: `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 47) + 1)}-uy`,
+  }
+  loadingTarget.value = false
+}
+
+async function lookupApplicant() {
+  await lookupPerson(
+    applicantPinflInput,
+    applicantLookupResult,
+    applicantLookupError,
+    isApplicantLookupLoading,
+  )
+}
+
+async function lookupServiceRecipient() {
+  await lookupPerson(
+    serviceRecipientPinflInput,
+    serviceRecipientLookupResult,
+    serviceRecipientLookupError,
+    isServiceRecipientLookupLoading,
+  )
+}
+
+function handleMedicalDocumentUpload(documentId: string, event: Event) {
+  const input = event.target as HTMLInputElement
+  const fileName = input.files?.[0]?.name ?? ''
+
+  uploadedMedicalDocuments.value = {
+    ...uploadedMedicalDocuments.value,
+    [documentId]: fileName,
+  }
+}
+
+function sendSmsCode() {
+  if (!serviceRecipientLookupResult.value || !selectedOrganization.value) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Ma’lumot yetarli emas',
+      description: 'Avval xizmat oluvchini aniqlang va tashkilotni tanlang.',
+    })
+    return
+  }
+
+  isSmsCodeSent.value = true
+  showNotification({
+    tone: 'success',
+    title: 'SMS-kod yuborildi',
+    description: 'Tasdiqlash uchun telefon raqamiga yuborilgan kodni kiriting.',
+  })
+}
+
 function clearSearchAndFilters() {
   clearSearch()
   clearAppliedFilters()
@@ -614,6 +870,32 @@ const paginationSummary = computed(() => {
   return `${start}-${end} / ${totalRows.value}`
 })
 const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
+const filterPanelBodyStyle = computed(() => {
+  if (!desktopFilterMaxHeight.value) {
+    return undefined
+  }
+
+  return {
+    maxHeight: `${desktopFilterMaxHeight.value}px`,
+  }
+})
+
+function updateDesktopFilterMaxHeight() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const anchorRect = filterAnchorRef.value?.getBoundingClientRect()
+  const paginationRect = paginationRef.value?.getBoundingClientRect()
+
+  if (!anchorRect || !paginationRect) {
+    desktopFilterMaxHeight.value = null
+    return
+  }
+
+  const availableHeight = Math.floor(paginationRect.top - anchorRect.bottom - 8)
+  desktopFilterMaxHeight.value = availableHeight > 220 ? availableHeight : null
+}
 
 function setRowsPerPage(nextValue: number) {
   runTableLoading(() => {
@@ -900,6 +1182,9 @@ onMounted(() => {
     isTableLoading.value = false
     loadingTimer = null
   }, 200)
+
+  window.addEventListener('resize', updateDesktopFilterMaxHeight)
+  updateDesktopFilterMaxHeight()
 })
 
 onUnmounted(() => {
@@ -914,6 +1199,17 @@ onUnmounted(() => {
   if (notificationTimer) {
     clearNotificationTimers()
   }
+
+  window.removeEventListener('resize', updateDesktopFilterMaxHeight)
+})
+
+watch(isFiltersOpen, async (nextOpen) => {
+  if (!nextOpen) {
+    return
+  }
+
+  await nextTick()
+  updateDesktopFilterMaxHeight()
 })
 </script>
 
@@ -978,7 +1274,7 @@ onUnmounted(() => {
         <div class="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-lg bg-transparent">
           <div
             :class="[
-              'h-full transition-[width] duration-100 ease-linear',
+              'h-full transition-[width] duration-200 ease-out',
               pageNotification.tone === 'success' ? 'bg-emerald-500' : 'bg-rose-500',
             ]"
             :style="{ width: `${notificationProgress}%` }"
@@ -996,7 +1292,7 @@ onUnmounted(() => {
         </div>
         <button
           type="button"
-          class="text-muted-foreground transition-colors hover:text-foreground"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
           @click="closeNotification"
         >
           <X class="h-4 w-4" />
@@ -1064,11 +1360,17 @@ onUnmounted(() => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
-              <Button class="gap-2">
+              <Button
+                class="gap-2"
+                @click="openCreateDialog"
+              >
                 <Plus class="h-4 w-4" />
                 <span>Yaratish</span>
               </Button>
-              <div class="relative">
+              <div
+                ref="filterAnchorRef"
+                class="relative"
+              >
                 <div
                   v-if="isFiltersOpen"
                   class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm lg:hidden"
@@ -1095,9 +1397,12 @@ onUnmounted(() => {
 
                 <div
                   v-if="isFiltersOpen"
-                  class="fixed inset-x-3 top-24 bottom-3 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none lg:inset-x-auto lg:right-6 lg:top-24 lg:bottom-6 lg:w-[min(92vw,22rem)]"
+                  class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:-translate-x-6 xl:origin-top-right"
                 >
-                  <div class="flex h-full flex-col gap-4 overflow-y-auto p-4">
+                  <div
+                    class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5"
+                    :style="filterPanelBodyStyle"
+                  >
                     <div class="flex items-start justify-between gap-2">
                       <p class="text-sm font-semibold text-foreground">
                         Filterlar
@@ -1114,14 +1419,14 @@ onUnmounted(() => {
                       </Button>
                     </div>
 
-                    <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-3">
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
                         <span class="font-medium text-foreground">Status</span>
                         <div class="space-y-2 lg:mt-2 lg:space-y-0">
                           <button
                             type="button"
                             :class="[
-                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors',
+                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
                               openFilterField === 'status'
                                 ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
                                 : 'border-input hover:border-ring',
@@ -1131,7 +1436,7 @@ onUnmounted(() => {
                             <span>{{ draftStatusLabel }}</span>
                             <ChevronDown
                               :class="[
-                                'h-4 w-4 text-muted-foreground transition-transform',
+                                'h-4 w-4 text-muted-foreground transition-transform duration-200 ease-out',
                                 openFilterField === 'status' ? 'rotate-180' : '',
                               ]"
                             />
@@ -1143,7 +1448,7 @@ onUnmounted(() => {
                           >
                             <button
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectStatusFilter('all')"
                             >
                               <span>Barchasi</span>
@@ -1156,7 +1461,7 @@ onUnmounted(() => {
                               v-for="status in demoStatuses"
                               :key="status"
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectStatusFilter(status)"
                             >
                               <span>{{ status }}</span>
@@ -1175,7 +1480,7 @@ onUnmounted(() => {
                           <button
                             type="button"
                             :class="[
-                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors',
+                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
                               openFilterField === 'region'
                                 ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
                                 : 'border-input hover:border-ring',
@@ -1185,7 +1490,7 @@ onUnmounted(() => {
                             <span class="truncate">{{ draftRegionLabel }}</span>
                             <ChevronDown
                               :class="[
-                                'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
                                 openFilterField === 'region' ? 'rotate-180' : '',
                               ]"
                             />
@@ -1197,7 +1502,7 @@ onUnmounted(() => {
                           >
                             <button
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectRegionFilter('all')"
                             >
                               <span>Barchasi</span>
@@ -1210,7 +1515,7 @@ onUnmounted(() => {
                               v-for="region in regionOptions"
                               :key="region"
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectRegionFilter(region)"
                             >
                               <span class="truncate">{{ region }}</span>
@@ -1229,7 +1534,7 @@ onUnmounted(() => {
                           <button
                             type="button"
                             :class="[
-                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
                               openFilterField === 'district'
                                 ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
                                 : 'border-input hover:border-ring',
@@ -1240,7 +1545,7 @@ onUnmounted(() => {
                             <span class="truncate">{{ draftDistrictLabel }}</span>
                             <ChevronDown
                               :class="[
-                                'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
                                 openFilterField === 'district' ? 'rotate-180' : '',
                               ]"
                             />
@@ -1252,7 +1557,7 @@ onUnmounted(() => {
                           >
                             <button
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectDistrictFilter('all')"
                             >
                               <span>Barchasi</span>
@@ -1265,7 +1570,7 @@ onUnmounted(() => {
                               v-for="district in districtOptions"
                               :key="district"
                               type="button"
-                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                               @click="selectDistrictFilter(district)"
                             >
                               <span class="truncate">{{ district }}</span>
@@ -1290,7 +1595,7 @@ onUnmounted(() => {
                             />
                             <button
                               type="button"
-                              class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
                               aria-label="Boshlanish sanasini tanlash"
                               @click="openCalendar('start')"
                             >
@@ -1363,7 +1668,7 @@ onUnmounted(() => {
                                 v-for="day in calendarDays"
                                 :key="day.key"
                                 type="button"
-                                class="flex h-8 items-center justify-center rounded-md text-sm transition-colors"
+                                class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
                                 :class="day.isCurrentMonth
                                   ? isCalendarDateSelected(day.value)
                                     ? 'bg-primary text-primary-foreground'
@@ -1391,7 +1696,7 @@ onUnmounted(() => {
                             />
                             <button
                               type="button"
-                              class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                              class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
                               aria-label="Tugash sanasini tanlash"
                               @click="openCalendar('end')"
                             >
@@ -1464,7 +1769,7 @@ onUnmounted(() => {
                                 v-for="day in calendarDays"
                                 :key="day.key"
                                 type="button"
-                                class="flex h-8 items-center justify-center rounded-md text-sm transition-colors"
+                                class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
                                 :class="day.isCurrentMonth
                                   ? isCalendarDateSelected(day.value)
                                     ? 'bg-primary text-primary-foreground'
@@ -1702,7 +2007,7 @@ onUnmounted(() => {
                   <tr
                     v-for="row in paginatedRows"
                     :key="row.id"
-                    class="transition-colors hover:bg-muted/40"
+                    class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
                       <td class="border-b border-border px-4 py-3 align-top">
                         <DropdownMenuRoot @update:open="setActionMenuOpen(row.id, $event)">
@@ -1798,7 +2103,10 @@ onUnmounted(() => {
                 </table>
               </div>
 
-              <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+              <div
+                ref="paginationRef"
+                class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between"
+              >
                 <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
                   <div class="flex items-center gap-2">
                     <span class="text-muted-foreground">Qatorlar soni</span>
@@ -1896,4 +2204,301 @@ onUnmounted(() => {
     </div>
 
   </PageContainer>
+
+  <div
+    v-if="isCreateDialogOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-background/50 px-4 py-6 backdrop-blur-sm"
+    @click.self="closeCreateDialog"
+  >
+    <div class="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <p class="text-lg font-semibold text-foreground">
+          Yangi ariza yaratish
+        </p>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          class="h-9 w-9 p-0"
+          aria-label="Oynani yopish"
+          @click="closeCreateDialog"
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div class="max-h-[calc(100vh-6rem)] space-y-6 overflow-y-auto p-5">
+        <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+          <label class="space-y-2">
+            <span class="text-sm font-medium text-foreground">Arizachi</span>
+            <Input
+              :model-value="applicantPinflInput"
+              placeholder="JSHSHIR kiriting"
+              class="h-11"
+              @update:model-value="applicantPinflInput = String($event).replace(/\\D/g, '').slice(0, 14)"
+            />
+          </label>
+
+          <Button
+            class="gap-2"
+            :disabled="isApplicantLookupLoading"
+            @click="lookupApplicant"
+          >
+            <div
+              v-if="isApplicantLookupLoading"
+              class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
+            />
+            <Search
+              v-else
+              class="h-4 w-4"
+            />
+            <span>Qidiruv</span>
+          </Button>
+        </div>
+
+        <p
+          v-if="applicantLookupError"
+          class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+        >
+          {{ applicantLookupError }}
+        </p>
+
+        <div
+          v-if="applicantLookupResult"
+          class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+        >
+          <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-5">
+            <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-semibold text-primary">
+              {{ applicantInitials }}
+            </div>
+            <p class="mt-3 text-sm text-muted-foreground">
+              Rasm
+            </p>
+          </div>
+
+          <div class="overflow-hidden rounded-2xl border border-border bg-card">
+            <table class="w-full border-collapse text-sm">
+              <tbody>
+                <tr
+                  v-for="[label, value] in applicantLookupRows"
+                  :key="label"
+                  class="border-b border-border last:border-b-0"
+                >
+                  <td class="w-40 bg-muted/40 px-4 py-3 font-medium text-muted-foreground">
+                    {{ label }}
+                  </td>
+                  <td class="px-4 py-3 text-foreground">
+                    {{ value }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          v-if="applicantLookupResult"
+          class="space-y-4 border-t border-border pt-5"
+        >
+          <p class="text-base font-semibold text-foreground">
+            Xizmat oluvchi
+          </p>
+
+          <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+              <Input
+                :model-value="serviceRecipientPinflInput"
+                placeholder="JSHSHIR kiriting"
+                class="h-11"
+                @update:model-value="serviceRecipientPinflInput = String($event).replace(/\D/g, '').slice(0, 14)"
+              />
+            </label>
+
+            <Button
+              class="gap-2"
+              :disabled="isServiceRecipientLookupLoading"
+              @click="lookupServiceRecipient"
+            >
+              <div
+                v-if="isServiceRecipientLookupLoading"
+                class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
+              />
+              <Search
+                v-else
+                class="h-4 w-4"
+              />
+              <span>Qidiruv</span>
+            </Button>
+          </div>
+
+          <p
+            v-if="serviceRecipientLookupError"
+            class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          >
+            {{ serviceRecipientLookupError }}
+          </p>
+
+          <div
+            v-if="serviceRecipientLookupResult"
+            class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+          >
+            <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-5">
+              <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-semibold text-primary">
+                {{ serviceRecipientInitials }}
+              </div>
+              <p class="mt-3 text-sm text-muted-foreground">
+                Rasm
+              </p>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-border bg-card">
+              <table class="w-full border-collapse text-sm">
+                <tbody>
+                  <tr
+                    v-for="[label, value] in serviceRecipientLookupRows"
+                    :key="label"
+                    class="border-b border-border last:border-b-0"
+                  >
+                    <td class="w-40 bg-muted/40 px-4 py-3 font-medium text-muted-foreground">
+                      {{ label }}
+                    </td>
+                    <td class="px-4 py-3 text-foreground">
+                      {{ value }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="serviceRecipientLookupResult"
+          class="space-y-4 border-t border-border pt-5"
+        >
+          <p class="text-base font-semibold text-foreground">
+            Tibbiy hujjatlarni yuklash
+          </p>
+
+          <div class="grid gap-3">
+            <label
+              v-for="document in medicalDocumentFields"
+              :key="document.id"
+              class="rounded-xl border border-border bg-card p-3"
+            >
+              <span class="block text-sm font-medium text-foreground">
+                {{ document.label }}
+              </span>
+              <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span class="truncate text-sm text-muted-foreground">
+                  {{ uploadedMedicalDocuments[document.id] || 'Fayl tanlanmagan' }}
+                </span>
+                <label class="inline-flex cursor-pointer items-center rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors duration-200 ease-out hover:bg-accent/40">
+                  <span>Fayl tanlash</span>
+                  <input
+                    type="file"
+                    class="sr-only"
+                    @change="handleMedicalDocumentUpload(document.id, $event)"
+                  >
+                </label>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div
+          v-if="serviceRecipientLookupResult"
+          class="space-y-4 border-t border-border pt-5"
+        >
+          <p class="text-base font-semibold text-foreground">
+            Tashkilotni tanlash
+          </p>
+
+          <div class="overflow-hidden rounded-2xl border border-border bg-card">
+            <table class="w-full border-collapse text-sm">
+              <thead class="bg-muted/40 text-left text-muted-foreground">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Tashkilot</th>
+                  <th class="px-4 py-3 font-medium">Quvvati</th>
+                  <th class="px-4 py-3 font-medium">Band</th>
+                  <th class="px-4 py-3 font-medium">Bo‘sh</th>
+                  <th class="px-4 py-3 font-medium">Navbat</th>
+                  <th class="px-4 py-3 font-medium">Tanlash</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="organization in organizationOptions"
+                  :key="organization.id"
+                  :class="selectedOrganizationId === organization.id ? 'bg-primary/5' : ''"
+                >
+                  <td class="border-t border-border px-4 py-3 font-medium text-foreground">
+                    {{ organization.name }}
+                  </td>
+                  <td class="border-t border-border px-4 py-3 text-foreground">
+                    {{ organization.capacity }}
+                  </td>
+                  <td class="border-t border-border px-4 py-3 text-foreground">
+                    {{ organization.occupied }}
+                  </td>
+                  <td class="border-t border-border px-4 py-3 text-foreground">
+                    {{ organization.available }}
+                  </td>
+                  <td class="border-t border-border px-4 py-3 text-foreground">
+                    {{ organization.queue }}
+                  </td>
+                  <td class="border-t border-border px-4 py-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="selectedOrganizationId === organization.id ? 'border-primary bg-primary/10 text-primary' : ''"
+                      @click="selectedOrganizationId = organization.id"
+                    >
+                      {{ selectedOrganizationId === organization.id ? 'Tanlandi' : 'Tanlash' }}
+                    </Button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          v-if="serviceRecipientLookupResult"
+          class="space-y-4 border-t border-border pt-5"
+        >
+          <p class="text-base font-semibold text-foreground">
+            SMS-kod orqali tasdiqlash
+          </p>
+
+          <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">SMS-kod</span>
+              <Input
+                :model-value="smsCodeInput"
+                placeholder="SMS-kodni kiriting"
+                class="h-11"
+                @update:model-value="smsCodeInput = String($event).replace(/\D/g, '').slice(0, 6)"
+              />
+            </label>
+
+            <Button
+              class="gap-2"
+              @click="sendSmsCode"
+            >
+              <span>{{ isSmsCodeSent ? 'Qayta yuborish' : 'SMS-kod yuborish' }}</span>
+            </Button>
+          </div>
+
+          <p
+            v-if="selectedOrganization"
+            class="text-sm text-muted-foreground"
+          >
+            Tanlangan tashkilot: <span class="font-medium text-foreground">{{ selectedOrganization.name }}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

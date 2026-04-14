@@ -10,7 +10,7 @@ defineProps<{
 </script>
 
 <template>
-  <Card class="h-full transition-colors hover:border-primary/30 hover:bg-accent/50">
+  <Card class="h-full transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-accent/35">
     <CardContent class="flex h-full flex-col gap-4 pt-5">
       <div class="flex items-start gap-3">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/60 text-foreground">

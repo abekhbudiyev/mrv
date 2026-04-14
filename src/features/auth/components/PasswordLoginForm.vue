@@ -72,7 +72,7 @@ const emit = defineEmits<{
         />
         <button
           type="button"
-          class="absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          class="absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:bg-secondary/70 hover:text-foreground"
           :aria-label="isPasswordVisible ? 'Parolni yashirish' : 'Parolni ko‘rsatish'"
           @click="emit('togglePasswordVisibility')"
         >
@@ -106,7 +106,7 @@ const emit = defineEmits<{
 
       <button
         type="button"
-        class="font-medium text-primary transition-colors hover:text-primary-hover"
+        class="font-medium text-primary transition-colors duration-200 ease-out hover:text-primary-hover"
         @click="emit('forgotPassword')"
       >
         Parolni unutdingizmi?

@@ -71,7 +71,7 @@ function handleForgotPassword() {
             <Button
               type="button"
               variant="outline"
-              class="h-14 justify-center rounded-[1.15rem] px-4"
+              class="h-14 justify-center rounded-[1.15rem] px-4 transition-colors duration-200 ease-out"
               :class="selectedMethod === 'oneid' ? 'border-[#4b2bc8]/35 bg-[#f5f1ff]' : ''"
               :disabled="isSubmitting"
               @click="submitProviderLogin('oneid')"
@@ -88,7 +88,7 @@ function handleForgotPassword() {
             <Button
               type="button"
               variant="outline"
-              class="h-14 justify-center rounded-[1.15rem] px-4"
+              class="h-14 justify-center rounded-[1.15rem] px-4 transition-colors duration-200 ease-out"
               :class="selectedMethod === 'eimzo' ? 'border-[#d9c77e]/55 bg-[#fffbec]' : ''"
               :disabled="isSubmitting"
               @click="submitProviderLogin('eimzo')"

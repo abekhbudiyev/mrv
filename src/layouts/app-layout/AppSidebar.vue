@@ -135,7 +135,8 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             v-if="item.route"
             :to="item.route"
             :class="cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+              'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
+              collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
               isItemActive(item)
                 ? 'border border-primary/35 bg-primary/12 text-foreground'
                 : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
@@ -158,7 +159,8 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             <button
               type="button"
               :class="cn(
-                'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent',
+                'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out hover:bg-accent/80',
+                collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'w-full px-3 py-2',
                 isItemActive(item) ? 'bg-primary/10 text-foreground' : 'text-sidebar-foreground',
               )"
               :title="collapsed ? item.title : undefined"
@@ -177,19 +179,19 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               <ChevronDown
                 v-if="!collapsed"
                 :class="cn(
-                  'ml-auto h-4 w-4 transition-transform',
+                  'ml-auto h-4 w-4 transition-transform duration-200 ease-out',
                   openSections[item.id] ? 'rotate-180' : '',
                 )"
               />
             </button>
 
             <Transition
-              enter-active-class="transition-all duration-200 ease-out"
-              enter-from-class="max-h-0 translate-y-[-4px] opacity-0"
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="max-h-0 translate-y-[-2px] opacity-0"
               enter-to-class="max-h-96 translate-y-0 opacity-100"
-              leave-active-class="transition-all duration-150 ease-in"
+              leave-active-class="transition-all duration-220 ease-out"
               leave-from-class="max-h-96 translate-y-0 opacity-100"
-              leave-to-class="max-h-0 translate-y-[-4px] opacity-0"
+              leave-to-class="max-h-0 translate-y-[-2px] opacity-0"
             >
               <div
                 v-if="!collapsed && item.children?.length && openSections[item.id]"
@@ -200,7 +202,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                   :key="child.id"
                   :to="child.route ?? '/apps'"
                   :class="cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-200 ease-out',
                     isItemActive(child)
                       ? 'border-l-2 border-primary bg-primary/10 text-foreground'
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -230,7 +232,8 @@ watch(() => route.path, syncOpenSections, { immediate: true })
           :key="module.id"
           :to="module.route"
           :class="cn(
-            'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors',
+            'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
+            collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
             isActive(module.route)
               ? 'border border-primary/35 bg-primary/12 text-foreground'
               : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',

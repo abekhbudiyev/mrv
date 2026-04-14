@@ -22,7 +22,7 @@ const modules = computed(() => appModules.filter((module) => module.enabled))
       title="Modullar"
       description="Modul tanlangandan keyin uning ichki navigatsiyasi va alohida sahifalari o‘sha modul konteksida ishlaydi."
     >
-      <div class="grid gap-4 xl:grid-cols-2">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <AppCard
           v-for="app in modules"
           :key="app.id"
