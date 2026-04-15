@@ -12,6 +12,7 @@ import MonitoringPage from '@/features/monitoring/pages/MonitoringPage.vue'
 import ReportsPage from '@/features/reports/pages/ReportsPage.vue'
 import SettingsPage from '@/features/settings/pages/SettingsPage.vue'
 import UsersPage from '@/features/users/pages/UsersPage.vue'
+import IPTKPage from '@/features/iptk/pages/IPTKPage.vue'
 import MuruvvatPage from '@/features/muruvvat/pages/MuruvvatPage.vue'
 
 export const routes: RouteRecordRaw[] = [
@@ -44,6 +45,96 @@ export const routes: RouteRecordRaw[] = [
           title: 'Ilovalar',
           requiresAuth: true,
           breadcrumb: ['Ilovalar'],
+        },
+      },
+      {
+        path: 'apps/iptk',
+        name: 'iptk-dashboard',
+        component: IPTKPage,
+        props: {
+          pageKey: 'dashboard',
+        },
+        meta: {
+          title: 'Dashboard',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Dashboard'],
+        },
+      },
+      {
+        path: 'apps/iptk/info/info-1',
+        name: 'iptk-info-1',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-1',
+        },
+        meta: {
+          title: 'Info 1',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 1'],
+        },
+      },
+      {
+        path: 'apps/iptk/info/info-2',
+        name: 'iptk-info-2',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-2',
+        },
+        meta: {
+          title: 'Info 2',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 2'],
+        },
+      },
+      {
+        path: 'apps/iptk/info/info-3',
+        name: 'iptk-info-3',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-3',
+        },
+        meta: {
+          title: 'Info 3',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 3'],
+        },
+      },
+      {
+        path: 'apps/iptk/applications/list',
+        name: 'iptk-applications-list',
+        component: MuruvvatPage,
+        props: {
+          pageKey: 'applications-list',
+        },
+        meta: {
+          title: 'Arizalar',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Arizalar'],
+        },
+      },
+      {
+        path: 'apps/iptk/reports/applications',
+        name: 'iptk-applications-report',
+        component: IPTKPage,
+        props: {
+          pageKey: 'applications-report',
+        },
+        meta: {
+          title: 'Arizalar bo‘yicha hisobot',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Hisobotlar', 'Arizalar bo‘yicha hisobot'],
         },
       },
       {

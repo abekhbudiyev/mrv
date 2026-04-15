@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { ChevronDown } from 'lucide-vue-next'
 import logoMark from '@/assets/logo-mark.svg'
 import { appModules } from '@/features/apps/registry/apps'
+import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { cn } from '@/shared/lib/utils'
@@ -45,6 +46,10 @@ const currentModuleLabel = computed(() => {
 })
 
 const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
+  if (activeModuleKey.value === 'iptk') {
+    return iptkMenu
+  }
+
   if (activeModuleKey.value === 'muruvvat') {
     return muruvvatMenu
   }

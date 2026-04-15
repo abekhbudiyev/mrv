@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CreditCard,
+  FileCheck2,
   FileText,
   FolderOpen,
   HeartHandshake,
@@ -14,6 +15,16 @@ import {
 import type { AppModule } from '../types'
 
 export const appModules: AppModule[] = [
+  {
+    id: 'iptk',
+    title: 'IPTK',
+    description: 'Ijtimoiy-psixiatrik-tibbiy komissiya moduli uchun arizalar bilan ishlash sahifasi.',
+    route: '/apps/iptk',
+    icon: FileCheck2,
+    enabled: true,
+    permission: 'iptk.view',
+    hasInternalNavigation: true,
+  },
   {
     id: 'muruvvat',
     title: 'Muruvvat',

@@ -31,6 +31,7 @@ type ApplicationRow = {
   date: string
   fullName: string
   pinfl: string
+  serviceType: string
   region: string
   district: string
   status: ApplicationStatus
@@ -40,10 +41,10 @@ type ApplicationRow = {
 type ApplicantLookupResult = {
   fullName: string
   pinfl: string
-  region: string
-  district: string
-  mfy: string
-  address: string
+  birthDate: string
+  permanentAddress: string
+  temporaryAddress?: string
+  documentNumber: string
 }
 
 type MedicalDocumentField = {
@@ -51,13 +52,20 @@ type MedicalDocumentField = {
   label: string
 }
 
-type OrganizationOption = {
+type ServiceOption = {
   id: string
-  name: string
-  capacity: number
-  occupied: number
-  available: number
-  queue: number
+  label: string
+}
+
+type ViewApplicationDetail = {
+  applicant: ApplicantLookupResult
+  applicantInitials: string
+  serviceRecipient: ApplicantLookupResult
+  serviceRecipientInitials: string
+  service: ServiceOption
+  documents: Array<{ id: string, label: string, fileName: string }>
+  phoneNumber: string
+  smsCode: string
 }
 
 type PageNotification = {
@@ -149,36 +157,110 @@ const demoMahallas = [
   'Bunyodkor MFY',
   'Yoshlik MFY',
 ] as const
-const medicalDocumentFields: MedicalDocumentField[] = [
+const huzurMedicalDocumentFields: MedicalDocumentField[] = [
   {
-    id: 'ambulatory',
-    label: "Ambulator kartadan yoki kasallik tarixidan ko‘chirma (qon va siydik tahlili, qonning Avstraliya antigeniga tahlili, ko‘krak qafasi flyuorografiyasi)",
+    id: 'huzur-027',
+    label: 'Ambulator-poliklinika muassasasining bosh vrachi tomonidan imzolangan bemorning tibbiy kartasidan batafsil ko‘chirma (027-shakl), oilaviy shifokor va psixiatr xulosalari bilan',
   },
   {
-    id: 'mental-health',
-    label: 'Ruhiy-asab kasalliklari dispanseri Tibbiy-maslahat komissiyasi xulosasi',
+    id: 'huzur-medical-history',
+    label: 'Kasallik tarixidan ko‘chirma (ruhiy-asab kasalliklari shifoxonasida oxirgi 5 yil davomida davolanganligi to‘g‘risida)',
   },
   {
-    id: 'tuberculosis',
+    id: 'huzur-guardian-order',
+    label: 'Nogironligi bo‘lgan shaxsga vasiy tayinlash to‘g‘risidagi qaror',
+  },
+  {
+    id: 'huzur-court-capacity',
+    label: 'Shaxsni muomalaga layoqatsiz deb topish to‘g‘risidagi sud qarori',
+  },
+  {
+    id: 'huzur-psy-expertise',
+    label: 'Sud tomonidan tayinlangan sud-psixiatriya ekspertizasi xulosasi',
+  },
+]
+const communityMedicalDocumentFields: MedicalDocumentField[] = [
+  {
+    id: 'community-027',
+    label: 'Ambulator-poliklinika muassasasining bosh vrachi tomonidan imzolangan bemorning tibbiy kartasidan batafsil ko‘chirma (027-shakl), oilaviy shifokor va psixiatr xulosalari bilan',
+  },
+  {
+    id: 'community-medical-history',
+    label: 'Kasallik tarixidan ko‘chirma (ruhiy-asab kasalliklari shifoxonasida oxirgi 5 yil davomida davolanganligi to‘g‘risida)',
+  },
+]
+const madadMedicalDocumentFields: MedicalDocumentField[] = [
+  {
+    id: 'madad-027',
+    label: 'Ambulator-poliklinika muassasasining bosh vrachi tomonidan imzolangan bemorning tibbiy kartasidan batafsil ko‘chirma (027-shakl), oilaviy shifokor va psixiatr xulosalari bilan',
+  },
+  {
+    id: 'madad-medical-history',
+    label: 'Kasallik tarixidan ko‘chirma (ruhiy-asab kasalliklari shifoxonasida oxirgi 5 yil davomida davolanganligi to‘g‘risida)',
+  },
+  {
+    id: 'madad-blood',
+    label: 'Qonning umumiy tahlili',
+  },
+  {
+    id: 'madad-urine',
+    label: 'Siydik umumiy tahlili',
+  },
+  {
+    id: 'madad-rw',
+    label: 'Qonning RW (Vasserman reaksiyasi) tahlili',
+  },
+  {
+    id: 'madad-hepatitis',
+    label: '“B” va “C” gepatit markerlarini aniqlovchi qon tahlili (HBsAg, HCV)',
+  },
+  {
+    id: 'madad-hiv-analysis',
+    label: 'Qonning OIV bilan zararlanishi to‘g‘risidagi tahlil (OITSga qarshi kurash markazidan)',
+  },
+  {
+    id: 'madad-fluorography',
+    label: 'Ko‘krak qafasi a’zolarining flyuorografiyasi',
+  },
+  {
+    id: 'madad-mental-commission',
+    label: 'Respublika ixtisoslashtirilgan ruhiy salomatlik ilmiy-amaliy tibbiyot markazi hududiy filiallari Tibbiy-maslahat komissiyasi xulosasi',
+  },
+  {
+    id: 'madad-tuberculosis',
     label: 'Silga qarshi kurashish dispanseri xulosasi',
   },
   {
-    id: 'oncology',
+    id: 'madad-oncology',
     label: 'Onkologik dispanser xulosasi',
   },
   {
-    id: 'skin',
+    id: 'madad-skin',
     label: 'Teri-tanosil kasalliklari dispanseri xulosasi',
   },
   {
-    id: 'aids',
-    label: 'OITS markazining xulosasi',
+    id: 'madad-aids',
+    label: 'OITSga qarshi kurash markazining xulosasi',
+  },
+  {
+    id: 'madad-guardian-order',
+    label: 'Nogironligi bo‘lgan shaxsga vasiy tayinlash to‘g‘risidagi qaror',
+  },
+  {
+    id: 'madad-court-capacity',
+    label: 'Shaxsni muomalaga layoqatsiz deb topish to‘g‘risidagi sud qarori',
+  },
+  {
+    id: 'madad-psy-expertise',
+    label: 'Sud tomonidan tayinlangan sud-psixiatriya ekspertizasi xulosasi',
   },
 ]
-const organizationOptions: OrganizationOption[] = [
-  { id: 'org-1', name: 'Muruvvat internat uyi 1', capacity: 120, occupied: 95, available: 25, queue: 8 },
-  { id: 'org-2', name: 'Muruvvat internat uyi 2', capacity: 80, occupied: 78, available: 2, queue: 14 },
-  { id: 'org-3', name: 'Saxovat uyi markazi', capacity: 150, occupied: 133, available: 17, queue: 5 },
+const serviceOptions: ServiceOption[] = [
+  { id: 'huzur', label: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish' },
+  { id: 'madad', label: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish' },
+  { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish' },
+  { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish' },
+  { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
 ]
 const monthNames = [
   'Yanvar',
@@ -200,6 +282,7 @@ const applicationRows = ref(Array.from({ length: 100 }, (_, index) => {
   const regionEntry = demoRegions[index % demoRegions.length] ?? demoRegions[0]
   const [region, district] = regionEntry
   const status = demoStatuses[index % demoStatuses.length] ?? demoStatuses[0]
+  const service = serviceOptions[index % serviceOptions.length] ?? serviceOptions[0]
   const day = String((index % 28) + 1).padStart(2, '0')
   const month = String((index % 12) + 1).padStart(2, '0')
   const year = 2024 + Math.floor(index / 50)
@@ -210,6 +293,7 @@ const applicationRows = ref(Array.from({ length: 100 }, (_, index) => {
     date: `${day}.${month}.${year}`,
     fullName: person,
     pinfl: pinflSeed,
+    serviceType: service?.label ?? 'Xizmat turi belgilanmagan',
     region,
     district,
     status,
@@ -242,6 +326,7 @@ const isTableLoading = ref(true)
 const isExporting = ref(false)
 const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
+const selectedViewRow = ref<ApplicationRow | null>(null)
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const filterAnchorRef = ref<HTMLElement | null>(null)
@@ -252,17 +337,32 @@ const applicantPinflInput = ref('')
 const applicantLookupResult = ref<ApplicantLookupResult | null>(null)
 const applicantLookupError = ref('')
 const isApplicantLookupLoading = ref(false)
+const hasApplicantCustomResidenceAddress = ref(false)
+const applicantCustomResidenceRegion = ref('')
+const applicantCustomResidenceDistrict = ref('')
+const applicantCustomResidenceMfy = ref('')
+const applicantCustomResidenceAddress = ref('')
 const serviceRecipientPinflInput = ref('')
 const serviceRecipientLookupResult = ref<ApplicantLookupResult | null>(null)
 const serviceRecipientLookupError = ref('')
 const isServiceRecipientLookupLoading = ref(false)
+const hasServiceRecipientCustomResidenceAddress = ref(false)
+const serviceRecipientCustomResidenceRegion = ref('')
+const serviceRecipientCustomResidenceDistrict = ref('')
+const serviceRecipientCustomResidenceMfy = ref('')
+const serviceRecipientCustomResidenceAddress = ref('')
 const uploadedMedicalDocuments = ref<Record<string, string>>({})
-const selectedOrganizationId = ref('')
+const selectedServiceOptionId = ref('')
+const smsPhoneNumber = ref('')
 const smsCodeInput = ref('')
 const isSmsCodeSent = ref(false)
+const smsResendCountdown = ref(0)
+const isSavingApplication = ref(false)
+const openCreateAddressField = ref<'applicant-region' | 'applicant-district' | 'applicant-mfy' | 'recipient-region' | 'recipient-district' | 'recipient-mfy' | 'service-option' | null>(null)
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let notificationTimer: ReturnType<typeof setTimeout> | null = null
+let smsResendTimer: ReturnType<typeof setInterval> | null = null
 let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
@@ -276,6 +376,7 @@ const filteredRows = computed(() => {
       row.date,
       row.fullName,
       row.pinfl,
+      row.serviceType,
       row.region,
       row.district,
       row.status,
@@ -324,6 +425,85 @@ const activeFilterCount = computed(() => {
     Boolean(appliedEndDateFilter.value),
   ].filter(Boolean).length
 })
+const applicantCustomResidenceRegionOptions = computed(() => {
+  return Array.from(new Set(demoRegions.map(([region]) => region))).sort((left, right) => left.localeCompare(right))
+})
+const applicantCustomResidenceDistrictOptions = computed(() => {
+  if (!applicantCustomResidenceRegion.value) {
+    return []
+  }
+
+  return demoRegions
+    .filter(([region]) => region === applicantCustomResidenceRegion.value)
+    .map(([, district]) => district)
+})
+const serviceRecipientCustomResidenceRegionOptions = computed(() => {
+  return Array.from(new Set(demoRegions.map(([region]) => region))).sort((left, right) => left.localeCompare(right))
+})
+const serviceRecipientCustomResidenceDistrictOptions = computed(() => {
+  if (!serviceRecipientCustomResidenceRegion.value) {
+    return []
+  }
+
+  return demoRegions
+    .filter(([region]) => region === serviceRecipientCustomResidenceRegion.value)
+    .map(([, district]) => district)
+})
+const applicantCustomResidenceRegionLabel = computed(() => applicantCustomResidenceRegion.value || 'Viloyatni tanlang')
+const applicantCustomResidenceDistrictLabel = computed(() => {
+  if (!applicantCustomResidenceRegion.value) {
+    return 'Tuman yoki shaharni tanlang'
+  }
+
+  return applicantCustomResidenceDistrict.value || 'Tuman yoki shaharni tanlang'
+})
+const applicantCustomResidenceMfyLabel = computed(() => {
+  if (!applicantCustomResidenceDistrict.value) {
+    return 'Avval tumanni tanlang'
+  }
+
+  return applicantCustomResidenceMfy.value || 'MFYni tanlang'
+})
+const serviceRecipientCustomResidenceRegionLabel = computed(() => serviceRecipientCustomResidenceRegion.value || 'Viloyatni tanlang')
+const serviceRecipientCustomResidenceDistrictLabel = computed(() => {
+  if (!serviceRecipientCustomResidenceRegion.value) {
+    return 'Tuman yoki shaharni tanlang'
+  }
+
+  return serviceRecipientCustomResidenceDistrict.value || 'Tuman yoki shaharni tanlang'
+})
+const serviceRecipientCustomResidenceMfyLabel = computed(() => {
+  if (!serviceRecipientCustomResidenceDistrict.value) {
+    return 'Avval tumanni tanlang'
+  }
+
+  return serviceRecipientCustomResidenceMfy.value || 'MFYni tanlang'
+})
+const selectedServiceOption = computed(() => {
+  return serviceOptions.find((service) => service.id === selectedServiceOptionId.value) ?? null
+})
+const selectedServiceOptionLabel = computed(() => {
+  return selectedServiceOption.value?.label ?? 'Xizmat turini tanlang'
+})
+
+function getMedicalDocumentsForService(serviceId: string) {
+  switch (serviceId) {
+    case 'huzur':
+      return huzurMedicalDocumentFields
+    case 'madad':
+      return madadMedicalDocumentFields
+    case 'social-holiday':
+    case 'home-care':
+    case 'yangi-kun':
+      return communityMedicalDocumentFields
+    default:
+      return []
+  }
+}
+
+const activeMedicalDocumentFields = computed(() => {
+  return getMedicalDocumentsForService(selectedServiceOptionId.value)
+})
 const applicantLookupRows = computed(() => {
   if (!applicantLookupResult.value) {
     return []
@@ -331,11 +511,12 @@ const applicantLookupRows = computed(() => {
 
   return [
     ['FIO', applicantLookupResult.value.fullName],
+    ["Tug'ilgan sanasi", applicantLookupResult.value.birthDate],
+    ...(applicantLookupResult.value.temporaryAddress
+      ? [["Vaqtinchalik manzili", applicantLookupResult.value.temporaryAddress] as const]
+      : []),
     ['JSHSHIR', applicantLookupResult.value.pinfl],
-    ['Hudud', applicantLookupResult.value.region],
-    ['Tuman', applicantLookupResult.value.district],
-    ['MFY', applicantLookupResult.value.mfy],
-    ["To'liq manzil", applicantLookupResult.value.address],
+    ['Manzil', applicantLookupResult.value.permanentAddress],
   ] as const
 })
 const applicantInitials = computed(() => {
@@ -358,11 +539,12 @@ const serviceRecipientLookupRows = computed(() => {
 
   return [
     ['FIO', serviceRecipientLookupResult.value.fullName],
+    ["Tug'ilgan sanasi", serviceRecipientLookupResult.value.birthDate],
+    ...(serviceRecipientLookupResult.value.temporaryAddress
+      ? [["Vaqtinchalik manzili", serviceRecipientLookupResult.value.temporaryAddress] as const]
+      : []),
     ['JSHSHIR', serviceRecipientLookupResult.value.pinfl],
-    ['Hudud', serviceRecipientLookupResult.value.region],
-    ['Tuman', serviceRecipientLookupResult.value.district],
-    ['MFY', serviceRecipientLookupResult.value.mfy],
-    ["To'liq manzil", serviceRecipientLookupResult.value.address],
+    ['Manzil', serviceRecipientLookupResult.value.permanentAddress],
   ] as const
 })
 const serviceRecipientInitials = computed(() => {
@@ -378,8 +560,182 @@ const serviceRecipientInitials = computed(() => {
     .join('')
     .toUpperCase()
 })
-const selectedOrganization = computed(() => {
-  return organizationOptions.find((organization) => organization.id === selectedOrganizationId.value) ?? null
+
+function getInitials(fullName: string) {
+  return fullName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+}
+
+function buildBirthDate(indexSeed: number, isMinor = false) {
+  const birthDay = String((indexSeed % 28) + 1).padStart(2, '0')
+  const birthMonth = String((indexSeed % 12) + 1).padStart(2, '0')
+  const currentYear = new Date().getFullYear()
+  const birthYear = isMinor
+    ? String(currentYear - ((indexSeed % 17) + 1))
+    : String(1970 + (indexSeed % 30))
+
+  return `${birthDay}.${birthMonth}.${birthYear}`
+}
+
+function buildLookupResultFromRow(row: ApplicationRow, indexOffset = 0, isMinor = false) {
+  const rowIndex = applicationRows.value.findIndex((entry) => entry.id === row.id)
+  const safeIndex = rowIndex >= 0 ? rowIndex + indexOffset : indexOffset
+  const fallbackRegionEntry = demoRegions[safeIndex % demoRegions.length] ?? demoRegions[0]
+  const [fallbackRegion, fallbackDistrict] = fallbackRegionEntry
+  const mfy = demoMahallas[safeIndex % demoMahallas.length] ?? demoMahallas[0]
+
+  return {
+    fullName: demoPeople[safeIndex % demoPeople.length] ?? row.fullName,
+    pinfl: String(Number(row.pinfl) + indexOffset).padStart(14, '0').slice(0, 14),
+    birthDate: buildBirthDate(safeIndex, isMinor),
+    permanentAddress: `${row.region || fallbackRegion}, ${row.district || fallbackDistrict}, ${mfy}, ${String((safeIndex % 47) + 1)}-uy`,
+    temporaryAddress: safeIndex % 2 === 0
+      ? `${row.region || fallbackRegion}, ${row.district || fallbackDistrict}, ${mfy}, ${String((safeIndex % 17) + 10)}-uy, ${String((safeIndex % 12) + 1)}-xonadon`
+      : undefined,
+    documentNumber: '',
+  } satisfies ApplicantLookupResult
+}
+
+const selectedViewDetail = computed<ViewApplicationDetail | null>(() => {
+  if (!selectedViewRow.value) {
+    return null
+  }
+
+  const row = selectedViewRow.value
+  const rowIndex = Math.max(0, applicationRows.value.findIndex((entry) => entry.id === row.id))
+  const defaultService = serviceOptions[0]
+
+  if (!defaultService) {
+    return null
+  }
+
+  const service = serviceOptions[rowIndex % serviceOptions.length] ?? defaultService
+  const serviceRecipient = {
+    ...buildLookupResultFromRow(row, 0, true),
+    fullName: row.fullName,
+    pinfl: row.pinfl,
+    permanentAddress: `${row.region}, ${row.district}, ${demoMahallas[rowIndex % demoMahallas.length] ?? demoMahallas[0]}, ${String((rowIndex % 47) + 1)}-uy`,
+  }
+  const applicant = buildLookupResultFromRow(row, 3)
+  const documents = getMedicalDocumentsForService(service.id).map((document, index) => ({
+    id: document.id,
+    label: document.label,
+    fileName: `hujjat-${String(index + 1).padStart(2, '0')}.pdf`,
+  }))
+
+  return {
+    applicant,
+    applicantInitials: getInitials(applicant.fullName),
+    serviceRecipient,
+    serviceRecipientInitials: getInitials(serviceRecipient.fullName),
+    service,
+    documents,
+    phoneNumber: '90 123 45 67',
+    smsCode: '000001',
+  }
+})
+const selectedViewApplicantRows = computed(() => {
+  if (!selectedViewDetail.value) {
+    return []
+  }
+
+  const applicant = selectedViewDetail.value.applicant
+
+  return [
+    ['FIO', applicant.fullName],
+    ["Tug'ilgan sanasi", applicant.birthDate],
+    ['JSHSHIR', applicant.pinfl],
+    ...(applicant.temporaryAddress
+      ? [["Vaqtinchalik manzili", applicant.temporaryAddress] as const]
+      : []),
+    ['Manzil', applicant.permanentAddress],
+  ] as const
+})
+const selectedViewServiceRecipientRows = computed(() => {
+  if (!selectedViewDetail.value) {
+    return []
+  }
+
+  const serviceRecipient = selectedViewDetail.value.serviceRecipient
+
+  return [
+    ['FIO', serviceRecipient.fullName],
+    ["Tug'ilgan sanasi", serviceRecipient.birthDate],
+    ['JSHSHIR', serviceRecipient.pinfl],
+    ...(serviceRecipient.temporaryAddress
+      ? [["Vaqtinchalik manzili", serviceRecipient.temporaryAddress] as const]
+      : []),
+    ['Manzil', serviceRecipient.permanentAddress],
+  ] as const
+})
+const hasAllMedicalDocuments = computed(() => {
+  return activeMedicalDocumentFields.value.length > 0
+    && activeMedicalDocumentFields.value.every((document) => Boolean(uploadedMedicalDocuments.value[document.id]))
+})
+const isApplicantCustomResidenceComplete = computed(() => {
+  if (!hasApplicantCustomResidenceAddress.value) {
+    return true
+  }
+
+  return Boolean(
+    applicantCustomResidenceRegion.value
+    && applicantCustomResidenceDistrict.value
+    && applicantCustomResidenceMfy.value
+    && applicantCustomResidenceAddress.value.trim(),
+  )
+})
+const isServiceRecipientCustomResidenceComplete = computed(() => {
+  if (!hasServiceRecipientCustomResidenceAddress.value) {
+    return true
+  }
+
+  return Boolean(
+    serviceRecipientCustomResidenceRegion.value
+    && serviceRecipientCustomResidenceDistrict.value
+    && serviceRecipientCustomResidenceMfy.value
+    && serviceRecipientCustomResidenceAddress.value.trim(),
+  )
+})
+const hasCreateFormContent = computed(() => {
+  return Boolean(
+    applicantPinflInput.value
+    || applicantLookupResult.value
+    || hasApplicantCustomResidenceAddress.value
+    || applicantCustomResidenceRegion.value
+    || applicantCustomResidenceDistrict.value
+    || applicantCustomResidenceMfy.value
+    || applicantCustomResidenceAddress.value
+    || serviceRecipientPinflInput.value
+    || serviceRecipientLookupResult.value
+    || hasServiceRecipientCustomResidenceAddress.value
+    || serviceRecipientCustomResidenceRegion.value
+    || serviceRecipientCustomResidenceDistrict.value
+    || serviceRecipientCustomResidenceMfy.value
+    || serviceRecipientCustomResidenceAddress.value
+    || Object.keys(uploadedMedicalDocuments.value).length
+    || selectedServiceOptionId.value
+    || smsPhoneNumber.value
+    || smsCodeInput.value
+    || isSmsCodeSent.value
+  )
+})
+const isCreateFormReadyToSave = computed(() => {
+  return Boolean(
+    applicantLookupResult.value
+    && serviceRecipientLookupResult.value
+    && isApplicantCustomResidenceComplete.value
+    && isServiceRecipientCustomResidenceComplete.value
+    && selectedServiceOptionId.value
+    && hasAllMedicalDocuments.value
+    && smsPhoneNumber.value.length === 9
+    && isSmsCodeSent.value
+    && smsCodeInput.value.length === 6,
+  )
 })
 
 const hasPendingFilterChanges = computed(() => {
@@ -470,6 +826,23 @@ function closeFilters() {
   openCalendarField.value = null
 }
 
+function toggleCreateAddressField(field: typeof openCreateAddressField.value) {
+  openCreateAddressField.value = openCreateAddressField.value === field ? null : field
+}
+
+function closeCreateAddressField() {
+  openCreateAddressField.value = null
+}
+
+function handleServiceOptionChange(value: string) {
+  if (selectedServiceOptionId.value !== value) {
+    uploadedMedicalDocuments.value = {}
+  }
+
+  selectedServiceOptionId.value = value
+  closeCreateAddressField()
+}
+
 function setRowsPerPageOpen(nextOpen: boolean) {
   isRowsPerPageOpen.value = nextOpen
 }
@@ -540,10 +913,6 @@ function formatFilterDateForInput(value: string) {
   return `${day}.${month}.${year}`
 }
 
-function getTodayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
 function openCalendar(field: 'start' | 'end') {
   openCalendarField.value = openCalendarField.value === field ? null : field
   if (!openCalendarField.value) {
@@ -552,6 +921,10 @@ function openCalendar(field: 'start' | 'end') {
 
   const sourceDate = field === 'start' ? draftStartDateFilter.value : draftEndDateFilter.value
   calendarMonth.value = (sourceDate || getTodayIso()).slice(0, 7)
+}
+
+function getTodayIso() {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function shiftCalendarMonth(direction: -1 | 1) {
@@ -646,6 +1019,130 @@ function selectDistrictFilter(value: string) {
   openFilterField.value = null
 }
 
+function sanitizePinflValue(value: string) {
+  return value.replace(/\D/g, '').slice(0, 14)
+}
+
+function handlePinflKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    return
+  }
+
+  const allowedKeys = [
+    'Backspace',
+    'Delete',
+    'Tab',
+    'ArrowLeft',
+    'ArrowRight',
+    'Home',
+    'End',
+  ]
+
+  if (allowedKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
+    return
+  }
+
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault()
+  }
+}
+
+function updateApplicantPinfl(value: string) {
+  applicantPinflInput.value = sanitizePinflValue(value)
+}
+
+function updateServiceRecipientPinfl(value: string) {
+  serviceRecipientPinflInput.value = sanitizePinflValue(value)
+}
+
+function updateSmsPhoneNumber(value: string) {
+  smsPhoneNumber.value = value.replace(/\D/g, '').slice(0, 9)
+}
+
+function clearSmsResendTimer() {
+  if (smsResendTimer) {
+    clearInterval(smsResendTimer)
+    smsResendTimer = null
+  }
+}
+
+function startSmsResendCountdown() {
+  clearSmsResendTimer()
+  smsResendCountdown.value = 10
+
+  smsResendTimer = setInterval(() => {
+    if (smsResendCountdown.value <= 1) {
+      smsResendCountdown.value = 0
+      clearSmsResendTimer()
+      return
+    }
+
+    smsResendCountdown.value -= 1
+  }, 1000)
+}
+
+function resetApplicantCustomResidenceAddress() {
+  applicantCustomResidenceRegion.value = ''
+  applicantCustomResidenceDistrict.value = ''
+  applicantCustomResidenceMfy.value = ''
+  applicantCustomResidenceAddress.value = ''
+  closeCreateAddressField()
+}
+
+function resetServiceRecipientCustomResidenceAddress() {
+  serviceRecipientCustomResidenceRegion.value = ''
+  serviceRecipientCustomResidenceDistrict.value = ''
+  serviceRecipientCustomResidenceMfy.value = ''
+  serviceRecipientCustomResidenceAddress.value = ''
+  closeCreateAddressField()
+}
+
+function handleApplicantCustomResidenceRegionChange(value: string) {
+  applicantCustomResidenceRegion.value = value
+  applicantCustomResidenceDistrict.value = ''
+  applicantCustomResidenceMfy.value = ''
+  closeCreateAddressField()
+}
+
+function handleServiceRecipientCustomResidenceRegionChange(value: string) {
+  serviceRecipientCustomResidenceRegion.value = value
+  serviceRecipientCustomResidenceDistrict.value = ''
+  serviceRecipientCustomResidenceMfy.value = ''
+  closeCreateAddressField()
+}
+
+function handleApplicantCustomResidenceDistrictChange(value: string) {
+  applicantCustomResidenceDistrict.value = value
+  applicantCustomResidenceMfy.value = ''
+  closeCreateAddressField()
+}
+
+function handleServiceRecipientCustomResidenceDistrictChange(value: string) {
+  serviceRecipientCustomResidenceDistrict.value = value
+  serviceRecipientCustomResidenceMfy.value = ''
+  closeCreateAddressField()
+}
+
+function handleApplicantCustomResidenceMfyChange(value: string) {
+  applicantCustomResidenceMfy.value = value
+  closeCreateAddressField()
+}
+
+function handleServiceRecipientCustomResidenceMfyChange(value: string) {
+  serviceRecipientCustomResidenceMfy.value = value
+  closeCreateAddressField()
+}
+
+function handleApplicantPinflPaste(event: ClipboardEvent) {
+  event.preventDefault()
+  updateApplicantPinfl(event.clipboardData?.getData('text') ?? '')
+}
+
+function handleServiceRecipientPinflPaste(event: ClipboardEvent) {
+  event.preventDefault()
+  updateServiceRecipientPinfl(event.clipboardData?.getData('text') ?? '')
+}
+
 function handleStartDateFilterChange(value: string) {
   const normalizedValue = normalizeFilterDate(value)
   draftStartDateFilter.value = normalizedValue
@@ -704,32 +1201,48 @@ function clearAppliedFilters() {
 
 function openCreateDialog() {
   isCreateDialogOpen.value = true
+  isSavingApplication.value = false
   applicantPinflInput.value = ''
   applicantLookupResult.value = null
   applicantLookupError.value = ''
   serviceRecipientPinflInput.value = ''
   serviceRecipientLookupResult.value = null
   serviceRecipientLookupError.value = ''
+  hasApplicantCustomResidenceAddress.value = false
+  resetApplicantCustomResidenceAddress()
+  hasServiceRecipientCustomResidenceAddress.value = false
+  resetServiceRecipientCustomResidenceAddress()
   uploadedMedicalDocuments.value = {}
-  selectedOrganizationId.value = ''
+  selectedServiceOptionId.value = ''
+  smsPhoneNumber.value = ''
   smsCodeInput.value = ''
   isSmsCodeSent.value = false
+  smsResendCountdown.value = 0
+  clearSmsResendTimer()
 }
 
 function closeCreateDialog() {
   isCreateDialogOpen.value = false
+  isSavingApplication.value = false
   applicantLookupResult.value = null
   applicantLookupError.value = ''
   applicantPinflInput.value = ''
   isApplicantLookupLoading.value = false
+  hasApplicantCustomResidenceAddress.value = false
+  resetApplicantCustomResidenceAddress()
   serviceRecipientLookupResult.value = null
   serviceRecipientLookupError.value = ''
   serviceRecipientPinflInput.value = ''
   isServiceRecipientLookupLoading.value = false
+  hasServiceRecipientCustomResidenceAddress.value = false
+  resetServiceRecipientCustomResidenceAddress()
   uploadedMedicalDocuments.value = {}
-  selectedOrganizationId.value = ''
+  selectedServiceOptionId.value = ''
+  smsPhoneNumber.value = ''
   smsCodeInput.value = ''
   isSmsCodeSent.value = false
+  smsResendCountdown.value = 0
+  clearSmsResendTimer()
 }
 
 async function lookupPerson(
@@ -737,6 +1250,9 @@ async function lookupPerson(
   resultTarget: typeof applicantLookupResult,
   errorTarget: typeof applicantLookupError,
   loadingTarget: typeof isApplicantLookupLoading,
+  options?: {
+    isMinor?: boolean
+  },
 ) {
   const normalizedPinfl = pinflInput.value.replace(/\D/g, '')
   pinflInput.value = normalizedPinfl
@@ -761,19 +1277,27 @@ async function lookupPerson(
   const fallbackRegionEntry = demoRegions[addressIndex % demoRegions.length] ?? demoRegions[0]
   const [fallbackRegion, fallbackDistrict] = fallbackRegionEntry
   const mfy = demoMahallas[addressIndex % demoMahallas.length] ?? demoMahallas[0]
+  const permanentAddress = `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 47) + 1)}-uy`
+  const temporaryAddress = addressIndex % 2 === 0
+    ? `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 31) + 10)}-uy, ${String((addressIndex % 12) + 1)}-xonadon`
+    : undefined
+  const documentSeries = ['AA', 'AB', 'AC', 'AD'][addressIndex % 4] ?? 'AA'
+  const documentNumber = `${documentSeries} ${String(1000000 + ((addressIndex + 1) * 731) % 9000000).padStart(7, '0')}`
 
   resultTarget.value = {
     fullName: matchedRow?.fullName ?? "Demo foydalanuvchi",
     pinfl: matchedRow?.pinfl ?? normalizedPinfl,
-    region: matchedRow?.region ?? fallbackRegion,
-    district: matchedRow?.district ?? fallbackDistrict,
-    mfy,
-    address: `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 47) + 1)}-uy`,
+    birthDate: buildBirthDate(addressIndex, options?.isMinor),
+    permanentAddress,
+    temporaryAddress,
+    documentNumber,
   }
   loadingTarget.value = false
 }
 
 async function lookupApplicant() {
+  hasApplicantCustomResidenceAddress.value = false
+  resetApplicantCustomResidenceAddress()
   await lookupPerson(
     applicantPinflInput,
     applicantLookupResult,
@@ -783,11 +1307,14 @@ async function lookupApplicant() {
 }
 
 async function lookupServiceRecipient() {
+  hasServiceRecipientCustomResidenceAddress.value = false
+  resetServiceRecipientCustomResidenceAddress()
   await lookupPerson(
     serviceRecipientPinflInput,
     serviceRecipientLookupResult,
     serviceRecipientLookupError,
     isServiceRecipientLookupLoading,
+    { isMinor: true },
   )
 }
 
@@ -802,21 +1329,90 @@ function handleMedicalDocumentUpload(documentId: string, event: Event) {
 }
 
 function sendSmsCode() {
-  if (!serviceRecipientLookupResult.value || !selectedOrganization.value) {
+  if (!serviceRecipientLookupResult.value) {
     showNotification({
       tone: 'destructive',
       title: 'Ma’lumot yetarli emas',
-      description: 'Avval xizmat oluvchini aniqlang va tashkilotni tanlang.',
+      description: 'Avval xizmat oluvchini aniqlang.',
+    })
+    return
+  }
+
+  if (smsPhoneNumber.value.length !== 9) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Telefon raqami noto‘g‘ri',
+      description: 'SMS-kod yuborish uchun +998 dan keyingi 9 xonali telefon raqamini kiriting.',
     })
     return
   }
 
   isSmsCodeSent.value = true
+  startSmsResendCountdown()
   showNotification({
     tone: 'success',
     title: 'SMS-kod yuborildi',
-    description: 'Tasdiqlash uchun telefon raqamiga yuborilgan kodni kiriting.',
+    description: 'SMS-kod kiritilib tasdiqlangach, ma’lumotlarni olish va qayta ishlashga rozilik tasdiqlanadi.',
   })
+}
+
+function clearCreateDialogForm() {
+  isSavingApplication.value = false
+  applicantPinflInput.value = ''
+  applicantLookupResult.value = null
+  applicantLookupError.value = ''
+  isApplicantLookupLoading.value = false
+  hasApplicantCustomResidenceAddress.value = false
+  resetApplicantCustomResidenceAddress()
+  serviceRecipientPinflInput.value = ''
+  serviceRecipientLookupResult.value = null
+  serviceRecipientLookupError.value = ''
+  isServiceRecipientLookupLoading.value = false
+  hasServiceRecipientCustomResidenceAddress.value = false
+  resetServiceRecipientCustomResidenceAddress()
+  uploadedMedicalDocuments.value = {}
+  selectedServiceOptionId.value = ''
+  smsPhoneNumber.value = ''
+  smsCodeInput.value = ''
+  isSmsCodeSent.value = false
+  smsResendCountdown.value = 0
+  clearSmsResendTimer()
+}
+
+async function saveApplicationDraft() {
+  if (!hasCreateFormContent.value) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Ma’lumot kiritilmagan',
+      description: 'Arizani saqlash uchun kamida bitta maydonni to‘ldiring.',
+    })
+    return
+  }
+
+  if (!isCreateFormReadyToSave.value) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Majburiy ma’lumotlar yetarli emas',
+      description: 'Arizani saqlash uchun oynadagi barcha majburiy maydonlarni to‘ldiring va SMS-kod bilan tasdiqlang.',
+    })
+    return
+  }
+
+  if (isSavingApplication.value) {
+    return
+  }
+
+  isSavingApplication.value = true
+
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  showNotification({
+    tone: 'success',
+    title: 'Ariza saqlandi',
+    description: 'Yangi ariza ma’lumotlari vaqtincha saqlandi.',
+  })
+  isSavingApplication.value = false
+  closeCreateDialog()
 }
 
 function clearSearchAndFilters() {
@@ -960,6 +1556,50 @@ function closeNotification() {
   notificationRemaining.value = NOTIFICATION_DURATION
 }
 
+function openViewDialog(row: ApplicationRow) {
+  selectedViewRow.value = row
+}
+
+function closeViewDialog() {
+  selectedViewRow.value = null
+}
+
+function buildViewDocumentContent(viewDocument: { label: string, fileName: string }) {
+  if (!selectedViewRow.value || !selectedViewDetail.value) {
+    return ''
+  }
+
+  return [
+    `Hujjat: ${viewDocument.label}`,
+    `Fayl: ${viewDocument.fileName}`,
+    `Ariza raqami: ${selectedViewRow.value.id}`,
+    `Ariza sanasi: ${selectedViewRow.value.date}`,
+    `Xizmat turi: ${selectedViewDetail.value.service.label}`,
+    `Arizachi: ${selectedViewDetail.value.applicant.fullName}`,
+    `Xizmat oluvchi: ${selectedViewDetail.value.serviceRecipient.fullName}`,
+    '',
+    'Demo preview hujjati.',
+    'Backend API ulangach bu yerda real yuklangan faylning preview yoki original fayli ko‘rsatiladi.',
+  ].join('\n')
+}
+
+function downloadViewDocument(viewDocument: { label: string, fileName: string }) {
+  const content = buildViewDocumentContent(viewDocument)
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const objectUrl = URL.createObjectURL(blob)
+  const anchor = window.document.createElement('a')
+
+  anchor.href = objectUrl
+  anchor.download = viewDocument.fileName
+  window.document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+
+  setTimeout(() => {
+    URL.revokeObjectURL(objectUrl)
+  }, 1000)
+}
+
 function updateNotificationProgress() {
   if (!pageNotification.value) {
     notificationAnimationFrame = null
@@ -1100,6 +1740,7 @@ async function downloadApplicationsAsExcel() {
       'T/r': index + 1,
       'Ariza ID': row.id,
       Sana: row.date,
+      'Xizmat turi': row.serviceType,
       'Xizmat oluvchi': row.fullName,
       PINFL: row.pinfl,
       Viloyat: row.region,
@@ -1200,6 +1841,8 @@ onUnmounted(() => {
     clearNotificationTimers()
   }
 
+  clearSmsResendTimer()
+
   window.removeEventListener('resize', updateDesktopFilterMaxHeight)
 })
 
@@ -1261,9 +1904,216 @@ watch(isFiltersOpen, async (nextOpen) => {
       </div>
 
       <div
+        v-if="selectedViewRow && selectedViewDetail"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        @click.self="closeViewDialog"
+      >
+        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div>
+              <p class="text-lg font-semibold text-foreground">
+                Ariza ma'lumotlari
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                {{ selectedViewRow.id }} bo‘yicha batafsil ko‘rish
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-9 w-9 p-0"
+              @click="closeViewDialog"
+            >
+              <X class="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div class="flex-1 space-y-5 overflow-y-auto p-5">
+            <div class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <p class="text-base font-semibold text-foreground">
+                  Ariza rekvizitlari
+                </p>
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Ariza raqami
+                    </p>
+                    <p class="mt-2 text-sm font-semibold text-foreground">
+                      {{ selectedViewRow.id }}
+                    </p>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Sana
+                    </p>
+                    <p class="mt-2 text-sm font-medium text-foreground">
+                      {{ selectedViewRow.date }}
+                    </p>
+                  </div>
+                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Status
+                    </p>
+                    <div class="mt-2">
+                      <span
+                        :class="[
+                          'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
+                          selectedViewRow.statusClass,
+                        ]"
+                      >
+                        {{ selectedViewRow.status }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <p class="text-base font-semibold text-foreground">
+                  Xizmat turi
+                </p>
+                <div class="mt-4 rounded-xl border border-border bg-background px-4 py-3">
+                  <p class="text-sm font-medium leading-6 text-foreground">
+                    {{ selectedViewDetail.service.label }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <p class="text-base font-semibold text-foreground">
+                Arizachi
+              </p>
+              <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+                <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
+                  <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/8 text-4xl font-semibold text-primary">
+                    {{ selectedViewDetail.applicantInitials }}
+                  </div>
+                  <span class="mt-4 text-sm text-muted-foreground">Rasm</span>
+                </div>
+                <div class="overflow-hidden rounded-2xl border border-border bg-background">
+                  <div
+                    v-for="[label, value] in selectedViewApplicantRows"
+                    :key="`view-applicant-${label}`"
+                    class="grid border-b border-border last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)]"
+                  >
+                    <div class="bg-muted/35 px-4 py-3 text-sm font-medium text-muted-foreground">
+                      {{ label }}
+                    </div>
+                    <div class="px-4 py-3 text-sm text-foreground">
+                      {{ value }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <p class="text-base font-semibold text-foreground">
+                Xizmat oluvchi
+              </p>
+              <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+                <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
+                  <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/8 text-4xl font-semibold text-primary">
+                    {{ selectedViewDetail.serviceRecipientInitials }}
+                  </div>
+                  <span class="mt-4 text-sm text-muted-foreground">Rasm</span>
+                </div>
+                <div class="overflow-hidden rounded-2xl border border-border bg-background">
+                  <div
+                    v-for="[label, value] in selectedViewServiceRecipientRows"
+                    :key="`view-service-recipient-${label}`"
+                    class="grid border-b border-border last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)]"
+                  >
+                    <div class="bg-muted/35 px-4 py-3 text-sm font-medium text-muted-foreground">
+                      {{ label }}
+                    </div>
+                    <div class="px-4 py-3 text-sm text-foreground">
+                      {{ value }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <p class="text-base font-semibold text-foreground">
+                Tibbiy hujjatlar
+              </p>
+              <div class="mt-4 grid gap-3">
+                <div
+                  v-for="document in selectedViewDetail.documents"
+                  :key="document.id"
+                  class="rounded-xl border border-border bg-background px-4 py-3"
+                >
+                  <p class="text-sm font-medium leading-6 text-foreground">
+                    {{ document.label }}
+                  </p>
+                  <div class="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-sm text-muted-foreground">
+                      {{ document.fileName }}
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="rounded-full px-4"
+                        @click="downloadViewDocument(document)"
+                      >
+                        Yuklab olish
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <p class="text-base font-semibold text-foreground">
+                SMS-kod orqali tasdiqlash
+              </p>
+              <div class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div class="rounded-xl border border-border bg-background px-4 py-3">
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Telefon raqami
+                  </p>
+                  <p class="mt-2 text-sm font-medium text-foreground">
+                    +998 {{ selectedViewDetail.phoneNumber }}
+                  </p>
+                </div>
+                <div class="rounded-xl border border-border bg-background px-4 py-3">
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    SMS-kod
+                  </p>
+                  <p class="mt-2 text-sm font-medium tracking-[0.3em] text-foreground">
+                    {{ selectedViewDetail.smsCode }}
+                  </p>
+                </div>
+              </div>
+              <p class="mt-4 text-sm leading-6 text-muted-foreground">
+                Arizachi tomonidan so‘rovnomaning tasdiqlanishi u hamda nogironligi bo‘lgan shaxsga tegishli shaxsga doir ma’lumotlarni olish va ishlov berishga rozilikni bildiradi.
+              </p>
+            </div>
+
+            <div class="flex justify-end border-t border-border pt-1">
+              <Button
+                variant="outline"
+                class="rounded-full px-5"
+                @click="closeViewDialog"
+              >
+                Yopish
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
         v-if="pageNotification"
         :class="[
-          'absolute right-4 top-4 z-30 flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border px-4 py-3 text-sm shadow-lg',
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border px-4 py-3 text-sm shadow-lg',
           pageNotification.tone === 'success'
             ? 'border-emerald-200 bg-card text-foreground dark:border-emerald-900/60'
             : 'border-rose-200 bg-card text-foreground dark:border-rose-900/60',
@@ -1449,7 +2299,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectStatusFilter('all')"
+                              @click.stop.prevent="selectStatusFilter('all')"
                             >
                               <span>Barchasi</span>
                               <Check
@@ -1462,7 +2312,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                               :key="status"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectStatusFilter(status)"
+                              @click.stop.prevent="selectStatusFilter(status)"
                             >
                               <span>{{ status }}</span>
                               <Check
@@ -1503,7 +2353,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectRegionFilter('all')"
+                              @click.stop.prevent="selectRegionFilter('all')"
                             >
                               <span>Barchasi</span>
                               <Check
@@ -1516,7 +2366,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                               :key="region"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectRegionFilter(region)"
+                              @click.stop.prevent="selectRegionFilter(region)"
                             >
                               <span class="truncate">{{ region }}</span>
                               <Check
@@ -1558,7 +2408,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectDistrictFilter('all')"
+                              @click.stop.prevent="selectDistrictFilter('all')"
                             >
                               <span>Barchasi</span>
                               <Check
@@ -1571,7 +2421,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                               :key="district"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                              @click="selectDistrictFilter(district)"
+                              @click.stop.prevent="selectDistrictFilter(district)"
                             >
                               <span class="truncate">{{ district }}</span>
                               <Check
@@ -1902,7 +2752,10 @@ watch(isFiltersOpen, async (nextOpen) => {
                                 :collision-padding="12"
                                 class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
                               >
-                                <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                                <DropdownMenuItem
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                  @click="openViewDialog(row)"
+                                >
                                   <Eye class="h-4 w-4 shrink-0" />
                                   <span>Ko'rish</span>
                                 </DropdownMenuItem>
@@ -1954,6 +2807,15 @@ watch(isFiltersOpen, async (nextOpen) => {
 
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Xizmat turi
+                          </p>
+                          <p class="mt-1 font-medium text-foreground">
+                            {{ row.serviceType }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                             Manzil
                           </p>
                           <p class="mt-1 font-medium text-foreground">
@@ -1970,12 +2832,13 @@ watch(isFiltersOpen, async (nextOpen) => {
               </div>
 
               <div class="hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
-                <table class="min-w-[1100px] border-separate border-spacing-0 text-sm xl:min-w-full">
+                <table class="min-w-[1260px] border-separate border-spacing-0 text-sm xl:min-w-full">
                   <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                     <tr>
                       <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Ariza</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
                       <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
                     </tr>
@@ -1983,7 +2846,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                 <tbody>
                   <tr v-if="paginatedRows.length === 0">
                     <td
-                      colspan="5"
+                      colspan="6"
                       class="border-b border-border px-4 py-12 text-center"
                     >
                       <div class="mx-auto flex max-w-md flex-col items-center gap-2">
@@ -2029,7 +2892,10 @@ watch(isFiltersOpen, async (nextOpen) => {
                               :collision-padding="12"
                               class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
                             >
-                              <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                              <DropdownMenuItem
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="openViewDialog(row)"
+                              >
                                 <Eye class="h-4 w-4 shrink-0" />
                                 <span>Ko'rish</span>
                               </DropdownMenuItem>
@@ -2078,6 +2944,11 @@ watch(isFiltersOpen, async (nextOpen) => {
                         </div>
                         <div class="mt-1 text-muted-foreground">
                           {{ row.pinfl }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="max-w-[320px] font-medium text-foreground">
+                          {{ row.serviceType }}
                         </div>
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
@@ -2228,14 +3099,24 @@ watch(isFiltersOpen, async (nextOpen) => {
       </div>
 
       <div class="max-h-[calc(100vh-6rem)] space-y-6 overflow-y-auto p-5">
+        <p class="text-base font-semibold text-foreground">
+          Arizachi
+        </p>
+
         <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
           <label class="space-y-2">
-            <span class="text-sm font-medium text-foreground">Arizachi</span>
+            <span class="text-sm font-medium text-foreground">JSHSHIR</span>
             <Input
               :model-value="applicantPinflInput"
+              inputmode="numeric"
+              maxlength="14"
+              autocomplete="off"
               placeholder="JSHSHIR kiriting"
               class="h-11"
-              @update:model-value="applicantPinflInput = String($event).replace(/\\D/g, '').slice(0, 14)"
+              @update:model-value="updateApplicantPinfl(String($event))"
+              @keydown="handlePinflKeydown"
+              @keydown.enter.prevent="lookupApplicant"
+              @paste="handleApplicantPinflPaste"
             />
           </label>
 
@@ -2298,6 +3179,161 @@ watch(isFiltersOpen, async (nextOpen) => {
 
         <div
           v-if="applicantLookupResult"
+          class="space-y-3 rounded-xl border border-border/70 bg-card p-4"
+        >
+          <label class="flex items-start gap-3 text-sm text-foreground">
+            <input
+              v-model="hasApplicantCustomResidenceAddress"
+              type="checkbox"
+              class="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+            >
+            <span>Arizachining yashash manzili amaldagi manzildan farq qiladi</span>
+          </label>
+
+          <label
+            v-if="hasApplicantCustomResidenceAddress"
+            class="space-y-2"
+          >
+            <span class="text-sm font-medium text-foreground">Amaldagi yashash manzili</span>
+
+            <div class="grid gap-3 md:grid-cols-3">
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">Viloyat</span>
+                <button
+                  type="button"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                    openCreateAddressField === 'applicant-region'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('applicant-region')"
+                >
+                  <span class="truncate">{{ applicantCustomResidenceRegionLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'applicant-region' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'applicant-region'"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="region in applicantCustomResidenceRegionOptions"
+                    :key="region"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleApplicantCustomResidenceRegionChange(region)"
+                  >
+                    <span class="truncate">{{ region }}</span>
+                    <Check
+                      v-if="applicantCustomResidenceRegion === region"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">Tuman</span>
+                <button
+                  type="button"
+                  :disabled="!applicantCustomResidenceRegion"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                    openCreateAddressField === 'applicant-district'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('applicant-district')"
+                >
+                  <span class="truncate">{{ applicantCustomResidenceDistrictLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'applicant-district' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'applicant-district' && applicantCustomResidenceRegion"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="district in applicantCustomResidenceDistrictOptions"
+                    :key="district"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleApplicantCustomResidenceDistrictChange(district)"
+                  >
+                    <span class="truncate">{{ district }}</span>
+                    <Check
+                      v-if="applicantCustomResidenceDistrict === district"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">MFY</span>
+                <button
+                  type="button"
+                  :disabled="!applicantCustomResidenceDistrict"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                    openCreateAddressField === 'applicant-mfy'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('applicant-mfy')"
+                >
+                  <span class="truncate">{{ applicantCustomResidenceMfyLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'applicant-mfy' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'applicant-mfy' && applicantCustomResidenceDistrict"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="mfy in demoMahallas"
+                    :key="mfy"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleApplicantCustomResidenceMfyChange(mfy)"
+                  >
+                    <span class="truncate">{{ mfy }}</span>
+                    <Check
+                      v-if="applicantCustomResidenceMfy === mfy"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+            </div>
+
+            <label class="space-y-2">
+              <span class="text-sm text-muted-foreground">To‘liq manzil</span>
+              <Input
+                :model-value="applicantCustomResidenceAddress"
+                placeholder="Uy, ko‘cha va boshqa manzil tafsilotlarini kiriting"
+                class="h-10"
+                @update:model-value="applicantCustomResidenceAddress = String($event)"
+              />
+            </label>
+          </label>
+        </div>
+
+        <div
+          v-if="applicantLookupResult"
           class="space-y-4 border-t border-border pt-5"
         >
           <p class="text-base font-semibold text-foreground">
@@ -2309,9 +3345,15 @@ watch(isFiltersOpen, async (nextOpen) => {
               <span class="text-sm font-medium text-foreground">JSHSHIR</span>
               <Input
                 :model-value="serviceRecipientPinflInput"
+                inputmode="numeric"
+                maxlength="14"
+                autocomplete="off"
                 placeholder="JSHSHIR kiriting"
                 class="h-11"
-                @update:model-value="serviceRecipientPinflInput = String($event).replace(/\D/g, '').slice(0, 14)"
+                @update:model-value="updateServiceRecipientPinfl(String($event))"
+                @keydown="handlePinflKeydown"
+                @keydown.enter.prevent="lookupServiceRecipient"
+                @paste="handleServiceRecipientPinflPaste"
               />
             </label>
 
@@ -2371,6 +3413,161 @@ watch(isFiltersOpen, async (nextOpen) => {
               </table>
             </div>
           </div>
+
+          <div
+            v-if="serviceRecipientLookupResult"
+            class="space-y-3 rounded-xl border border-border/70 bg-card p-4"
+          >
+            <label class="flex items-start gap-3 text-sm text-foreground">
+              <input
+                v-model="hasServiceRecipientCustomResidenceAddress"
+                type="checkbox"
+                class="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+              >
+              <span>Xizmat oluvchining yashash manzili amaldagi manzildan farq qiladi</span>
+            </label>
+
+          <label
+            v-if="hasServiceRecipientCustomResidenceAddress"
+            class="space-y-2"
+          >
+            <span class="text-sm font-medium text-foreground">Amaldagi yashash manzili</span>
+
+            <div class="grid gap-3 md:grid-cols-3">
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">Viloyat</span>
+                <button
+                  type="button"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                    openCreateAddressField === 'recipient-region'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('recipient-region')"
+                >
+                  <span class="truncate">{{ serviceRecipientCustomResidenceRegionLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'recipient-region' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'recipient-region'"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="region in serviceRecipientCustomResidenceRegionOptions"
+                    :key="region"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleServiceRecipientCustomResidenceRegionChange(region)"
+                  >
+                    <span class="truncate">{{ region }}</span>
+                    <Check
+                      v-if="serviceRecipientCustomResidenceRegion === region"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">Tuman</span>
+                <button
+                  type="button"
+                  :disabled="!serviceRecipientCustomResidenceRegion"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                    openCreateAddressField === 'recipient-district'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('recipient-district')"
+                >
+                  <span class="truncate">{{ serviceRecipientCustomResidenceDistrictLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'recipient-district' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'recipient-district' && serviceRecipientCustomResidenceRegion"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="district in serviceRecipientCustomResidenceDistrictOptions"
+                    :key="district"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleServiceRecipientCustomResidenceDistrictChange(district)"
+                  >
+                    <span class="truncate">{{ district }}</span>
+                    <Check
+                      v-if="serviceRecipientCustomResidenceDistrict === district"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+
+              <label class="space-y-2 lg:relative">
+                <span class="text-sm text-muted-foreground">MFY</span>
+                <button
+                  type="button"
+                  :disabled="!serviceRecipientCustomResidenceDistrict"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                    openCreateAddressField === 'recipient-mfy'
+                      ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                      : 'border-input hover:border-ring',
+                  ]"
+                  @click="toggleCreateAddressField('recipient-mfy')"
+                >
+                  <span class="truncate">{{ serviceRecipientCustomResidenceMfyLabel }}</span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                      openCreateAddressField === 'recipient-mfy' ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <div
+                  v-if="openCreateAddressField === 'recipient-mfy' && serviceRecipientCustomResidenceDistrict"
+                  class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                >
+                  <button
+                    v-for="mfy in demoMahallas"
+                    :key="mfy"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                    @click.stop.prevent="handleServiceRecipientCustomResidenceMfyChange(mfy)"
+                  >
+                    <span class="truncate">{{ mfy }}</span>
+                    <Check
+                      v-if="serviceRecipientCustomResidenceMfy === mfy"
+                      class="h-4 w-4 shrink-0 text-primary"
+                    />
+                  </button>
+                </div>
+              </label>
+            </div>
+
+            <label class="space-y-2">
+              <span class="text-sm text-muted-foreground">To‘liq manzil</span>
+              <Input
+                :model-value="serviceRecipientCustomResidenceAddress"
+                placeholder="Uy, ko‘cha va boshqa manzil tafsilotlarini kiriting"
+                class="h-10"
+                @update:model-value="serviceRecipientCustomResidenceAddress = String($event)"
+              />
+            </label>
+          </label>
+        </div>
         </div>
 
         <div
@@ -2378,12 +3575,64 @@ watch(isFiltersOpen, async (nextOpen) => {
           class="space-y-4 border-t border-border pt-5"
         >
           <p class="text-base font-semibold text-foreground">
+            Xizmat turini tanlash
+          </p>
+
+          <div class="rounded-xl border border-border/70 bg-card p-4">
+            <label class="space-y-2 lg:relative">
+              <span class="text-sm font-medium text-foreground">Xizmat turi</span>
+              <button
+                type="button"
+                :class="[
+                  'flex h-11 w-full items-center justify-between rounded-md border bg-background px-3 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                  openCreateAddressField === 'service-option'
+                    ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                    : 'border-input hover:border-ring',
+                ]"
+                @click="toggleCreateAddressField('service-option')"
+              >
+                <span class="truncate">{{ selectedServiceOptionLabel }}</span>
+                <ChevronDown
+                  :class="[
+                    'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                    openCreateAddressField === 'service-option' ? 'rotate-180' : '',
+                  ]"
+                />
+              </button>
+
+              <div
+                v-if="openCreateAddressField === 'service-option'"
+                class="mt-2 max-h-72 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20 lg:mt-0"
+              >
+                <button
+                  v-for="service in serviceOptions"
+                  :key="service.id"
+                  type="button"
+                  class="flex w-full items-start justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                  @click.stop.prevent="handleServiceOptionChange(service.id)"
+                >
+                  <span class="leading-6">{{ service.label }}</span>
+                  <Check
+                    v-if="selectedServiceOptionId === service.id"
+                    class="mt-1 h-4 w-4 shrink-0 text-primary"
+                  />
+                </button>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div
+          v-if="serviceRecipientLookupResult && selectedServiceOptionId"
+          class="space-y-4 border-t border-border pt-5"
+        >
+          <p class="text-base font-semibold text-foreground">
             Tibbiy hujjatlarni yuklash
           </p>
 
           <div class="grid gap-3">
-            <label
-              v-for="document in medicalDocumentFields"
+            <div
+              v-for="document in activeMedicalDocumentFields"
               :key="document.id"
               class="rounded-xl border border-border bg-card p-3"
             >
@@ -2403,64 +3652,7 @@ watch(isFiltersOpen, async (nextOpen) => {
                   >
                 </label>
               </div>
-            </label>
-          </div>
-        </div>
-
-        <div
-          v-if="serviceRecipientLookupResult"
-          class="space-y-4 border-t border-border pt-5"
-        >
-          <p class="text-base font-semibold text-foreground">
-            Tashkilotni tanlash
-          </p>
-
-          <div class="overflow-hidden rounded-2xl border border-border bg-card">
-            <table class="w-full border-collapse text-sm">
-              <thead class="bg-muted/40 text-left text-muted-foreground">
-                <tr>
-                  <th class="px-4 py-3 font-medium">Tashkilot</th>
-                  <th class="px-4 py-3 font-medium">Quvvati</th>
-                  <th class="px-4 py-3 font-medium">Band</th>
-                  <th class="px-4 py-3 font-medium">Bo‘sh</th>
-                  <th class="px-4 py-3 font-medium">Navbat</th>
-                  <th class="px-4 py-3 font-medium">Tanlash</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="organization in organizationOptions"
-                  :key="organization.id"
-                  :class="selectedOrganizationId === organization.id ? 'bg-primary/5' : ''"
-                >
-                  <td class="border-t border-border px-4 py-3 font-medium text-foreground">
-                    {{ organization.name }}
-                  </td>
-                  <td class="border-t border-border px-4 py-3 text-foreground">
-                    {{ organization.capacity }}
-                  </td>
-                  <td class="border-t border-border px-4 py-3 text-foreground">
-                    {{ organization.occupied }}
-                  </td>
-                  <td class="border-t border-border px-4 py-3 text-foreground">
-                    {{ organization.available }}
-                  </td>
-                  <td class="border-t border-border px-4 py-3 text-foreground">
-                    {{ organization.queue }}
-                  </td>
-                  <td class="border-t border-border px-4 py-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      :class="selectedOrganizationId === organization.id ? 'border-primary bg-primary/10 text-primary' : ''"
-                      @click="selectedOrganizationId = organization.id"
-                    >
-                      {{ selectedOrganizationId === organization.id ? 'Tanlandi' : 'Tanlash' }}
-                    </Button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            </div>
           </div>
         </div>
 
@@ -2471,32 +3663,69 @@ watch(isFiltersOpen, async (nextOpen) => {
           <p class="text-base font-semibold text-foreground">
             SMS-kod orqali tasdiqlash
           </p>
-
-          <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">SMS-kod</span>
-              <Input
-                :model-value="smsCodeInput"
-                placeholder="SMS-kodni kiriting"
-                class="h-11"
-                @update:model-value="smsCodeInput = String($event).replace(/\D/g, '').slice(0, 6)"
-              />
-            </label>
-
-            <Button
-              class="gap-2"
-              @click="sendSmsCode"
-            >
-              <span>{{ isSmsCodeSent ? 'Qayta yuborish' : 'SMS-kod yuborish' }}</span>
-            </Button>
-          </div>
-
-          <p
-            v-if="selectedOrganization"
-            class="text-sm text-muted-foreground"
-          >
-            Tanlangan tashkilot: <span class="font-medium text-foreground">{{ selectedOrganization.name }}</span>
+          <p class="text-sm leading-6 text-muted-foreground">
+            SMS-kod bilan tasdiqlash arizachi tomonidan so‘rovnomaning tasdiqlanishi hisoblanadi va u hamda nogironligi bo‘lgan shaxsga tegishli shaxsga doir ma’lumotlarni olish va ishlov berishga rozilikni bildiradi.
           </p>
+
+          <div class="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,220px)_190px] md:items-end">
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Telefon raqami</span>
+                <div class="flex h-11 items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring">
+                  <span class="flex h-full items-center border-r border-border px-3 text-sm font-medium text-foreground">
+                    +998
+                  </span>
+                  <Input
+                    :model-value="smsPhoneNumber"
+                    inputmode="numeric"
+                    maxlength="9"
+                    autocomplete="off"
+                    placeholder="90 123 45 67"
+                    class="h-full border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    @update:model-value="updateSmsPhoneNumber(String($event))"
+                    @keydown="handlePinflKeydown"
+                  />
+                </div>
+              </label>
+
+              <label class="block space-y-2">
+                <span class="text-sm font-medium text-foreground">SMS-kod</span>
+                <Input
+                  :model-value="smsCodeInput"
+                  inputmode="numeric"
+                  maxlength="6"
+                  autocomplete="off"
+                  placeholder="000000"
+                  class="h-11 text-center text-base tracking-[0.35em]"
+                  @update:model-value="smsCodeInput = String($event).replace(/\D/g, '').slice(0, 6)"
+                  @keydown="handlePinflKeydown"
+                />
+              </label>
+
+              <Button
+                class="h-11 w-full gap-2"
+                :disabled="smsResendCountdown > 0"
+                @click="sendSmsCode"
+              >
+                <span>{{ smsResendCountdown > 0 ? `${smsResendCountdown}s` : 'SMS-kod yuborish' }}</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 border-t border-border pt-5">
+          <Button
+            variant="outline"
+            @click="clearCreateDialogForm"
+          >
+            Tozalash
+          </Button>
+          <Button
+            :disabled="!isCreateFormReadyToSave || isSavingApplication"
+            @click="saveApplicationDraft"
+          >
+            Arizani saqlash
+          </Button>
         </div>
       </div>
     </div>
