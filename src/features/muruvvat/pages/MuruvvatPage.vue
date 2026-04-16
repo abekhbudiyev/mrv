@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Plus, Search, Trash2, X } from 'lucide-vue-next'
+import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, Plus, Search, Trash2, X } from 'lucide-vue-next'
+import mermaid from 'mermaid'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -8,6 +9,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger,
 } from 'reka-ui'
+import { useRoute } from 'vue-router'
 import { getMuruvvatPage } from '@/features/muruvvat/config'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
@@ -16,10 +18,14 @@ import EmptyState from '@/shared/components/EmptyState.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
+import applicantManImage from '@/assets/applicant-man.png'
+import applicantWomanImage from '@/assets/applicant-woman.png'
 
 const props = defineProps<{
   pageKey: string
 }>()
+
+const route = useRoute()
 
 const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
@@ -57,6 +63,12 @@ type ServiceOption = {
   label: string
 }
 
+type FlowStepInfo = {
+  title: string
+  services: string[]
+  description: string
+}
+
 type ViewApplicationDetail = {
   applicant: ApplicantLookupResult
   applicantInitials: string
@@ -84,6 +96,7 @@ type PendingConfirmation = {
 
 const page = computed(() => getMuruvvatPage(props.pageKey))
 const isApplicationsListPage = computed(() => props.pageKey === 'applications-list')
+const isIptkApplicationsListPage = computed(() => isApplicationsListPage.value && route.meta.moduleKey === 'iptk')
 
 const applicationStatusCardMeta = [
   {
@@ -262,6 +275,72 @@ const serviceOptions: ServiceOption[] = [
   { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish' },
   { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
 ]
+const iptkFlowSteps: FlowStepInfo[] = [
+  {
+    title: 'Qabul qilindi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Ariza qabul qilinadi va tizimga ro‘yxatdan o‘tkaziladi.',
+  },
+  {
+    title: 'Hujjatlar tekshirilmoqda',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: '“Inson” markazi hujjatlarni o‘rganadi va rad etish asoslari bor-yo‘qligini tekshiradi.',
+  },
+  {
+    title: 'Baholash jarayoni',
+    services: ['Huzur', 'Madad'],
+    description: 'Ishchi guruh nogironligi bo‘lgan shaxsning parvarishga muhtojlik darajasi va yashash sharoitini baholaydi.',
+  },
+  {
+    title: 'Qo‘shimcha hujjatlar yig‘ilmoqda',
+    services: ['Huzur (faqat tezkor guruh)'],
+    description: 'Tezkor guruh uchun zarur bo‘lgan qo‘shimcha hujjatlar arizachidan olinadi.',
+  },
+  {
+    title: 'IPTKga yuborildi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Ma’lumot va hujjatlar axborot moduli orqali IPTKga yuboriladi, arizachiga xabarnoma jo‘natiladi.',
+  },
+  {
+    title: 'Tasdiqlandi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Jarayonning ijobiy yakuniy bosqichi.',
+  },
+  {
+    title: 'Rad etildi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Ariza xizmat turiga mos kelmasligi, hujjatlar yetishmasligi yoki arizachi rad etgani sababli yakunlanadi.',
+  },
+]
+
+const iptkFlowMermaidDefinition = `
+flowchart TD
+    A["Qabul qilindi"] --> B["Hujjatlar tekshirilmoqda"]
+    B --> C{"Rad etish asosi bormi?"}
+
+    C -->|Ha| R["Rad etildi"]
+    C -->|Yo'q| D{"Xizmat turi"}
+
+    D -->|"Huzur"| E["Baholash jarayoni"]
+    D -->|"Madad"| E
+    D -->|"Ijtimoiy ta'til"| F["IPTKga yuborildi"]
+    D -->|"Uy sharoitida qarab turish"| F
+    D -->|"Yangi kun"| F
+
+    E --> G{"Tezkor guruhmi?"}
+    G -->|Ha| H["Qo'shimcha hujjatlar yig'ilmoqda"]
+    G -->|Yo'q| F
+
+    H --> I{"Hujjatlar to'liqmi?"}
+    I -->|Yo'q| H
+    I -->|Ha| F
+
+    F --> T["Tasdiqlandi"]
+`
+
+let mermaidInitialized = false
+let mermaidRenderId = 0
+
 const monthNames = [
   'Yanvar',
   'Fevral',
@@ -327,6 +406,8 @@ const isExporting = ref(false)
 const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const selectedViewRow = ref<ApplicationRow | null>(null)
+const isIptkFlowDialogOpen = ref(false)
+const iptkFlowMermaidSvg = ref('')
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const filterAnchorRef = ref<HTMLElement | null>(null)
@@ -519,19 +600,6 @@ const applicantLookupRows = computed(() => {
     ['Manzil', applicantLookupResult.value.permanentAddress],
   ] as const
 })
-const applicantInitials = computed(() => {
-  if (!applicantLookupResult.value) {
-    return ''
-  }
-
-  return applicantLookupResult.value.fullName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-})
 const serviceRecipientLookupRows = computed(() => {
   if (!serviceRecipientLookupResult.value) {
     return []
@@ -570,6 +638,31 @@ function getInitials(fullName: string) {
     .join('')
     .toUpperCase()
 }
+
+function getApplicantImageByFullName(fullName: string) {
+  const normalizedFullName = fullName.toLowerCase()
+
+  if (normalizedFullName.includes(' qizi')) {
+    return applicantWomanImage
+  }
+
+  return applicantManImage
+}
+
+const applicantImage = computed(() => {
+  if (!applicantLookupResult.value) {
+    return ''
+  }
+
+  return getApplicantImageByFullName(applicantLookupResult.value.fullName)
+})
+const selectedViewApplicantImage = computed(() => {
+  if (!selectedViewDetail.value) {
+    return ''
+  }
+
+  return getApplicantImageByFullName(selectedViewDetail.value.applicant.fullName)
+})
 
 function buildBirthDate(indexSeed: number, isMinor = false) {
   const birthDay = String((indexSeed % 28) + 1).padStart(2, '0')
@@ -1182,23 +1275,6 @@ function clearFilters() {
   draftEndDateFilter.value = ''
 }
 
-function clearAppliedFilters() {
-  draftStatusFilter.value = 'all'
-  draftRegionFilter.value = 'all'
-  draftDistrictFilter.value = 'all'
-  draftStartDateFilter.value = ''
-  draftEndDateFilter.value = ''
-
-  runTableLoading(() => {
-    appliedStatusFilter.value = 'all'
-    appliedRegionFilter.value = 'all'
-    appliedDistrictFilter.value = 'all'
-    appliedStartDateFilter.value = ''
-    appliedEndDateFilter.value = ''
-    currentPage.value = 1
-  })
-}
-
 function openCreateDialog() {
   isCreateDialogOpen.value = true
   isSavingApplication.value = false
@@ -1416,8 +1492,27 @@ async function saveApplicationDraft() {
 }
 
 function clearSearchAndFilters() {
-  clearSearch()
-  clearAppliedFilters()
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+    searchDebounceTimer = null
+  }
+
+  searchInput.value = ''
+  draftStatusFilter.value = 'all'
+  draftRegionFilter.value = 'all'
+  draftDistrictFilter.value = 'all'
+  draftStartDateFilter.value = ''
+  draftEndDateFilter.value = ''
+
+  runTableLoading(() => {
+    searchQuery.value = ''
+    appliedStatusFilter.value = 'all'
+    appliedRegionFilter.value = 'all'
+    appliedDistrictFilter.value = 'all'
+    appliedStartDateFilter.value = ''
+    appliedEndDateFilter.value = ''
+    currentPage.value = 1
+  })
 }
 
 const totalRows = computed(() => filteredRows.value.length)
@@ -1516,19 +1611,6 @@ function handleSearchInput(value: string) {
   }, 1000)
 }
 
-function clearSearch() {
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer)
-    searchDebounceTimer = null
-  }
-
-  searchInput.value = ''
-  runTableLoading(() => {
-    searchQuery.value = ''
-    currentPage.value = 1
-  })
-}
-
 function showNotification(notification: PageNotification) {
   pageNotification.value = notification
   notificationProgress.value = 100
@@ -1558,6 +1640,51 @@ function closeNotification() {
 
 function openViewDialog(row: ApplicationRow) {
   selectedViewRow.value = row
+}
+
+function openIptkFlowDialog() {
+  isIptkFlowDialogOpen.value = true
+}
+
+function closeIptkFlowDialog() {
+  isIptkFlowDialogOpen.value = false
+}
+
+async function renderIptkFlowMermaid() {
+  if (!mermaidInitialized) {
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'base',
+      fontFamily: 'Roboto, sans-serif',
+      flowchart: {
+        useMaxWidth: true,
+        curve: 'basis',
+        nodeSpacing: 40,
+        rankSpacing: 56,
+        padding: 16,
+      },
+      themeVariables: {
+        background: '#ffffff',
+        primaryColor: '#f8fafc',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#cbd5e1',
+        lineColor: '#94a3b8',
+        secondaryColor: '#ecfdf5',
+        secondaryTextColor: '#166534',
+        secondaryBorderColor: '#86efac',
+        tertiaryColor: '#eff6ff',
+        tertiaryTextColor: '#1d4ed8',
+        tertiaryBorderColor: '#93c5fd',
+      },
+    })
+    mermaidInitialized = true
+  }
+
+  mermaidRenderId += 1
+  const renderId = `iptk-flowchart-${mermaidRenderId}`
+  const { svg } = await mermaid.render(renderId, iptkFlowMermaidDefinition)
+  iptkFlowMermaidSvg.value = svg
 }
 
 function closeViewDialog() {
@@ -1854,6 +1981,16 @@ watch(isFiltersOpen, async (nextOpen) => {
   await nextTick()
   updateDesktopFilterMaxHeight()
 })
+
+watch(isIptkFlowDialogOpen, async (nextOpen) => {
+  if (!nextOpen) {
+    iptkFlowMermaidSvg.value = ''
+    return
+  }
+
+  await nextTick()
+  await renderIptkFlowMermaid()
+})
 </script>
 
 <template>
@@ -1987,11 +2124,13 @@ watch(isFiltersOpen, async (nextOpen) => {
                 Arizachi
               </p>
               <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
-                <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
-                  <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/8 text-4xl font-semibold text-primary">
-                    {{ selectedViewDetail.applicantInitials }}
-                  </div>
-                  <span class="mt-4 text-sm text-muted-foreground">Rasm</span>
+                <div class="flex h-full min-h-[180px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-4 py-4 text-center">
+                  <img
+                    :src="selectedViewApplicantImage"
+                    alt="Arizachi rasmi"
+                    class="h-32 w-24 rounded-2xl border border-border/60 object-cover"
+                  >
+                  <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
                 </div>
                 <div class="overflow-hidden rounded-2xl border border-border bg-background">
                   <div
@@ -2111,6 +2250,94 @@ watch(isFiltersOpen, async (nextOpen) => {
       </div>
 
       <div
+        v-if="isIptkFlowDialogOpen"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        @click.self="closeIptkFlowDialog"
+      >
+        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <div>
+              <p class="text-lg font-semibold text-foreground">
+                IPTK umumiy flow
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Xizmat turiga qarab qo‘llanadigan umumiy bosqichlar
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-9 w-9 p-0"
+              @click="closeIptkFlowDialog"
+            >
+              <X class="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto p-5">
+            <div class="rounded-2xl border border-border bg-card p-4 sm:p-5">
+              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+                <p class="text-sm font-semibold text-foreground">
+                  BPMN / flowchart ko‘rinishidagi umumiy jarayon
+                </p>
+                <div class="mt-4">
+                  <div class="overflow-x-auto rounded-2xl border border-border bg-background p-4">
+                    <div
+                      class="min-w-[900px] [&_.edgeLabel]:rounded-md [&_.edgeLabel]:bg-background [&_.edgeLabel]:px-2 [&_.edgeLabel]:py-1 [&_.edgeLabel]:text-xs [&_.edgeLabel]:font-semibold [&_.edgeLabel]:text-muted-foreground [&_.label]:font-['Roboto',sans-serif] [&_.label]:text-foreground [&_.nodeLabel]:font-['Roboto',sans-serif] [&_.nodeLabel]:text-foreground [&_.labelBkg]:fill-background [&_.cluster]:fill-transparent [&_.cluster]:stroke-border [&_.edgePath_.path]:stroke-slate-400 [&_.edgePath_.path]:stroke-[2px] [&_.flowchart-link]:stroke-slate-400 [&_.marker]:fill-slate-400 [&_.marker]:stroke-slate-400 [&_.node_rect]:fill-background [&_.node_rect]:stroke-slate-300 [&_.node_rect]:stroke-[1.5px] [&_.node_polygon]:fill-background [&_.node_polygon]:stroke-slate-300 [&_.node_polygon]:stroke-[1.5px] [&_.node_default>rect]:fill-background [&_.node_default>rect]:stroke-slate-300 [&_.node_default>rect]:stroke-[1.5px] [&_.node.default>rect]:fill-background"
+                      v-html="iptkFlowMermaidSvg"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 space-y-4">
+                <p class="text-sm font-semibold text-foreground">
+                  Step tafsilotlari
+                </p>
+                <div
+                  v-for="(step, index) in iptkFlowSteps"
+                  :key="step.title"
+                  class="relative rounded-2xl border border-border bg-background p-4"
+                >
+                  <div class="flex items-start gap-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {{ index + 1 }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
+                          <p class="text-base font-semibold text-foreground">
+                            {{ step.title }}
+                          </p>
+                          <p class="mt-2 text-sm leading-6 text-muted-foreground">
+                            {{ step.description }}
+                          </p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 lg:max-w-[50%] lg:justify-end">
+                          <span
+                            v-for="service in step.services"
+                            :key="`${step.title}-${service}`"
+                            class="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
+                          >
+                            {{ service }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    v-if="index < iptkFlowSteps.length - 1"
+                    class="pointer-events-none absolute -bottom-4 left-9 hidden h-4 w-px bg-border md:block"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
         v-if="pageNotification"
         :class="[
           'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border px-4 py-3 text-sm shadow-lg',
@@ -2210,6 +2437,16 @@ watch(isFiltersOpen, async (nextOpen) => {
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+              <Button
+                v-if="isIptkApplicationsListPage"
+                variant="outline"
+                size="icon"
+                class="h-10 w-10"
+                aria-label="Umumiy flow"
+                @click="openIptkFlowDialog"
+              >
+                <Info class="h-4 w-4" />
+              </Button>
               <Button
                 class="gap-2"
                 @click="openCreateDialog"
@@ -3148,11 +3385,13 @@ watch(isFiltersOpen, async (nextOpen) => {
           v-if="applicantLookupResult"
           class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
         >
-          <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-5">
-            <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-semibold text-primary">
-              {{ applicantInitials }}
-            </div>
-            <p class="mt-3 text-sm text-muted-foreground">
+          <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-3 py-4">
+            <img
+              :src="applicantImage"
+              alt="Arizachi rasmi"
+              class="h-28 w-20 rounded-2xl border border-border/60 object-cover"
+            >
+            <p class="mt-2 text-center text-sm text-muted-foreground">
               Rasm
             </p>
           </div>
