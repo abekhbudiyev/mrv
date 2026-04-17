@@ -4,6 +4,9 @@ import type { CurrentUser, LoginPayload } from '@/core/types/auth'
 import type { PermissionKey } from '@/core/types/permissions'
 import { STORAGE_KEYS } from '@/core/constants/storage'
 
+const DEMO_USERNAME = 'admin'
+const DEMO_PASSWORD = 'aBekhbudiyev.2003'
+
 const mockPermissions: PermissionKey[] = [
   'apps.view',
   'dashboard.view',
@@ -71,7 +74,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(payload: LoginPayload) {
-    currentUser.value = buildMockUser(payload.username)
+    const username = payload.username.trim()
+    const password = payload.password.trim()
+
+    if (username !== DEMO_USERNAME || password !== DEMO_PASSWORD) {
+      throw new Error('Login yoki parol noto‘g‘ri.')
+    }
+
+    currentUser.value = buildMockUser(username)
     persistSession(payload.remember ?? true)
   }
 

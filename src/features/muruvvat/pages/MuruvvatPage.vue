@@ -328,7 +328,7 @@ flowchart TD
     D -->|"Yangi kun"| F
 
     E --> G{"Tezkor guruhmi?"}
-    G -->|Ha| H["Qo'shimcha hujjatlar yig'ilmoqda"]
+    G -->|Ha| H["Qo'shimcha hujjatlar<br/>yig'ilmoqda"]
     G -->|Yo'q| F
 
     H --> I{"Hujjatlar to'liqmi?"}
@@ -336,6 +336,20 @@ flowchart TD
     I -->|Ha| F
 
     F --> T["Tasdiqlandi"]
+
+    classDef neutral fill:#f8fafc,stroke:#cbd5e1,color:#0f172a,stroke-width:1.5px;
+    classDef decision fill:#ffffff,stroke:#94a3b8,color:#0f172a,stroke-width:1.5px;
+    classDef danger fill:#fff1f2,stroke:#fda4af,color:#be123c,stroke-width:1.5px;
+    classDef info fill:#eff6ff,stroke:#93c5fd,color:#1d4ed8,stroke-width:1.5px;
+    classDef warning fill:#fff7ed,stroke:#fdba74,color:#9a3412,stroke-width:1.5px;
+    classDef success fill:#ecfdf5,stroke:#86efac,color:#166534,stroke-width:1.5px;
+
+    class A,B neutral;
+    class C,D,G,I decision;
+    class R danger;
+    class E info;
+    class H warning;
+    class F,T success;
 `
 
 let mermaidInitialized = false
@@ -1658,6 +1672,7 @@ async function renderIptkFlowMermaid() {
       theme: 'base',
       fontFamily: 'Roboto, sans-serif',
       flowchart: {
+        htmlLabels: false,
         useMaxWidth: true,
         curve: 'basis',
         nodeSpacing: 40,
@@ -1670,12 +1685,16 @@ async function renderIptkFlowMermaid() {
         primaryTextColor: '#0f172a',
         primaryBorderColor: '#cbd5e1',
         lineColor: '#94a3b8',
+        textColor: '#0f172a',
+        mainBkg: '#ffffff',
+        nodeBorder: '#cbd5e1',
         secondaryColor: '#ecfdf5',
         secondaryTextColor: '#166534',
         secondaryBorderColor: '#86efac',
         tertiaryColor: '#eff6ff',
         tertiaryTextColor: '#1d4ed8',
         tertiaryBorderColor: '#93c5fd',
+        edgeLabelBackground: '#ffffff',
       },
     })
     mermaidInitialized = true
@@ -2284,7 +2303,7 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
                 <div class="mt-4">
                   <div class="overflow-x-auto rounded-2xl border border-border bg-background p-4">
                     <div
-                      class="min-w-[900px] [&_.edgeLabel]:rounded-md [&_.edgeLabel]:bg-background [&_.edgeLabel]:px-2 [&_.edgeLabel]:py-1 [&_.edgeLabel]:text-xs [&_.edgeLabel]:font-semibold [&_.edgeLabel]:text-muted-foreground [&_.label]:font-['Roboto',sans-serif] [&_.label]:text-foreground [&_.nodeLabel]:font-['Roboto',sans-serif] [&_.nodeLabel]:text-foreground [&_.labelBkg]:fill-background [&_.cluster]:fill-transparent [&_.cluster]:stroke-border [&_.edgePath_.path]:stroke-slate-400 [&_.edgePath_.path]:stroke-[2px] [&_.flowchart-link]:stroke-slate-400 [&_.marker]:fill-slate-400 [&_.marker]:stroke-slate-400 [&_.node_rect]:fill-background [&_.node_rect]:stroke-slate-300 [&_.node_rect]:stroke-[1.5px] [&_.node_polygon]:fill-background [&_.node_polygon]:stroke-slate-300 [&_.node_polygon]:stroke-[1.5px] [&_.node_default>rect]:fill-background [&_.node_default>rect]:stroke-slate-300 [&_.node_default>rect]:stroke-[1.5px] [&_.node.default>rect]:fill-background"
+                      class="min-w-[900px] [&_svg]:h-auto [&_svg]:w-full [&_text]:fill-slate-900 [&_text]:font-['Roboto',sans-serif] [&_.edgePath_.path]:stroke-slate-400 [&_.edgePath_.path]:stroke-[2px] [&_.flowchart-link]:stroke-slate-400 [&_.marker]:fill-slate-400 [&_.marker]:stroke-slate-400 [&_.labelBkg]:fill-background [&_.node_rect]:fill-background [&_.node_rect]:stroke-slate-300 [&_.node_rect]:stroke-[1.5px] [&_.node_polygon]:fill-background [&_.node_polygon]:stroke-slate-300 [&_.node_polygon]:stroke-[1.5px]"
                       v-html="iptkFlowMermaidSvg"
                     />
                   </div>

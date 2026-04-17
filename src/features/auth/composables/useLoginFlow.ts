@@ -6,12 +6,12 @@ import type { AuthMethod, LoginFormErrors, LoginFormState } from '../types'
 
 const providerCredentials: Record<Exclude<AuthMethod, 'password'>, { username: string, password: string }> = {
   oneid: {
-    username: 'oneid.operator',
-    password: 'oneid',
+    username: 'admin',
+    password: 'aBekhbudiyev.2003',
   },
   eimzo: {
-    username: 'eimzo.operator',
-    password: 'eimzo',
+    username: 'admin',
+    password: 'aBekhbudiyev.2003',
   },
 }
 
@@ -102,6 +102,9 @@ export function useLoginFlow() {
     try {
       await finalizeLogin(form.username, form.password, form.remember)
     }
+    catch (error) {
+      errors.form = error instanceof Error ? error.message : 'Kirishda xatolik yuz berdi.'
+    }
     finally {
       isSubmitting.value = false
     }
@@ -119,6 +122,9 @@ export function useLoginFlow() {
     try {
       const credentials = providerCredentials[provider]
       await finalizeLogin(credentials.username, credentials.password, true)
+    }
+    catch (error) {
+      errors.form = error instanceof Error ? error.message : 'Kirishda xatolik yuz berdi.'
     }
     finally {
       isSubmitting.value = false
