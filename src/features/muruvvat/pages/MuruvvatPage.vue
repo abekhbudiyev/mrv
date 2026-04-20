@@ -766,6 +766,8 @@ const selectedViewRow = ref<ApplicationRow | null>(null)
 const isIptkFlowDialogOpen = ref(false)
 const iptkFlowMermaidSvg = ref('')
 const selectedIptkFlowStepId = ref('A')
+const iptkFlowDiagramRef = ref<HTMLElement | null>(null)
+const iptkFlowCommentBadges = ref<Array<{ stepId: string; left: number; top: number }>>([])
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const filterAnchorRef = ref<HTMLElement | null>(null)
@@ -807,6 +809,7 @@ let smsResendTimer: ReturnType<typeof setInterval> | null = null
 let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
+let iptkFlowBadgeMeasureFrame: number | null = null
 
 const selectedIptkFlowStep = computed(() => {
   return iptkFlowSteps.find((step) => step.id === selectedIptkFlowStepId.value) ?? iptkFlowSteps[0]
@@ -2134,6 +2137,58 @@ function selectIptkFlowStep(stepId: string) {
   selectedIptkFlowStepId.value = stepId
 }
 
+function updateIptkFlowCommentBadges() {
+  if (!iptkFlowDiagramRef.value) {
+    iptkFlowCommentBadges.value = []
+    return
+  }
+
+  const svgElement = iptkFlowDiagramRef.value.querySelector('svg')
+  if (!svgElement) {
+    iptkFlowCommentBadges.value = []
+    return
+  }
+
+  const svgRect = svgElement.getBoundingClientRect()
+  if (!svgRect.width || !svgRect.height) {
+    iptkFlowCommentBadges.value = []
+    return
+  }
+
+  const supportedStepIds = new Set(iptkFlowSteps.map((step) => step.id))
+  const badges = Array.from(svgElement.querySelectorAll('g.node'))
+    .map((node) => {
+      const rawId = node.getAttribute('id') ?? ''
+      const match = rawId.match(/^flowchart-([A-Z]+)-\d+$/)
+      const stepId = match?.[1] ?? ''
+      if (!supportedStepIds.has(stepId)) {
+        return null
+      }
+
+      const nodeRect = (node as SVGGElement).getBoundingClientRect()
+      return {
+        stepId,
+        left: nodeRect.right - svgRect.left - 10,
+        top: nodeRect.top - svgRect.top - 10,
+      }
+    })
+    .filter((badge): badge is { stepId: string; left: number; top: number } => Boolean(badge))
+
+  const uniqueBadges = badges.filter((badge, index, array) => array.findIndex((item) => item.stepId === badge.stepId) === index)
+  iptkFlowCommentBadges.value = uniqueBadges
+}
+
+function scheduleIptkFlowBadgeMeasurement() {
+  if (iptkFlowBadgeMeasureFrame !== null) {
+    cancelAnimationFrame(iptkFlowBadgeMeasureFrame)
+  }
+
+  iptkFlowBadgeMeasureFrame = requestAnimationFrame(() => {
+    iptkFlowBadgeMeasureFrame = null
+    updateIptkFlowCommentBadges()
+  })
+}
+
 function triggerBrowserDownload(url: string, fileName: string) {
   const anchor = window.document.createElement('a')
   anchor.href = url
@@ -2331,6 +2386,8 @@ async function renderIptkFlowMermaid() {
   const renderId = `iptk-flowchart-${mermaidRenderId}`
   const { svg } = await mermaid.render(renderId, iptkFlowMermaidDefinition)
   iptkFlowMermaidSvg.value = svg
+  await nextTick()
+  scheduleIptkFlowBadgeMeasurement()
 }
 
 function closeViewDialog() {
@@ -2602,6 +2659,7 @@ onMounted(() => {
   }, 200)
 
   window.addEventListener('resize', updateDesktopFilterMaxHeight)
+  window.addEventListener('resize', scheduleIptkFlowBadgeMeasurement)
   updateDesktopFilterMaxHeight()
 })
 
@@ -2623,6 +2681,12 @@ onUnmounted(() => {
   clearSmsResendTimer()
 
   window.removeEventListener('resize', updateDesktopFilterMaxHeight)
+  window.removeEventListener('resize', scheduleIptkFlowBadgeMeasurement)
+
+  if (iptkFlowBadgeMeasureFrame !== null) {
+    cancelAnimationFrame(iptkFlowBadgeMeasureFrame)
+    iptkFlowBadgeMeasureFrame = null
+  }
 })
 
 watch(isFiltersOpen, async (nextOpen) => {
@@ -2637,6 +2701,7 @@ watch(isFiltersOpen, async (nextOpen) => {
 watch(isIptkFlowDialogOpen, async (nextOpen) => {
   if (!nextOpen) {
     iptkFlowMermaidSvg.value = ''
+    iptkFlowCommentBadges.value = []
     return
   }
 
@@ -2966,10 +3031,24 @@ watch(serviceRecipientLookupResult, () => {
                 </p>
                 <div class="mt-4">
                   <div class="overflow-x-auto rounded-2xl border border-border bg-background p-4">
-                    <div
-                      class="min-w-[900px] [&_svg]:h-auto [&_svg]:w-full [&_text]:fill-slate-900 [&_text]:font-['Roboto',sans-serif] [&_.edgePath_.path]:stroke-slate-400 [&_.edgePath_.path]:stroke-[2px] [&_.flowchart-link]:stroke-slate-400 [&_.marker]:fill-slate-400 [&_.marker]:stroke-slate-400 [&_.labelBkg]:fill-background [&_.node_rect]:fill-background [&_.node_rect]:stroke-slate-300 [&_.node_rect]:stroke-[1.5px] [&_.node_polygon]:fill-background [&_.node_polygon]:stroke-slate-300 [&_.node_polygon]:stroke-[1.5px]"
-                      v-html="iptkFlowMermaidSvg"
-                    />
+                    <div class="relative min-w-[900px]">
+                      <div
+                        ref="iptkFlowDiagramRef"
+                        class="[&_svg]:h-auto [&_svg]:w-full [&_text]:fill-slate-900 [&_text]:font-['Roboto',sans-serif] [&_.edgePath_.path]:stroke-slate-400 [&_.edgePath_.path]:stroke-[2px] [&_.flowchart-link]:stroke-slate-400 [&_.marker]:fill-slate-400 [&_.marker]:stroke-slate-400 [&_.labelBkg]:fill-background [&_.node_rect]:fill-background [&_.node_rect]:stroke-slate-300 [&_.node_rect]:stroke-[1.5px] [&_.node_polygon]:fill-background [&_.node_polygon]:stroke-slate-300 [&_.node_polygon]:stroke-[1.5px]"
+                        v-html="iptkFlowMermaidSvg"
+                      />
+                      <button
+                        v-for="badge in iptkFlowCommentBadges"
+                        :key="`flow-comment-${badge.stepId}`"
+                        type="button"
+                        class="absolute flex h-6 w-6 items-center justify-center rounded-full border border-primary/25 bg-background text-primary shadow-sm transition hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        :style="{ left: `${badge.left}px`, top: `${badge.top}px` }"
+                        :aria-label="`${badge.stepId} bo'yicha batafsil ma'lumot`"
+                        @click.stop="selectIptkFlowStep(badge.stepId)"
+                      >
+                        <Info class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2980,7 +3059,7 @@ watch(serviceRecipientLookupResult, () => {
                     Bosqichlar
                   </p>
                   <p class="mt-1 text-sm text-muted-foreground">
-                    Diagrammadagi node ustiga bosing yoki pastdagi ro‘yxatdan tanlang.
+                    Diagrammadagi node ustiga bosing, yoki undagi `i` badge orqali batafsil ma'lumotni oching.
                   </p>
                   <div class="mt-4 flex flex-wrap gap-2">
                     <button

@@ -23,9 +23,29 @@ type CommissionWorkflowStage = 'Qoralama' | 'Tasdiqlashga yuborildi' | 'Tasdiqla
 
 interface CommissionMemberDraft {
   id: string
+  pinfl: string
   fullName: string
+  birthDate: string
   position: string
+  phone: string
   organization: string
+  region: string
+  district: string
+  error: string
+}
+
+interface CommissionLookupProfile {
+  pinfl: string
+  fullName: string
+  birthDate: string
+  region: string
+  district: string
+}
+
+interface CommissionSearchState {
+  pinfl: string
+  profile: CommissionLookupProfile | null
+  error: string
 }
 
 interface CommissionRecord {
@@ -70,9 +90,9 @@ const regionOptions = [
 ] as const
 
 const statusClassMap: Record<CommissionStatus, string> = {
-  Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700',
-  Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  'Rad etilgan': 'border-rose-200 bg-rose-50 text-rose-700',
+  Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
+  Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+  'Rad etilgan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 }
 
 const workflowStageLabels: Record<CommissionWorkflowStage, string> = {
@@ -93,15 +113,27 @@ const commissions = ref<CommissionRecord[]>([
     members: [
       {
         id: crypto.randomUUID(),
+        pinfl: '10000000000001',
         fullName: "Rasulov Sherzod G'ayratovich",
+        birthDate: '14.03.1984',
         position: 'Psixiatr',
+        phone: '+998901112233',
         organization: 'Ruhiy salomatlik markazi',
+        region: 'Samarqand viloyati',
+        district: 'Samarqand shahri',
+        error: '',
       },
       {
         id: crypto.randomUUID(),
+        pinfl: '10000000000002',
         fullName: 'Bozorova Nilufar Sodiq qizi',
+        birthDate: '02.07.1988',
         position: 'Nevropatolog',
+        phone: '+998911234567',
         organization: "Hududiy sog'liqni saqlash boshqarmasi",
+        region: 'Samarqand viloyati',
+        district: 'Urgut tumani',
+        error: '',
       },
     ],
     status: 'Jarayonda',
@@ -119,15 +151,27 @@ const commissions = ref<CommissionRecord[]>([
     members: [
       {
         id: crypto.randomUUID(),
+        pinfl: '10000000000003',
         fullName: 'Yusupov Odilbek Akbarovich',
+        birthDate: '22.11.1981',
         position: 'Psixolog',
+        phone: '+998937654321',
         organization: 'Hududiy IPTK',
+        region: 'Toshkent shahri',
+        district: 'Mirzo Ulug‘bek tumani',
+        error: '',
       },
       {
         id: crypto.randomUUID(),
+        pinfl: '10000000000004',
         fullName: 'Eshonqulova Shahlo Islom qizi',
+        birthDate: '09.05.1987',
         position: 'Ijtimoiy xodim',
+        phone: '+998909998877',
         organization: 'Inson markazi',
+        region: 'Toshkent shahri',
+        district: 'Shayxontohur tumani',
+        error: '',
       },
     ],
     status: 'Tasdiqlangan',
@@ -147,9 +191,15 @@ const commissions = ref<CommissionRecord[]>([
     members: [
       {
         id: crypto.randomUUID(),
+        pinfl: '10000000000005',
         fullName: 'Meliqulov Doston Otabekovich',
+        birthDate: '17.01.1983',
         position: 'Psixiatr',
+        phone: '+998935551122',
         organization: "Viloyat ruhiy salomatlik markazi",
+        region: 'Buxoro viloyati',
+        district: 'Buxoro shahri',
+        error: '',
       },
     ],
     status: 'Rad etilgan',
@@ -178,18 +228,146 @@ const currentPage = ref(1)
 const isRowsPerPageOpen = ref(false)
 
 const formRegion = ref('')
-const formChair = ref('')
-const formDeputyChair = ref('')
-const formSecretary = ref('')
+const chairSearch = ref<CommissionSearchState>(createSearchState())
+const deputyChairSearch = ref<CommissionSearchState>(createSearchState())
+const secretarySearch = ref<CommissionSearchState>(createSearchState())
 const formMembers = ref<CommissionMemberDraft[]>([createEmptyMember()])
+
+function createSearchState(): CommissionSearchState {
+  return {
+    pinfl: '',
+    profile: null,
+    error: '',
+  }
+}
 
 function createEmptyMember(): CommissionMemberDraft {
   return {
     id: crypto.randomUUID(),
+    pinfl: '',
     fullName: '',
+    birthDate: '',
     position: '',
+    phone: '',
     organization: '',
+    region: '',
+    district: '',
+    error: '',
   }
+}
+
+const commissionFirstNames = ['Azizbek', 'Javohir', 'Komiljon', 'Muzaffar', 'Doston', 'Oybek', 'Sevara', 'Dilnoza', 'Mohira', 'Yulduz']
+const commissionLastNames = ['Abdullayev', 'Karimova', 'Raximov', 'Tursunova', 'Meliqulov', 'Sharipov', 'Qobilova', 'Jo‘rayeva', 'Bozorova', 'Rasulov']
+const commissionPatronymics = ['Anvarovich', 'Zafarovich', 'Rustam qizi', 'Oybek qizi', 'Bahrom qizi', 'Alisherovich', 'Ikrom qizi']
+const regionDistrictOptions: Record<string, string[]> = {
+  "Qoraqalpog'iston Respublikasi": ['Nukus shahri', "To'rtko'l tumani", "Xo'jayli tumani"],
+  'Andijon viloyati': ['Andijon shahri', 'Asaka tumani', 'Buloqboshi tumani'],
+  'Buxoro viloyati': ['Buxoro shahri', 'G‘ijduvon tumani', 'Kogon shahri'],
+  "Farg'ona viloyati": ["Farg'ona shahri", 'Qo‘qon shahri', 'Marg‘ilon shahri'],
+  'Jizzax viloyati': ['Jizzax shahri', 'G‘allaorol tumani', 'Zomin tumani'],
+  'Namangan viloyati': ['Namangan shahri', 'Chortoq tumani', 'Kosonsoy tumani'],
+  'Navoiy viloyati': ['Navoiy shahri', 'Karmana tumani', 'Zarafshon shahri'],
+  'Qashqadaryo viloyati': ['Qarshi shahri', 'Shahrisabz shahri', 'Kitob tumani'],
+  'Samarqand viloyati': ['Samarqand shahri', 'Urgut tumani', 'Kattaqo‘rg‘on shahri'],
+  'Sirdaryo viloyati': ['Guliston shahri', 'Yangiyer shahri', 'Shirin shahri'],
+  'Surxondaryo viloyati': ['Termiz shahri', 'Denov tumani', 'Sherobod tumani'],
+  'Toshkent viloyati': ['Nurafshon shahri', 'Chirchiq shahri', 'Zangiota tumani'],
+  'Toshkent shahri': ['Mirzo Ulug‘bek tumani', 'Shayxontohur tumani', 'Yakkasaroy tumani'],
+  'Xorazm viloyati': ['Urganch shahri', 'Xiva shahri', 'Hazorasp tumani'],
+}
+
+function sanitizePinfl(value: string) {
+  return value.replace(/\D/g, '').slice(0, 14)
+}
+
+function normalizeFullName(value: string) {
+  return value.trim().toLocaleUpperCase('uz-UZ')
+}
+
+function buildCommissionProfile(pinfl: string, region: string, offset = 0): CommissionLookupProfile {
+  const seed = Number.parseInt(pinfl.slice(-4) || '0', 10) + offset
+  const districts = regionDistrictOptions[region] ?? ['Hudud aniqlanmagan']
+  const lastName = commissionLastNames[seed % commissionLastNames.length]
+  const firstName = commissionFirstNames[(seed + 3) % commissionFirstNames.length]
+  const patronymic = commissionPatronymics[(seed + 5) % commissionPatronymics.length]
+  const year = 1975 + (seed % 20)
+  const month = String((seed % 12) + 1).padStart(2, '0')
+  const day = String((seed % 28) + 1).padStart(2, '0')
+
+  return {
+    pinfl,
+    fullName: normalizeFullName(`${lastName} ${firstName} ${patronymic}`),
+    birthDate: `${day}.${month}.${year}`,
+    region,
+    district: districts[seed % districts.length] ?? 'Hudud aniqlanmagan',
+  }
+}
+
+function hydrateExistingProfile(fullName: string, region: string, suffix: string): CommissionLookupProfile {
+  const normalized = suffix.padStart(14, '1').slice(0, 14)
+  const districts = regionDistrictOptions[region] ?? ['Hudud aniqlanmagan']
+
+  return {
+    pinfl: normalized,
+    fullName: normalizeFullName(fullName),
+    birthDate: buildCommissionProfile(normalized, region).birthDate,
+    region,
+    district: districts[0] ?? 'Hudud aniqlanmagan',
+  }
+}
+
+function updateSearchPinfl(state: { pinfl: string; profile: CommissionLookupProfile | null; error: string }, value: string) {
+  state.pinfl = sanitizePinfl(value)
+  state.profile = null
+  state.error = ''
+}
+
+function lookupCommissionSearch(state: { pinfl: string; profile: CommissionLookupProfile | null; error: string }, offset = 0) {
+  if (!formRegion.value) {
+    state.error = 'Avval viloyatni tanlang.'
+    state.profile = null
+    return
+  }
+
+  if (state.pinfl.length !== 14) {
+    state.error = 'JSHSHIR 14 xonali bo‘lishi kerak.'
+    state.profile = null
+    return
+  }
+
+  state.profile = buildCommissionProfile(state.pinfl, formRegion.value, offset)
+  state.error = ''
+}
+
+function updateMemberPinfl(member: CommissionMemberDraft, value: string) {
+  member.pinfl = sanitizePinfl(value)
+  member.fullName = ''
+  member.birthDate = ''
+  member.region = ''
+  member.district = ''
+  member.position = ''
+  member.phone = ''
+  member.error = ''
+}
+
+function lookupCommissionMember(member: CommissionMemberDraft, offset = 0) {
+  if (!formRegion.value) {
+    member.error = 'Avval viloyatni tanlang.'
+    return
+  }
+
+  if (member.pinfl.length !== 14) {
+    member.error = 'JSHSHIR 14 xonali bo‘lishi kerak.'
+    return
+  }
+
+  const profile = buildCommissionProfile(member.pinfl, formRegion.value, offset)
+  member.fullName = profile.fullName
+  member.birthDate = profile.birthDate
+  member.organization = formRegion.value
+  member.region = profile.region
+  member.district = profile.district
+  member.error = ''
 }
 
 function nowLabel() {
@@ -211,22 +389,22 @@ function nextDocumentNumber() {
 }
 
 const normalizedMembers = computed(() =>
-  formMembers.value.filter((member) => member.fullName.trim() || member.position.trim() || member.organization.trim())
+  formMembers.value.filter((member) => member.fullName.trim())
 )
 
 const formError = computed(() => {
   if (!formRegion.value) return 'Viloyat tanlanishi kerak.'
-  if (!formChair.value.trim()) return 'Komissiya raisi kiritilishi kerak.'
-  if (!formDeputyChair.value.trim()) return "Rais o'rinbosari kiritilishi kerak."
-  if (!formSecretary.value.trim()) return 'Kotib kiritilishi kerak.'
+  if (!chairSearch.value.profile) return 'Komissiya raisi JSHSHIR orqali aniqlanishi kerak.'
+  if (!deputyChairSearch.value.profile) return "Rais o'rinbosari JSHSHIR orqali aniqlanishi kerak."
+  if (!secretarySearch.value.profile) return 'Kotib JSHSHIR orqali aniqlanishi kerak.'
   if (normalizedMembers.value.length === 0) return "Kamida bitta a'zo kiritilishi kerak."
 
-  const invalidMember = normalizedMembers.value.some((member) =>
-    !member.fullName.trim() || !member.position.trim() || !member.organization.trim()
+const invalidMember = normalizedMembers.value.some((member) =>
+    !member.fullName.trim() || !member.position.trim() || !member.phone.trim()
   )
 
   if (invalidMember) {
-    return "Har bir a'zo uchun F.I.O., lavozim va tashkilot to'liq kiritilishi kerak."
+    return "Har bir a'zo uchun JSHSHIR, asosiy lavozimi va telefon raqami to'liq bo'lishi kerak."
   }
 
   return ''
@@ -276,15 +454,15 @@ const commissionStatusCards = computed(() => {
       title: 'Jami hujjatlar',
       value: total,
       share: buildShare(total),
-      tone: 'border-slate-200 bg-background',
-      badge: 'bg-slate-500',
+      tone: 'border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40',
+      badge: 'bg-slate-600',
     },
     {
       id: 'in-progress',
       title: 'Jarayonda',
       value: commissionStats.value.inProgress,
       share: buildShare(commissionStats.value.inProgress),
-      tone: 'border-amber-200 bg-amber-50',
+      tone: 'border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/20',
       badge: 'bg-amber-500',
     },
     {
@@ -292,16 +470,16 @@ const commissionStatusCards = computed(() => {
       title: 'Tasdiqlangan',
       value: commissionStats.value.approved,
       share: buildShare(commissionStats.value.approved),
-      tone: 'border-emerald-200 bg-emerald-50',
-      badge: 'bg-emerald-500',
+      tone: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20',
+      badge: 'bg-emerald-600',
     },
     {
       id: 'rejected',
       title: 'Rad etilgan',
       value: commissionStats.value.rejected,
       share: buildShare(commissionStats.value.rejected),
-      tone: 'border-rose-200 bg-rose-50',
-      badge: 'bg-rose-500',
+      tone: 'border-rose-200 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/20',
+      badge: 'bg-rose-600',
     },
   ]
 })
@@ -318,6 +496,27 @@ const paginationRange = computed(() => {
   return { start, end }
 })
 const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
+const activeFilterCount = computed(() => {
+  let count = 0
+
+  if (appliedStatusFilter.value !== 'all') count += 1
+  if (appliedRegionFilter.value !== 'all') count += 1
+
+  return count
+})
+const hasActiveFilters = computed(() => {
+  return appliedStatusFilter.value !== 'all' || appliedRegionFilter.value !== 'all'
+})
+const hasPendingFilterChanges = computed(() => {
+  return draftStatusFilter.value !== appliedStatusFilter.value
+    || draftRegionFilter.value !== appliedRegionFilter.value
+})
+const draftStatusLabel = computed(() => (
+  draftStatusFilter.value === 'all' ? 'Barchasi' : draftStatusFilter.value
+))
+const draftRegionLabel = computed(() => (
+  draftRegionFilter.value === 'all' ? 'Barchasi' : draftRegionFilter.value
+))
 
 function pushFeedback(type: 'success' | 'error' | 'info', message: string) {
   feedback.value = { type, message }
@@ -326,9 +525,9 @@ function pushFeedback(type: 'success' | 'error' | 'info', message: string) {
 function resetForm() {
   editingId.value = null
   formRegion.value = ''
-  formChair.value = ''
-  formDeputyChair.value = ''
-  formSecretary.value = ''
+  chairSearch.value = createSearchState()
+  deputyChairSearch.value = createSearchState()
+  secretarySearch.value = createSearchState()
   formMembers.value = [createEmptyMember()]
 }
 
@@ -364,14 +563,15 @@ function saveCommission() {
   const timestamp = nowLabel()
   const payload = {
     region: formRegion.value,
-    chair: formChair.value.trim(),
-    deputyChair: formDeputyChair.value.trim(),
-    secretary: formSecretary.value.trim(),
+    chair: normalizeFullName(chairSearch.value.profile?.fullName ?? ''),
+    deputyChair: normalizeFullName(deputyChairSearch.value.profile?.fullName ?? ''),
+    secretary: normalizeFullName(secretarySearch.value.profile?.fullName ?? ''),
     members: normalizedMembers.value.map((member) => ({
       ...member,
-      fullName: member.fullName.trim(),
+      fullName: normalizeFullName(member.fullName),
       position: member.position.trim(),
-      organization: member.organization.trim(),
+      phone: member.phone.trim(),
+      organization: member.organization.trim() || formRegion.value,
     })),
   }
 
@@ -414,10 +614,29 @@ function saveCommission() {
 function editCommission(record: CommissionRecord) {
   editingId.value = record.id
   formRegion.value = record.region
-  formChair.value = record.chair
-  formDeputyChair.value = record.deputyChair
-  formSecretary.value = record.secretary
-  formMembers.value = record.members.map((member) => ({ ...member }))
+  chairSearch.value = {
+    pinfl: hydrateExistingProfile(record.chair, record.region, `${record.id}01`).pinfl,
+    profile: hydrateExistingProfile(record.chair, record.region, `${record.id}01`),
+    error: '',
+  }
+  deputyChairSearch.value = {
+    pinfl: hydrateExistingProfile(record.deputyChair, record.region, `${record.id}02`).pinfl,
+    profile: hydrateExistingProfile(record.deputyChair, record.region, `${record.id}02`),
+    error: '',
+  }
+  secretarySearch.value = {
+    pinfl: hydrateExistingProfile(record.secretary, record.region, `${record.id}03`).pinfl,
+    profile: hydrateExistingProfile(record.secretary, record.region, `${record.id}03`),
+    error: '',
+  }
+  formMembers.value = record.members.map((member, index) => ({
+    ...member,
+    fullName: normalizeFullName(member.fullName),
+    pinfl: hydrateExistingProfile(member.fullName, record.region, `${record.id}${String(index + 4).padStart(2, '0')}`).pinfl,
+    region: record.region,
+    district: hydrateExistingProfile(member.fullName, record.region, `${record.id}${String(index + 4).padStart(2, '0')}`).district,
+    error: '',
+  }))
   isCreateDialogOpen.value = true
   pushFeedback('info', `${record.documentNumber} tahrirlash uchun ochildi.`)
 }
@@ -470,6 +689,13 @@ function applyFilters() {
 
 function clearFilters() {
   draftStatusFilter.value = 'all'
+  draftRegionFilter.value = 'all'
+  openFilterField.value = null
+}
+
+function resetSearchAndFilters() {
+  searchQuery.value = ''
+  draftStatusFilter.value = 'all'
   appliedStatusFilter.value = 'all'
   draftRegionFilter.value = 'all'
   appliedRegionFilter.value = 'all'
@@ -478,9 +704,21 @@ function clearFilters() {
   currentPage.value = 1
 }
 
-function resetSearchAndFilters() {
-  searchQuery.value = ''
-  clearFilters()
+function closeFilters() {
+  isFilterOpen.value = false
+  openFilterField.value = null
+}
+
+function toggleFiltersFromMenu(nextOpen: boolean) {
+  if (nextOpen) {
+    draftStatusFilter.value = appliedStatusFilter.value
+    draftRegionFilter.value = appliedRegionFilter.value
+    openFilterField.value = null
+  } else {
+    openFilterField.value = null
+  }
+
+  isFilterOpen.value = nextOpen
 }
 
 function toggleFilterField(field: 'status' | 'region') {
@@ -535,6 +773,17 @@ async function downloadCommissions() {
   xlsx.writeFile(workbook, 'iptk-komissiyalar-tarkibi.xlsx')
 }
 
+watch(formRegion, (nextRegion, previousRegion) => {
+  if (!nextRegion || nextRegion === previousRegion) {
+    return
+  }
+
+  chairSearch.value = createSearchState()
+  deputyChairSearch.value = createSearchState()
+  secretarySearch.value = createSearchState()
+  formMembers.value = formMembers.value.map(() => createEmptyMember())
+})
+
 watch(totalPages, (nextTotal) => {
   if (currentPage.value > nextTotal) {
     currentPage.value = nextTotal
@@ -554,16 +803,16 @@ watch(totalPages, (nextTotal) => {
         v-if="feedback"
         :class="cn(
           'mb-4 rounded-2xl border px-4 py-3 text-sm',
-          feedback.type === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-700',
-          feedback.type === 'error' && 'border-rose-200 bg-rose-50 text-rose-700',
-          feedback.type === 'info' && 'border-sky-200 bg-sky-50 text-sky-700',
+          feedback.type === 'success' && 'border-emerald-200 bg-card text-foreground dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 bg-card text-foreground dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 bg-card text-foreground dark:border-sky-900/60',
         )"
       >
         {{ feedback.message }}
       </div>
 
-      <div class="rounded-2xl border border-border bg-card p-5">
-        <div class="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-5 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card
             v-for="card in commissionStatusCards"
             :key="card.id"
@@ -591,7 +840,7 @@ watch(totalPages, (nextTotal) => {
           </Card>
         </div>
 
-        <div class="mb-5 flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
               <Search class="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -608,106 +857,167 @@ watch(totalPages, (nextTotal) => {
               </Button>
 
               <div class="relative">
+                <div
+                  v-if="isFilterOpen"
+                  class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
+                  @click="closeFilters"
+                />
+
                 <Button
                   variant="outline"
-                  :class="isFilterOpen ? 'border-ring bg-accent/40 ring-2 ring-ring/20' : ''"
-                  @click="isFilterOpen = !isFilterOpen"
+                  :class="isFilterOpen ? 'gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'gap-2'"
+                  @click="toggleFiltersFromMenu(!isFilterOpen)"
                 >
-                  <Filter class="h-4 w-4" />
+                  <span
+                    v-if="activeFilterCount > 0"
+                    class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
+                  >
+                    {{ activeFilterCount }}
+                  </span>
+                  <Filter
+                    v-else
+                    class="h-4 w-4"
+                  />
                   Filter
                 </Button>
 
                 <div
                   v-if="isFilterOpen"
-                  class="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-80 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl"
+                  class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:-translate-x-6 xl:origin-top-right"
                 >
-                  <div class="flex flex-col gap-3 p-4">
+                  <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
                     <div class="flex items-center justify-between gap-2">
                       <p class="text-sm font-semibold text-foreground">Filterlar</p>
                       <Button
                         variant="ghost"
                         size="sm"
                         class="h-8 w-8 p-0"
-                        @click="isFilterOpen = false"
+                        @click="closeFilters"
                       >
                         <X class="h-4 w-4" />
                       </Button>
                     </div>
 
-                    <label class="space-y-2 text-sm relative">
+                    <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                       <span class="font-medium text-foreground">Status</span>
-                      <Button
-                        variant="outline"
-                        class="h-9 w-full justify-between px-3 text-sm font-normal"
-                        @click="toggleFilterField('status')"
-                      >
-                        <span>{{ draftStatusFilter === 'all' ? 'Barchasi' : draftStatusFilter }}</span>
-                        <ChevronDown class="h-4 w-4" />
-                      </Button>
-                      <div
-                        v-if="openFilterField === 'status'"
-                        class="absolute left-0 top-[calc(100%+0.45rem)] z-10 w-full rounded-xl border border-border bg-popover p-1 shadow-lg"
-                      >
+                      <div class="space-y-2 xl:mt-2 xl:space-y-0">
                         <button
                           type="button"
-                          class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                          @click="selectStatusFilter('all')"
+                          :class="[
+                            'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                            openFilterField === 'status'
+                              ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                              : 'border-input hover:border-ring',
+                          ]"
+                          @click="toggleFilterField('status')"
                         >
-                          <span>Barchasi</span>
+                          <span>{{ draftStatusLabel }}</span>
+                          <ChevronDown
+                            :class="[
+                              'h-4 w-4 text-muted-foreground transition-transform duration-200 ease-out',
+                              openFilterField === 'status' ? 'rotate-180' : '',
+                            ]"
+                          />
                         </button>
-                        <button
-                          v-for="status in ['Jarayonda', 'Tasdiqlangan', 'Rad etilgan']"
-                          :key="status"
-                          type="button"
-                          class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                          @click="selectStatusFilter(status as CommissionStatus)"
+                        <div
+                          v-if="openFilterField === 'status'"
+                          class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                         >
-                          <span>{{ status }}</span>
-                        </button>
+                          <button
+                            type="button"
+                            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                            @click.stop.prevent="selectStatusFilter('all')"
+                          >
+                            <span>Barchasi</span>
+                            <Check
+                              v-if="draftStatusFilter === 'all'"
+                              class="h-4 w-4 text-primary"
+                            />
+                          </button>
+                          <button
+                            v-for="status in ['Jarayonda', 'Tasdiqlangan', 'Rad etilgan']"
+                            :key="status"
+                            type="button"
+                            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                            @click.stop.prevent="selectStatusFilter(status as CommissionStatus)"
+                          >
+                            <span>{{ status }}</span>
+                            <Check
+                              v-if="draftStatusFilter === status"
+                              class="h-4 w-4 text-primary"
+                            />
+                          </button>
+                        </div>
                       </div>
                     </label>
 
-                    <label class="space-y-2 text-sm relative">
+                    <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                       <span class="font-medium text-foreground">Hudud</span>
-                      <Button
-                        variant="outline"
-                        class="h-9 w-full justify-between px-3 text-sm font-normal"
-                        @click="toggleFilterField('region')"
-                      >
-                        <span class="truncate">{{ draftRegionFilter === 'all' ? 'Barchasi' : draftRegionFilter }}</span>
-                        <ChevronDown class="h-4 w-4" />
-                      </Button>
-                      <div
-                        v-if="openFilterField === 'region'"
-                        class="absolute left-0 top-[calc(100%+0.45rem)] z-10 w-full rounded-xl border border-border bg-popover p-1 shadow-lg"
-                      >
+                      <div class="space-y-2 xl:mt-2 xl:space-y-0">
                         <button
                           type="button"
-                          class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                          @click="selectRegionFilter('all')"
+                          :class="[
+                            'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                            openFilterField === 'region'
+                              ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                              : 'border-input hover:border-ring',
+                          ]"
+                          @click="toggleFilterField('region')"
                         >
-                          <span>Barchasi</span>
+                          <span class="truncate">{{ draftRegionLabel }}</span>
+                          <ChevronDown
+                            :class="[
+                              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                              openFilterField === 'region' ? 'rotate-180' : '',
+                            ]"
+                          />
                         </button>
-                        <button
-                          v-for="region in regionOptions"
-                          :key="region"
-                          type="button"
-                          class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                          @click="selectRegionFilter(region)"
+                        <div
+                          v-if="openFilterField === 'region'"
+                          class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                         >
-                          <span class="truncate">{{ region }}</span>
-                        </button>
+                          <button
+                            type="button"
+                            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                            @click.stop.prevent="selectRegionFilter('all')"
+                          >
+                            <span>Barchasi</span>
+                            <Check
+                              v-if="draftRegionFilter === 'all'"
+                              class="h-4 w-4 text-primary"
+                            />
+                          </button>
+                          <button
+                            v-for="region in regionOptions"
+                            :key="region"
+                            type="button"
+                            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                            @click.stop.prevent="selectRegionFilter(region)"
+                          >
+                            <span class="truncate">{{ region }}</span>
+                            <Check
+                              v-if="draftRegionFilter === region"
+                              class="h-4 w-4 shrink-0 text-primary"
+                            />
+                          </button>
+                        </div>
                       </div>
                     </label>
 
                     <div class="flex items-center justify-end gap-3 border-t border-border pt-3">
                       <Button
                         variant="outline"
+                        size="sm"
+                        :disabled="!hasActiveFilters && !hasPendingFilterChanges"
                         @click="clearFilters"
                       >
                         Tozalash
                       </Button>
-                      <Button @click="applyFilters">
+                      <Button
+                        size="sm"
+                        :disabled="!hasPendingFilterChanges"
+                        @click="applyFilters"
+                      >
                         Qo'llash
                       </Button>
                     </div>
@@ -973,9 +1283,6 @@ watch(totalPages, (nextTotal) => {
                       <p class="font-semibold text-foreground">
                         {{ record.documentNumber }}
                       </p>
-                      <p class="mt-1 text-xs text-muted-foreground">
-                        {{ workflowStageLabels[record.workflowStage] }}
-                      </p>
                     </td>
                     <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
                       {{ record.createdAt }}
@@ -1092,9 +1399,6 @@ watch(totalPages, (nextTotal) => {
               <h2 class="text-xl font-semibold text-foreground">
                 {{ editingId ? "Komissiya tarkibini tahrirlash" : "Komissiya tarkibini shakllantirish" }}
               </h2>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Kotib komissiya raisi, rais o'rinbosari, kotib va a'zolar tarkibini shakllantiradi.
-              </p>
             </div>
 
             <button
@@ -1106,8 +1410,8 @@ watch(totalPages, (nextTotal) => {
           </div>
 
           <div class="space-y-6 px-6 py-6">
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <label class="space-y-2 text-sm font-medium text-foreground">
+            <div class="grid gap-4">
+              <label class="max-w-sm space-y-2 text-sm font-medium text-foreground">
                 <span>Viloyat</span>
                 <select
                   v-model="formRegion"
@@ -1125,40 +1429,168 @@ watch(totalPages, (nextTotal) => {
                   </option>
                 </select>
               </label>
-
-              <label class="space-y-2 text-sm font-medium text-foreground">
-                <span>Komissiya raisi</span>
-                <Input
-                  v-model="formChair"
-                  placeholder="F.I.O. kiriting"
-                />
-              </label>
-
-              <label class="space-y-2 text-sm font-medium text-foreground">
-                <span>Rais o'rinbosari</span>
-                <Input
-                  v-model="formDeputyChair"
-                  placeholder="F.I.O. kiriting"
-                />
-              </label>
-
-              <label class="space-y-2 text-sm font-medium text-foreground">
-                <span>Kotib</span>
-                <Input
-                  v-model="formSecretary"
-                  placeholder="F.I.O. kiriting"
-                />
-              </label>
             </div>
 
-            <div class="space-y-4 rounded-3xl border border-dashed border-border/70 bg-muted/20 p-4">
+            <div
+              v-if="formRegion"
+              class="grid gap-4 xl:grid-cols-2"
+            >
+              <div class="space-y-4 rounded-3xl border border-border/70 bg-muted/20 p-4">
+                <p class="text-sm font-semibold text-foreground">
+                  Komissiya raisi
+                </p>
+                <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                  <label class="space-y-2">
+                    <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+                    <Input
+                      :model-value="chairSearch.pinfl"
+                      inputmode="numeric"
+                      maxlength="14"
+                      autocomplete="off"
+                      placeholder="JSHSHIR kiriting"
+                      @update:model-value="updateSearchPinfl(chairSearch, String($event ?? ''))"
+                    />
+                  </label>
+                  <Button
+                    :disabled="chairSearch.pinfl.length !== 14"
+                    @click="lookupCommissionSearch(chairSearch, 1)"
+                  >
+                    Qidiruv
+                  </Button>
+                </div>
+                <p
+                  v-if="chairSearch.error"
+                  class="text-sm text-rose-600"
+                >
+                  {{ chairSearch.error }}
+                </p>
+                <div
+                  v-if="chairSearch.profile"
+                  class="overflow-hidden rounded-2xl border border-border bg-background"
+                >
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">F.I.O.</div>
+                    <div class="px-4 py-3 text-foreground">{{ chairSearch.profile.fullName }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">JSHSHIR</div>
+                    <div class="px-4 py-3 text-foreground">{{ chairSearch.profile.pinfl }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">Hudud</div>
+                    <div class="px-4 py-3 text-foreground">{{ chairSearch.profile.region }}, {{ chairSearch.profile.district }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4 rounded-3xl border border-border/70 bg-muted/20 p-4">
+                <p class="text-sm font-semibold text-foreground">
+                  Rais o'rinbosari
+                </p>
+                <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                  <label class="space-y-2">
+                    <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+                    <Input
+                      :model-value="deputyChairSearch.pinfl"
+                      inputmode="numeric"
+                      maxlength="14"
+                      autocomplete="off"
+                      placeholder="JSHSHIR kiriting"
+                      @update:model-value="updateSearchPinfl(deputyChairSearch, String($event ?? ''))"
+                    />
+                  </label>
+                  <Button
+                    :disabled="deputyChairSearch.pinfl.length !== 14"
+                    @click="lookupCommissionSearch(deputyChairSearch, 2)"
+                  >
+                    Qidiruv
+                  </Button>
+                </div>
+                <p
+                  v-if="deputyChairSearch.error"
+                  class="text-sm text-rose-600"
+                >
+                  {{ deputyChairSearch.error }}
+                </p>
+                <div
+                  v-if="deputyChairSearch.profile"
+                  class="overflow-hidden rounded-2xl border border-border bg-background"
+                >
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">F.I.O.</div>
+                    <div class="px-4 py-3 text-foreground">{{ deputyChairSearch.profile.fullName }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">JSHSHIR</div>
+                    <div class="px-4 py-3 text-foreground">{{ deputyChairSearch.profile.pinfl }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">Hudud</div>
+                    <div class="px-4 py-3 text-foreground">{{ deputyChairSearch.profile.region }}, {{ deputyChairSearch.profile.district }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4 rounded-3xl border border-border/70 bg-muted/20 p-4 xl:col-span-2">
+                <p class="text-sm font-semibold text-foreground">
+                  Komissiya kotibi
+                </p>
+                <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                  <label class="space-y-2">
+                    <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+                    <Input
+                      :model-value="secretarySearch.pinfl"
+                      inputmode="numeric"
+                      maxlength="14"
+                      autocomplete="off"
+                      placeholder="JSHSHIR kiriting"
+                      @update:model-value="updateSearchPinfl(secretarySearch, String($event ?? ''))"
+                    />
+                  </label>
+                  <Button
+                    :disabled="secretarySearch.pinfl.length !== 14"
+                    @click="lookupCommissionSearch(secretarySearch, 3)"
+                  >
+                    Qidiruv
+                  </Button>
+                </div>
+                <p
+                  v-if="secretarySearch.error"
+                  class="text-sm text-rose-600"
+                >
+                  {{ secretarySearch.error }}
+                </p>
+                <div
+                  v-if="secretarySearch.profile"
+                  class="overflow-hidden rounded-2xl border border-border bg-background"
+                >
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">F.I.O.</div>
+                    <div class="px-4 py-3 text-foreground">{{ secretarySearch.profile.fullName }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">JSHSHIR</div>
+                    <div class="px-4 py-3 text-foreground">{{ secretarySearch.profile.pinfl }}</div>
+                  </div>
+                  <div class="grid grid-cols-[180px_minmax(0,1fr)] text-sm">
+                    <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">Hudud</div>
+                    <div class="px-4 py-3 text-foreground">{{ secretarySearch.profile.region }}, {{ secretarySearch.profile.district }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              v-if="formRegion"
+              class="space-y-4 rounded-3xl border border-dashed border-border/70 bg-muted/20 p-4"
+            >
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-sm font-semibold text-foreground">
                     Komissiya a'zolari
                   </h3>
                   <p class="text-sm text-muted-foreground">
-                    Bir nechta mutaxassis qo'shiladi.
+                    A'zolar JSHSHIR orqali bittalab qo'shiladi.
                   </p>
                 </div>
 
@@ -1194,30 +1626,67 @@ watch(totalPages, (nextTotal) => {
                     </Button>
                   </div>
 
-                  <div class="grid gap-3 lg:grid-cols-3">
-                    <label class="space-y-2 text-sm font-medium text-foreground">
-                      <span>F.I.O.</span>
+                  <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+                    <label class="space-y-2">
+                      <span class="text-sm font-medium text-foreground">JSHSHIR</span>
                       <Input
-                        v-model="member.fullName"
-                        placeholder="To'liq ism kiriting"
+                        :model-value="member.pinfl"
+                        inputmode="numeric"
+                        maxlength="14"
+                        autocomplete="off"
+                        placeholder="JSHSHIR kiriting"
+                        @update:model-value="updateMemberPinfl(member, String($event ?? ''))"
                       />
                     </label>
-
-                    <label class="space-y-2 text-sm font-medium text-foreground">
-                      <span>Lavozim</span>
-                      <Input
-                        v-model="member.position"
-                        placeholder="Masalan, psixiatr"
-                      />
-                    </label>
-
-                    <label class="space-y-2 text-sm font-medium text-foreground">
-                      <span>Tashkilot</span>
-                      <Input
-                        v-model="member.organization"
-                        placeholder="Muassasa nomi"
-                      />
-                    </label>
+                    <Button
+                      :disabled="member.pinfl.length !== 14"
+                      @click="lookupCommissionMember(member, index + 4)"
+                    >
+                      Qidiruv
+                    </Button>
+                  </div>
+                  <p
+                    v-if="member.error"
+                    class="mt-3 text-sm text-rose-600"
+                  >
+                    {{ member.error }}
+                  </p>
+                  <div
+                    v-if="member.fullName"
+                    class="mt-3 overflow-hidden rounded-2xl border border-border bg-muted/10"
+                  >
+                    <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                      <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">F.I.O.</div>
+                      <div class="px-4 py-3 text-foreground">{{ member.fullName }}</div>
+                    </div>
+                    <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                      <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">Tug'ilgan sanasi</div>
+                      <div class="px-4 py-3 text-foreground">{{ member.birthDate }}</div>
+                    </div>
+                    <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                      <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">JSHSHIR</div>
+                      <div class="px-4 py-3 text-foreground">{{ member.pinfl }}</div>
+                    </div>
+                    <div class="grid grid-cols-[180px_minmax(0,1fr)] border-b border-border text-sm">
+                      <div class="bg-muted/40 px-4 py-3 font-medium text-muted-foreground">Hudud</div>
+                      <div class="px-4 py-3 text-foreground">{{ member.region }}, {{ member.district }}</div>
+                    </div>
+                    <div class="grid gap-3 border-t-0 p-4 md:grid-cols-2">
+                      <label class="space-y-2 text-sm font-medium text-foreground">
+                        <span>Asosiy lavozimi</span>
+                        <Input
+                          v-model="member.position"
+                          placeholder="Asosiy lavozimini kiriting"
+                        />
+                      </label>
+                      <label class="space-y-2 text-sm font-medium text-foreground">
+                        <span>Telefon raqami</span>
+                        <Input
+                          v-model="member.phone"
+                          placeholder="+998 XX XXX XX XX"
+                        />
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1234,7 +1703,7 @@ watch(totalPages, (nextTotal) => {
                 v-else
                 class="text-sm text-muted-foreground"
               >
-                Saqlangandan keyin hujjat ro'yxatda paydo bo'ladi va kotib uni tasdiqlashga yuborishi mumkin.
+                Viloyat, rais, rais o'rinbosari, kotib va kamida bitta a'zo aniqlangandan keyin saqlash ochiladi.
               </p>
 
               <div class="flex items-center gap-3">
