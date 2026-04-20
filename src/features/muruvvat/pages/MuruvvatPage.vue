@@ -51,6 +51,9 @@ type ApplicantLookupResult = {
   permanentAddress: string
   temporaryAddress?: string
   documentNumber: string
+  diagnosisCode?: string
+  diagnosisLabel?: string
+  disabilityGroup?: string
 }
 
 type MedicalDocumentField = {
@@ -63,10 +66,20 @@ type ServiceOption = {
   label: string
 }
 
+type ServiceEligibilityOption = ServiceOption & {
+  eligible: boolean
+  reasons: string[]
+}
+
 type FlowStepInfo = {
+  id: string
   title: string
   services: string[]
   description: string
+  responsible: string
+  duration: string
+  legalBasis: string
+  outcomes: string[]
 }
 
 type ViewApplicationDetail = {
@@ -275,67 +288,207 @@ const serviceOptions: ServiceOption[] = [
   { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish' },
   { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
 ]
+const diagnosisOptions = [
+  { code: 'F71', label: 'Mo‘tadil darajadagi aqliy zaiflik' },
+  { code: 'F72', label: 'Og‘ir darajadagi aqliy zaiflik' },
+  { code: 'F73', label: 'Chuqur darajadagi aqliy zaiflik' },
+  { code: 'F00-F03', label: 'Demensiya' },
+  { code: 'F20-F29', label: 'Shizofreniya, shizotipik va alahli buzilishlar' },
+  { code: 'F60-F69', label: 'Shaxsiyat va fe’l-atvor buzilishlari' },
+] as const
+const disabilityGroupOptions = ['I guruh', 'II guruh', 'III guruh'] as const
+const serviceRequirements = {
+  huzur: {
+    diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
+    diagnosisText: 'F71, F72, F73 yoki F00-F03',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
+  madad: {
+    diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
+    diagnosisText: 'F71, F72, F73 yoki F00-F03',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
+  'social-holiday': {
+    diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
+    diagnosisText: 'F71, F72, F73 yoki F00-F03',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
+  'home-care': {
+    diagnosisCodes: ['F73'],
+    diagnosisText: 'F73',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
+  'yangi-kun': {
+    diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
+    diagnosisText: 'F71, F72, F73 yoki F00-F03',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
+} as const
 const iptkFlowSteps: FlowStepInfo[] = [
   {
-    title: 'Qabul qilindi',
+    id: 'A',
+    title: 'So‘rovnoma tasdiqlandi',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Ariza qabul qilinadi va tizimga ro‘yxatdan o‘tkaziladi.',
+    description: 'Arizachi sўrovnomani tasdiqlaydi va hujjatlar bir ish kuni ichida axborot moduli orqali “Inson” markaziga tushadi.',
+    responsible: 'Arizachi / YAIDXP / “Inson” markazi / DXM / ijtimoiy xodim',
+    duration: '1 ish kuni ichida “Inson” markaziga tushadi',
+    legalBasis: '16-, 19-, 21-bandlar',
+    outcomes: ['Ariza va ilovalar axborot moduliga kelib tushadi', 'Tanlangan xizmat turi bo‘yicha keyingi tekshiruv boshlanadi'],
   },
   {
-    title: 'Hujjatlar tekshirilmoqda',
+    id: 'C',
+    title: '“Inson” markazi tekshiruvi',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: '“Inson” markazi hujjatlarni o‘rganadi va rad etish asoslari bor-yo‘qligini tekshiradi.',
+    description: '“Inson” markazi bir ish kuni ichida hujjatlarni o‘rganadi va rad etish asoslari bor-yo‘qligini aniqlaydi.',
+    responsible: '“Inson” markazi',
+    duration: '1 ish kuni',
+    legalBasis: '22-band 1-a, 2-a, 3-a; 23-band',
+    outcomes: ['Rad etish asoslari aniqlansa ariza rad etiladi', 'Rad etish asosi bo‘lmasa xizmat turiga qarab keyingi bosqichga o‘tadi'],
   },
   {
-    title: 'Baholash jarayoni',
+    id: 'F',
+    title: 'Baholash va xulosa kiritish',
     services: ['Huzur', 'Madad'],
-    description: 'Ishchi guruh nogironligi bo‘lgan shaxsning parvarishga muhtojlik darajasi va yashash sharoitini baholaydi.',
+    description: 'Ishchi guruh besh ish kuni ichida parvarishga muhtojlik darajasi va yashash sharoitini baholaydi hamda natijani axborot moduliga kiritadi.',
+    responsible: '“Inson” markazi ishchi guruhi, oilaviy shifokor, FYO‘B organi raisi',
+    duration: '5 ish kuni',
+    legalBasis: '22-band 1-b va 2-b',
+    outcomes: ['Baholash natijasi axborot moduliga kiritiladi', 'Huzur yoki Madad bo‘yicha keyingi qaror shakllanadi'],
   },
   {
-    title: 'Qo‘shimcha hujjatlar yig‘ilmoqda',
+    id: 'H',
+    title: 'Tezkor yoki rejali guruh',
+    services: ['Huzur'],
+    description: 'Huzur xizmati bo‘yicha baholashdan so‘ng shaxs tezkor yoki rejali guruhga ajratiladi.',
+    responsible: '“Inson” markazi',
+    duration: 'Baholash yakunlangandan so‘ng darhol',
+    legalBasis: '22-band 1-v, 1-d',
+    outcomes: ['Tezkor guruh bo‘lsa qo‘shimcha hujjatlar talab qilinadi', 'Rejali guruh bo‘lsa to‘g‘ridan IPTKga yuboriladi'],
+  },
+  {
+    id: 'I',
+    title: 'Qo‘shimcha hujjatlar yig‘ish',
     services: ['Huzur (faqat tezkor guruh)'],
-    description: 'Tezkor guruh uchun zarur bo‘lgan qo‘shimcha hujjatlar arizachidan olinadi.',
+    description: 'Tezkor guruhga tushgan shaxslar uchun 3-ilovadagi qo‘shimcha hujjatlar besh ish kuni ichida arizachidan olinadi.',
+    responsible: 'Arizachi / “Inson” markazi',
+    duration: '5 ish kuni',
+    legalBasis: '22-band 1-v',
+    outcomes: ['Qo‘shimcha hujjatlar to‘planadi', 'Hujjatlar to‘liq bo‘lsa IPTKga yuboriladi'],
   },
   {
+    id: 'J',
     title: 'IPTKga yuborildi',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Ma’lumot va hujjatlar axborot moduli orqali IPTKga yuboriladi, arizachiga xabarnoma jo‘natiladi.',
+    description: 'Ma’lumot va hujjatlar bir ish kuni ichida axborot moduli orqali IPTKga yuboriladi, arizachiga SMS va YAIDXP orqali xabar beriladi.',
+    responsible: '“Inson” markazi',
+    duration: '1 ish kuni',
+    legalBasis: '22-band 1-g, 2-v, 3-b',
+    outcomes: ['IPTK kotibi ko‘rib chiqishi uchun ish shakllanadi', 'Arizachi yuborilganligi haqida xabardor qilinadi'],
   },
   {
-    title: 'Tasdiqlandi',
+    id: 'L',
+    title: 'IPTK kotibi tekshiruvi',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Jarayonning ijobiy yakuniy bosqichi.',
+    description: 'IPTK kotibi besh ish kuni ichida hujjatlarning to‘liqligi va to‘g‘ri rasmiylashtirilganligini tekshiradi.',
+    responsible: 'IPTK kotibi',
+    duration: '5 ish kuni',
+    legalBasis: '25-band',
+    outcomes: ['Kamchilik bo‘lmasa yig‘ilishga kiritiladi', 'Kamchilik bo‘lsa “Inson” markaziga qaytariladi'],
   },
   {
-    title: 'Rad etildi',
+    id: 'N',
+    title: 'Yig‘ilish va xabarnoma',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Ariza xizmat turiga mos kelmasligi, hujjatlar yetishmasligi yoki arizachi rad etgani sababli yakunlanadi.',
+    description: 'Hujjatlar qabul qilingach ariza IPTK yig‘ilishiga kiritiladi, a’zolar va arizachi kamida uch kun oldin xabardor qilinadi.',
+    responsible: 'IPTK kotibi',
+    duration: 'Yig‘ilishdan kamida 3 kun oldin xabarnoma',
+    legalBasis: '26-, 27-bandlar',
+    outcomes: ['Ariza navbatdagi yig‘ilishga kiritiladi', 'A’zolar va arizachi xabardor qilinadi'],
+  },
+  {
+    id: 'Q',
+    title: 'IPTK tekshiruvi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'IPTK nogironligi bo‘lgan shaxsni ko‘rikdan o‘tkazadi, WHODAS va PPS kabi mezonlarni qo‘llaydi va bayonnoma rasmiylashtiradi.',
+    responsible: 'IPTK a’zolari',
+    duration: 'Yig‘ilish kuni',
+    legalBasis: '28–34-bandlar',
+    outcomes: ['Kompleks ijtimoiy-psixiatrik-tibbiy tekshiruv o‘tkaziladi', 'Bayonnoma va xulosa uchun asos yaratiladi'],
+  },
+  {
+    id: 'S',
+    title: 'IPTK xulosasi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'IPTK tanlangan xizmatga yo‘naltirish, boshqa xizmatni tavsiya qilish yoki rad etish haqida xulosa qabul qiladi.',
+    responsible: 'IPTK',
+    duration: 'Bayonnoma imzolangach 3 ish kuni ichida rasmiylashtiriladi',
+    legalBasis: '34-, 35-, 37-bandlar',
+    outcomes: ['Tanlangan xizmatga yo‘naltirish', 'Boshqa xizmatni tavsiya qilish', 'Rad etish'],
+  },
+  {
+    id: 'T',
+    title: 'Inson markaziga yuborildi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Rasmiylashtirilgan IPTK xulosasi bir ish kuni ichida yashash manzilidagi “Inson” markaziga yuboriladi va arizachi SMS orqali xabardor qilinadi.',
+    responsible: 'IPTK / axborot moduli',
+    duration: '1 ish kuni',
+    legalBasis: '38-band',
+    outcomes: ['Xulosa yashash manzilidagi “Inson” markaziga yuboriladi', 'Arizachi yakuniy xabarnoma oladi'],
+  },
+  {
+    id: 'R',
+    title: 'Rad etildi yoki qaytarildi',
+    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
+    description: 'Ariza xizmat turiga mos kelmasa rad etiladi; hujjatlarda kamchilik bo‘lsa yoki ko‘rikka olib kelinmasa ish “Inson” markaziga qaytariladi.',
+    responsible: '“Inson” markazi / IPTK / IPTK kotibi',
+    duration: 'Bosqichga qarab',
+    legalBasis: '23-, 24-, 25-, 27-bandlar',
+    outcomes: ['Rad etish bo‘yicha SMS xabarnoma yuboriladi', 'Yoki hujjatlar kamchiliklari bilan “Inson” markaziga qaytariladi'],
   },
 ]
 
 const iptkFlowMermaidDefinition = `
 flowchart TD
-    A["Qabul qilindi"] --> B["Hujjatlar tekshirilmoqda"]
-    B --> C{"Rad etish asosi bormi?"}
+    A["So'rovnoma tasdiqlandi"] --> B["Inson markaziga tushdi"]
+    B --> C["Inson markazi tekshiruvi"]
+    C --> D{"Rad etish asosi bormi?"}
 
-    C -->|Ha| R["Rad etildi"]
-    C -->|Yo'q| D{"Xizmat turi"}
+    D -->|Ha| R["Rad etildi"]
+    D -->|Yo'q| E{"Xizmat turi"}
 
-    D -->|"Huzur"| E["Baholash jarayoni"]
-    D -->|"Madad"| E
-    D -->|"Ijtimoiy ta'til"| F["IPTKga yuborildi"]
-    D -->|"Uy sharoitida qarab turish"| F
-    D -->|"Yangi kun"| F
+    E -->|"Huzur"| F["Baholash va xulosa kiritish"]
+    E -->|"Madad"| F
+    E -->|"Ijtimoiy ta'til"| J["IPTKga yuborildi"]
+    E -->|"Uy sharoitida qarab turish"| J
+    E -->|"Yangi kun"| J
 
-    E --> G{"Tezkor guruhmi?"}
-    G -->|Ha| H["Qo'shimcha hujjatlar<br/>yig'ilmoqda"]
-    G -->|Yo'q| F
+    F --> G{"Huzur bo'yichami?"}
+    G -->|Yo'q| J
+    G -->|Ha| H{"Tezkor guruhmi?"}
+    H -->|Yo'q| J
+    H -->|Ha| I["Qo'shimcha hujjatlar<br/>yig'iladi"]
+    I --> K{"Hujjatlar to'liqmi?"}
+    K -->|Yo'q| I
+    K -->|Ha| J
 
-    H --> I{"Hujjatlar to'liqmi?"}
-    I -->|Yo'q| H
-    I -->|Ha| F
-
-    F --> T["Tasdiqlandi"]
+    J --> L["IPTK kotibi tekshiruvi"]
+    L --> M{"Kamchilik bormi?"}
+    M -->|Ha| U["Inson markaziga<br/>qaytarildi"]
+    M -->|Yo'q| N["Yig'ilishga kiritildi"]
+    N --> O["SMS / xabarnoma yuborildi"]
+    O --> P{"Ko'rikka olib kelindimi?"}
+    P -->|Yo'q| V["Inson markaziga<br/>qaytarildi"]
+    P -->|Ha| Q["IPTK tekshiruvi o'tkazildi"]
+    Q --> S{"IPTK xulosasi"}
+    S -->|"Tanlangan xizmat"| T["Inson markaziga yuborildi"]
+    S -->|"Boshqa xizmat tavsiya qilindi"| T
+    S -->|"Rad etish"| W["Rad etildi"]
+    T --> X["Arizachi xabardor qilindi"]
 
     classDef neutral fill:#f8fafc,stroke:#cbd5e1,color:#0f172a,stroke-width:1.5px;
     classDef decision fill:#ffffff,stroke:#94a3b8,color:#0f172a,stroke-width:1.5px;
@@ -343,13 +496,31 @@ flowchart TD
     classDef info fill:#eff6ff,stroke:#93c5fd,color:#1d4ed8,stroke-width:1.5px;
     classDef warning fill:#fff7ed,stroke:#fdba74,color:#9a3412,stroke-width:1.5px;
     classDef success fill:#ecfdf5,stroke:#86efac,color:#166534,stroke-width:1.5px;
+    classDef return fill:#fefce8,stroke:#facc15,color:#854d0e,stroke-width:1.5px;
 
-    class A,B neutral;
-    class C,D,G,I decision;
-    class R danger;
-    class E info;
-    class H warning;
-    class F,T success;
+    class A,B,C,N,O neutral;
+    class D,E,G,H,K,M,P,S decision;
+    class R,W danger;
+    class F,J,L,Q info;
+    class I warning;
+    class T,X success;
+    class U,V return;
+
+    click A handleIptkFlowNodeClick
+    click C handleIptkFlowNodeClick
+    click F handleIptkFlowNodeClick
+    click H handleIptkFlowNodeClick
+    click I handleIptkFlowNodeClick
+    click J handleIptkFlowNodeClick
+    click L handleIptkFlowNodeClick
+    click N handleIptkFlowNodeClick
+    click Q handleIptkFlowNodeClick
+    click S handleIptkFlowNodeClick
+    click T handleIptkFlowNodeClick
+    click R handleIptkFlowNodeClick
+    click U handleIptkFlowNodeClick
+    click V handleIptkFlowNodeClick
+    click W handleIptkFlowNodeClick
 `
 
 let mermaidInitialized = false
@@ -422,6 +593,7 @@ const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const selectedViewRow = ref<ApplicationRow | null>(null)
 const isIptkFlowDialogOpen = ref(false)
 const iptkFlowMermaidSvg = ref('')
+const selectedIptkFlowStepId = ref('A')
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const filterAnchorRef = ref<HTMLElement | null>(null)
@@ -441,6 +613,8 @@ const serviceRecipientPinflInput = ref('')
 const serviceRecipientLookupResult = ref<ApplicantLookupResult | null>(null)
 const serviceRecipientLookupError = ref('')
 const isServiceRecipientLookupLoading = ref(false)
+const serviceRecipientPhotoPreview = ref('')
+const serviceRecipientPhotoName = ref('')
 const hasServiceRecipientCustomResidenceAddress = ref(false)
 const serviceRecipientCustomResidenceRegion = ref('')
 const serviceRecipientCustomResidenceDistrict = ref('')
@@ -461,6 +635,10 @@ let smsResendTimer: ReturnType<typeof setInterval> | null = null
 let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
+
+const selectedIptkFlowStep = computed(() => {
+  return iptkFlowSteps.find((step) => step.id === selectedIptkFlowStepId.value) ?? iptkFlowSteps[0]
+})
 
 const filteredRows = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
@@ -580,6 +758,13 @@ const selectedServiceOption = computed(() => {
 const selectedServiceOptionLabel = computed(() => {
   return selectedServiceOption.value?.label ?? 'Xizmat turini tanlang'
 })
+const serviceEligibilityOptions = computed(() => {
+  return serviceOptions.map((service) => buildServiceEligibility(service, serviceRecipientLookupResult.value))
+})
+const eligibleServiceCount = computed(() => serviceEligibilityOptions.value.filter((service) => service.eligible).length)
+const selectedServiceEligibility = computed(() => {
+  return serviceEligibilityOptions.value.find((service) => service.id === selectedServiceOptionId.value) ?? null
+})
 
 function getMedicalDocumentsForService(serviceId: string) {
   switch (serviceId) {
@@ -622,6 +807,8 @@ const serviceRecipientLookupRows = computed(() => {
   return [
     ['FIO', serviceRecipientLookupResult.value.fullName],
     ["Tug'ilgan sanasi", serviceRecipientLookupResult.value.birthDate],
+    ['Tashxis', `${serviceRecipientLookupResult.value.diagnosisLabel} (${serviceRecipientLookupResult.value.diagnosisCode})`],
+    ['Nogironlik guruhi', serviceRecipientLookupResult.value.disabilityGroup ?? '—'],
     ...(serviceRecipientLookupResult.value.temporaryAddress
       ? [["Vaqtinchalik manzili", serviceRecipientLookupResult.value.temporaryAddress] as const]
       : []),
@@ -689,12 +876,63 @@ function buildBirthDate(indexSeed: number, isMinor = false) {
   return `${birthDay}.${birthMonth}.${birthYear}`
 }
 
+function getDiagnosisBySeed(indexSeed: number, isMinor = false) {
+  if (isMinor) {
+    return diagnosisOptions[indexSeed % diagnosisOptions.length] ?? diagnosisOptions[0]
+  }
+
+  return diagnosisOptions[indexSeed % 4] ?? diagnosisOptions[0]
+}
+
+function getDisabilityGroupBySeed(indexSeed: number, isMinor = false) {
+  if (!isMinor) {
+    return disabilityGroupOptions[indexSeed % 2] ?? disabilityGroupOptions[0]
+  }
+
+  if (indexSeed % 5 === 0) {
+    return disabilityGroupOptions[2] ?? disabilityGroupOptions[0]
+  }
+
+  return disabilityGroupOptions[indexSeed % 2] ?? disabilityGroupOptions[0]
+}
+
+function buildServiceEligibility(service: ServiceOption, person: ApplicantLookupResult | null): ServiceEligibilityOption {
+  if (!person) {
+    return {
+      ...service,
+      eligible: false,
+      reasons: ['Avval xizmat oluvchining ma’lumotlarini aniqlang.'],
+    }
+  }
+
+  const requirement = serviceRequirements[service.id as keyof typeof serviceRequirements]
+  const allowedDiagnosisCodes: string[] = [...requirement.diagnosisCodes]
+  const allowedDisabilityGroups: string[] = [...requirement.disabilityGroups]
+  const reasons: string[] = []
+
+  if (person.diagnosisCode && !allowedDiagnosisCodes.includes(person.diagnosisCode)) {
+    reasons.push(`Aniqlangan tashxis: ${person.diagnosisLabel} (${person.diagnosisCode}). Talab etilgan tashxis: ${requirement.diagnosisText}.`)
+  }
+
+  if (person.disabilityGroup && !allowedDisabilityGroups.includes(person.disabilityGroup)) {
+    reasons.push(`Aniqlangan nogironlik guruhi: ${person.disabilityGroup}. Talab etilgan nogironlik guruhi: ${requirement.disabilityGroupText}.`)
+  }
+
+  return {
+    ...service,
+    eligible: reasons.length === 0,
+    reasons,
+  }
+}
+
 function buildLookupResultFromRow(row: ApplicationRow, indexOffset = 0, isMinor = false) {
   const rowIndex = applicationRows.value.findIndex((entry) => entry.id === row.id)
   const safeIndex = rowIndex >= 0 ? rowIndex + indexOffset : indexOffset
   const fallbackRegionEntry = demoRegions[safeIndex % demoRegions.length] ?? demoRegions[0]
   const [fallbackRegion, fallbackDistrict] = fallbackRegionEntry
   const mfy = demoMahallas[safeIndex % demoMahallas.length] ?? demoMahallas[0]
+  const diagnosis = getDiagnosisBySeed(safeIndex, isMinor)
+  const disabilityGroup = getDisabilityGroupBySeed(safeIndex, isMinor)
 
   return {
     fullName: demoPeople[safeIndex % demoPeople.length] ?? row.fullName,
@@ -705,6 +943,9 @@ function buildLookupResultFromRow(row: ApplicationRow, indexOffset = 0, isMinor 
       ? `${row.region || fallbackRegion}, ${row.district || fallbackDistrict}, ${mfy}, ${String((safeIndex % 17) + 10)}-uy, ${String((safeIndex % 12) + 1)}-xonadon`
       : undefined,
     documentNumber: '',
+    diagnosisCode: diagnosis.code,
+    diagnosisLabel: diagnosis.label,
+    disabilityGroup,
   } satisfies ApplicantLookupResult
 }
 
@@ -773,6 +1014,8 @@ const selectedViewServiceRecipientRows = computed(() => {
   return [
     ['FIO', serviceRecipient.fullName],
     ["Tug'ilgan sanasi", serviceRecipient.birthDate],
+    ['Tashxis', `${serviceRecipient.diagnosisLabel} (${serviceRecipient.diagnosisCode})`],
+    ['Nogironlik guruhi', serviceRecipient.disabilityGroup ?? '—'],
     ['JSHSHIR', serviceRecipient.pinfl],
     ...(serviceRecipient.temporaryAddress
       ? [["Vaqtinchalik manzili", serviceRecipient.temporaryAddress] as const]
@@ -838,6 +1081,7 @@ const isCreateFormReadyToSave = computed(() => {
     && isApplicantCustomResidenceComplete.value
     && isServiceRecipientCustomResidenceComplete.value
     && selectedServiceOptionId.value
+    && selectedServiceEligibility.value?.eligible
     && hasAllMedicalDocuments.value
     && smsPhoneNumber.value.length === 9
     && isSmsCodeSent.value
@@ -942,6 +1186,12 @@ function closeCreateAddressField() {
 }
 
 function handleServiceOptionChange(value: string) {
+  const targetService = serviceEligibilityOptions.value.find((service) => service.id === value)
+
+  if (!targetService?.eligible) {
+    return
+  }
+
   if (selectedServiceOptionId.value !== value) {
     uploadedMedicalDocuments.value = {}
   }
@@ -1298,6 +1548,7 @@ function openCreateDialog() {
   serviceRecipientPinflInput.value = ''
   serviceRecipientLookupResult.value = null
   serviceRecipientLookupError.value = ''
+  resetServiceRecipientPhoto()
   hasApplicantCustomResidenceAddress.value = false
   resetApplicantCustomResidenceAddress()
   hasServiceRecipientCustomResidenceAddress.value = false
@@ -1324,6 +1575,7 @@ function closeCreateDialog() {
   serviceRecipientLookupError.value = ''
   serviceRecipientPinflInput.value = ''
   isServiceRecipientLookupLoading.value = false
+  resetServiceRecipientPhoto()
   hasServiceRecipientCustomResidenceAddress.value = false
   resetServiceRecipientCustomResidenceAddress()
   uploadedMedicalDocuments.value = {}
@@ -1367,12 +1619,12 @@ async function lookupPerson(
   const fallbackRegionEntry = demoRegions[addressIndex % demoRegions.length] ?? demoRegions[0]
   const [fallbackRegion, fallbackDistrict] = fallbackRegionEntry
   const mfy = demoMahallas[addressIndex % demoMahallas.length] ?? demoMahallas[0]
+  const diagnosis = getDiagnosisBySeed(addressIndex, options?.isMinor)
+  const disabilityGroup = getDisabilityGroupBySeed(addressIndex, options?.isMinor)
   const permanentAddress = `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 47) + 1)}-uy`
   const temporaryAddress = addressIndex % 2 === 0
     ? `${matchedRow?.region ?? fallbackRegion}, ${matchedRow?.district ?? fallbackDistrict}, ${mfy}, ${String((addressIndex % 31) + 10)}-uy, ${String((addressIndex % 12) + 1)}-xonadon`
     : undefined
-  const documentSeries = ['AA', 'AB', 'AC', 'AD'][addressIndex % 4] ?? 'AA'
-  const documentNumber = `${documentSeries} ${String(1000000 + ((addressIndex + 1) * 731) % 9000000).padStart(7, '0')}`
 
   resultTarget.value = {
     fullName: matchedRow?.fullName ?? "Demo foydalanuvchi",
@@ -1380,7 +1632,10 @@ async function lookupPerson(
     birthDate: buildBirthDate(addressIndex, options?.isMinor),
     permanentAddress,
     temporaryAddress,
-    documentNumber,
+    documentNumber: '',
+    diagnosisCode: diagnosis.code,
+    diagnosisLabel: diagnosis.label,
+    disabilityGroup,
   }
   loadingTarget.value = false
 }
@@ -1399,6 +1654,7 @@ async function lookupApplicant() {
 async function lookupServiceRecipient() {
   hasServiceRecipientCustomResidenceAddress.value = false
   resetServiceRecipientCustomResidenceAddress()
+  resetServiceRecipientPhoto()
   await lookupPerson(
     serviceRecipientPinflInput,
     serviceRecipientLookupResult,
@@ -1416,6 +1672,29 @@ function handleMedicalDocumentUpload(documentId: string, event: Event) {
     ...uploadedMedicalDocuments.value,
     [documentId]: fileName,
   }
+}
+
+function resetServiceRecipientPhoto() {
+  serviceRecipientPhotoPreview.value = ''
+  serviceRecipientPhotoName.value = ''
+}
+
+function handleServiceRecipientPhotoUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) {
+    resetServiceRecipientPhoto()
+    return
+  }
+
+  serviceRecipientPhotoName.value = file.name
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    serviceRecipientPhotoPreview.value = typeof reader.result === 'string' ? reader.result : ''
+  }
+  reader.readAsDataURL(file)
 }
 
 function sendSmsCode() {
@@ -1458,6 +1737,7 @@ function clearCreateDialogForm() {
   serviceRecipientLookupResult.value = null
   serviceRecipientLookupError.value = ''
   isServiceRecipientLookupLoading.value = false
+  resetServiceRecipientPhoto()
   hasServiceRecipientCustomResidenceAddress.value = false
   resetServiceRecipientCustomResidenceAddress()
   uploadedMedicalDocuments.value = {}
@@ -1657,11 +1937,177 @@ function openViewDialog(row: ApplicationRow) {
 }
 
 function openIptkFlowDialog() {
+  selectedIptkFlowStepId.value = 'A'
   isIptkFlowDialogOpen.value = true
 }
 
 function closeIptkFlowDialog() {
   isIptkFlowDialogOpen.value = false
+}
+
+function selectIptkFlowStep(stepId: string) {
+  if (!iptkFlowSteps.some((step) => step.id === stepId)) {
+    return
+  }
+
+  selectedIptkFlowStepId.value = stepId
+}
+
+function triggerBrowserDownload(url: string, fileName: string) {
+  const anchor = window.document.createElement('a')
+  anchor.href = url
+  anchor.download = fileName
+  anchor.rel = 'noopener'
+  anchor.style.display = 'none'
+  window.document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+}
+
+async function saveBlobToFile(blob: Blob, fileName: string, mimeType: string) {
+  const savePickerWindow = window as Window & {
+    showSaveFilePicker?: (options: {
+      suggestedName: string
+      types: Array<{
+        description: string
+        accept: Record<string, string[]>
+      }>
+    }) => Promise<{
+      createWritable: () => Promise<{
+        write: (data: Blob) => Promise<void>
+        close: () => Promise<void>
+      }>
+    }>
+  }
+
+  if (savePickerWindow.showSaveFilePicker) {
+    const handle = await savePickerWindow.showSaveFilePicker({
+      suggestedName: fileName,
+      types: [
+        {
+          description: fileName.endsWith('.png') ? 'PNG image' : 'SVG image',
+          accept: {
+            [mimeType]: [`.${fileName.split('.').pop() ?? 'svg'}`],
+          },
+        },
+      ],
+    })
+    const writable = await handle.createWritable()
+    await writable.write(blob)
+    await writable.close()
+    return
+  }
+
+  const objectUrl = URL.createObjectURL(blob)
+  triggerBrowserDownload(objectUrl, fileName)
+  setTimeout(() => {
+    URL.revokeObjectURL(objectUrl)
+  }, 1000)
+}
+
+function getIptkFlowSvgMarkup() {
+  if (!iptkFlowMermaidSvg.value) {
+    return ''
+  }
+
+  return iptkFlowMermaidSvg.value.trim()
+}
+
+async function downloadIptkFlowAsSvg() {
+  const svgMarkup = getIptkFlowSvgMarkup()
+
+  if (!svgMarkup) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Flow hali tayyor emas',
+      description: 'Diagramma to‘liq yuklangach qayta urinib ko‘ring.',
+    })
+    return
+  }
+
+  const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
+
+  try {
+    await saveBlobToFile(blob, 'iptk-umumiy-flow.svg', 'image/svg+xml')
+  } catch {
+    showNotification({
+      tone: 'destructive',
+      title: 'Yuklab olish amalga oshmadi',
+      description: 'SVG formatni saqlashda xatolik yuz berdi.',
+    })
+  }
+}
+
+async function downloadIptkFlowAsPng() {
+  const svgMarkup = getIptkFlowSvgMarkup()
+
+  if (!svgMarkup) {
+    showNotification({
+      tone: 'destructive',
+      title: 'Flow hali tayyor emas',
+      description: 'Diagramma to‘liq yuklangach qayta urinib ko‘ring.',
+    })
+    return
+  }
+
+  const parser = new DOMParser()
+  const svgDocument = parser.parseFromString(svgMarkup, 'image/svg+xml')
+  const svgElement = svgDocument.documentElement
+  const viewBox = svgElement.getAttribute('viewBox')?.split(/\s+/).map(Number) ?? []
+  const widthFromViewBox = viewBox.length === 4 ? viewBox[2] : 1400
+  const heightFromViewBox = viewBox.length === 4 ? viewBox[3] : 1000
+  const width = Number(svgElement.getAttribute('width')?.replace(/[^\d.]/g, '')) || widthFromViewBox || 1400
+  const height = Number(svgElement.getAttribute('height')?.replace(/[^\d.]/g, '')) || heightFromViewBox || 1000
+  const scale = 2
+  const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
+  const objectUrl = URL.createObjectURL(blob)
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const image = new Image()
+      image.onload = () => {
+        const canvas = window.document.createElement('canvas')
+        canvas.width = Math.round(width * scale)
+        canvas.height = Math.round(height * scale)
+
+        const context = canvas.getContext('2d')
+
+        if (!context) {
+          reject(new Error('Canvas context yaratilmadi'))
+          return
+        }
+
+        context.fillStyle = '#ffffff'
+        context.fillRect(0, 0, canvas.width, canvas.height)
+        context.scale(scale, scale)
+        context.drawImage(image, 0, 0, width, height)
+
+        canvas.toBlob(async (pngBlob) => {
+          if (!pngBlob) {
+            reject(new Error('PNG blob yaratilmadi'))
+            return
+          }
+
+          try {
+            await saveBlobToFile(pngBlob, 'iptk-umumiy-flow.png', 'image/png')
+            resolve()
+          } catch (error) {
+            reject(error)
+          }
+        }, 'image/png')
+      }
+      image.onerror = () => reject(new Error('PNG render qilishda xatolik'))
+      image.src = objectUrl
+    })
+  } catch {
+    showNotification({
+      tone: 'destructive',
+      title: 'Yuklab olish amalga oshmadi',
+      description: 'PNG formatni tayyorlashda xatolik yuz berdi.',
+    })
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
 }
 
 async function renderIptkFlowMermaid() {
@@ -1965,6 +2411,10 @@ function runTableLoading(update: () => void) {
 }
 
 onMounted(() => {
+  ;(window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick = (nodeId: string) => {
+    selectIptkFlowStep(nodeId)
+  }
+
   loadingTimer = setTimeout(() => {
     isTableLoading.value = false
     loadingTimer = null
@@ -1975,6 +2425,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  delete (window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick
+
   if (loadingTimer) {
     clearTimeout(loadingTimer)
   }
@@ -2009,6 +2461,15 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
 
   await nextTick()
   await renderIptkFlowMermaid()
+})
+
+watch(serviceRecipientLookupResult, () => {
+  const currentSelection = serviceEligibilityOptions.value.find((service) => service.id === selectedServiceOptionId.value)
+
+  if (selectedServiceOptionId.value && !currentSelection?.eligible) {
+    selectedServiceOptionId.value = ''
+    uploadedMedicalDocuments.value = {}
+  }
 })
 </script>
 
@@ -2284,14 +2745,36 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
               </p>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-9 w-9 p-0"
-              @click="closeIptkFlowDialog"
-            >
-              <X class="h-4 w-4" />
-            </Button>
+            <div class="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                class="gap-2 rounded-full px-4"
+                @click="downloadIptkFlowAsSvg"
+              >
+                <Download class="h-4 w-4" />
+                <span>SVG</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                class="gap-2 rounded-full px-4"
+                @click="downloadIptkFlowAsPng"
+              >
+                <Download class="h-4 w-4" />
+                <span>PNG</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-9 w-9 p-0"
+                @click="closeIptkFlowDialog"
+              >
+                <X class="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div class="flex-1 overflow-y-auto p-5">
@@ -2310,45 +2793,112 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
                 </div>
               </div>
 
-              <div class="mt-6 space-y-4">
-                <p class="text-sm font-semibold text-foreground">
-                  Step tafsilotlari
-                </p>
+              <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <p class="text-sm font-semibold text-foreground">
+                    Bosqichlar
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Diagrammadagi node ustiga bosing yoki pastdagi ro‘yxatdan tanlang.
+                  </p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <button
+                      v-for="step in iptkFlowSteps"
+                      :key="step.id"
+                      type="button"
+                      :class="[
+                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                        selectedIptkFlowStep?.id === step.id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
+                      ]"
+                      @click="selectIptkFlowStep(step.id)"
+                    >
+                      {{ step.title }}
+                    </button>
+                  </div>
+                </div>
+
                 <div
-                  v-for="(step, index) in iptkFlowSteps"
-                  :key="step.title"
-                  class="relative rounded-2xl border border-border bg-background p-4"
+                  v-if="selectedIptkFlowStep"
+                  class="rounded-2xl border border-border bg-background p-4"
                 >
-                  <div class="flex items-start gap-4">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                      {{ index + 1 }}
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-semibold text-foreground">
+                        Batafsil ma’lumot
+                      </p>
+                      <p class="mt-1 text-base font-semibold text-foreground">
+                        {{ selectedIptkFlowStep.title }}
+                      </p>
                     </div>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div class="min-w-0">
-                          <p class="text-base font-semibold text-foreground">
-                            {{ step.title }}
-                          </p>
-                          <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                            {{ step.description }}
-                          </p>
-                        </div>
-                        <div class="flex flex-wrap gap-2 lg:max-w-[50%] lg:justify-end">
-                          <span
-                            v-for="service in step.services"
-                            :key="`${step.title}-${service}`"
-                            class="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
-                          >
-                            {{ service }}
-                          </span>
-                        </div>
+                    <span class="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      {{ selectedIptkFlowStep.id }}
+                    </span>
+                  </div>
+
+                  <p class="mt-4 text-sm leading-6 text-muted-foreground">
+                    {{ selectedIptkFlowStep.description }}
+                  </p>
+
+                  <div class="mt-4 space-y-3">
+                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Mas’ul
+                      </p>
+                      <p class="mt-2 text-sm text-foreground">
+                        {{ selectedIptkFlowStep.responsible }}
+                      </p>
+                    </div>
+
+                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Muddat
+                      </p>
+                      <p class="mt-2 text-sm text-foreground">
+                        {{ selectedIptkFlowStep.duration }}
+                      </p>
+                    </div>
+
+                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Normativ asos
+                      </p>
+                      <p class="mt-2 text-sm text-foreground">
+                        {{ selectedIptkFlowStep.legalBasis }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Xizmatlar
+                    </p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <span
+                        v-for="service in selectedIptkFlowStep.services"
+                        :key="`${selectedIptkFlowStep.id}-${service}`"
+                        class="inline-flex items-center rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
+                      >
+                        {{ service }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="mt-4">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Natijalar
+                    </p>
+                    <div class="mt-2 space-y-2">
+                      <div
+                        v-for="outcome in selectedIptkFlowStep.outcomes"
+                        :key="`${selectedIptkFlowStep.id}-${outcome}`"
+                        class="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground"
+                      >
+                        {{ outcome }}
                       </div>
                     </div>
                   </div>
-                  <div
-                    v-if="index < iptkFlowSteps.length - 1"
-                    class="pointer-events-none absolute -bottom-4 left-9 hidden h-4 w-px bg-border md:block"
-                  />
                 </div>
               </div>
             </div>
@@ -3644,11 +4194,31 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
             class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
           >
             <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-5">
-              <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-2xl font-semibold text-primary">
-                {{ serviceRecipientInitials }}
+              <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-primary/5">
+                <img
+                  v-if="serviceRecipientPhotoPreview"
+                  :src="serviceRecipientPhotoPreview"
+                  alt="Xizmat oluvchi rasmi"
+                  class="h-full w-full object-cover"
+                >
+                <div
+                  v-else
+                  class="flex h-full w-full items-center justify-center bg-primary/10 text-2xl font-semibold text-primary"
+                >
+                  {{ serviceRecipientInitials }}
+                </div>
               </div>
-              <p class="mt-3 text-sm text-muted-foreground">
-                Rasm
+              <label class="mt-3 inline-flex cursor-pointer items-center rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors duration-200 ease-out hover:bg-accent/40">
+                <span>{{ serviceRecipientPhotoPreview ? 'Rasmni almashtirish' : 'Rasm yuklash' }}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                  @change="handleServiceRecipientPhotoUpload"
+                >
+              </label>
+              <p class="mt-2 max-w-full truncate text-center text-xs text-muted-foreground">
+                {{ serviceRecipientPhotoName || 'Rasm yuklanmagan' }}
               </p>
             </div>
 
@@ -3832,6 +4402,42 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
           v-if="serviceRecipientLookupResult"
           class="space-y-4 border-t border-border pt-5"
         >
+          <div class="rounded-xl border border-primary/15 bg-primary/5 p-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p class="text-sm font-semibold text-foreground">
+                  Tashxis va nogironlik guruhi tekshirildi
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Aniqlangan ma’lumotlarga ko‘ra faqat mos xizmatlarni tanlash mumkin.
+                </p>
+              </div>
+              <span class="inline-flex items-center rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-semibold text-primary">
+                Mos xizmatlar: {{ eligibleServiceCount }} ta
+              </span>
+            </div>
+
+            <div class="mt-4 grid gap-3 md:grid-cols-2">
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Aniqlangan tashxis
+                </p>
+                <p class="mt-2 text-sm font-medium text-foreground">
+                  {{ serviceRecipientLookupResult.diagnosisLabel }} ({{ serviceRecipientLookupResult.diagnosisCode }})
+                </p>
+              </div>
+
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Aniqlangan nogironlik guruhi
+                </p>
+                <p class="mt-2 text-sm font-medium text-foreground">
+                  {{ serviceRecipientLookupResult.disabilityGroup }}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <p class="text-base font-semibold text-foreground">
             Xizmat turini tanlash
           </p>
@@ -3863,13 +4469,39 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
                 class="mt-2 max-h-72 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20 lg:mt-0"
               >
                 <button
-                  v-for="service in serviceOptions"
+                  v-for="service in serviceEligibilityOptions"
                   :key="service.id"
                   type="button"
-                  class="flex w-full items-start justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                  :disabled="!service.eligible"
+                  :class="[
+                    'flex w-full items-start justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm transition-colors duration-200 ease-out',
+                    service.eligible
+                      ? 'text-foreground hover:bg-muted/80'
+                      : 'cursor-not-allowed text-muted-foreground opacity-80',
+                  ]"
                   @click.stop.prevent="handleServiceOptionChange(service.id)"
                 >
-                  <span class="leading-6">{{ service.label }}</span>
+                  <div class="min-w-0 flex-1">
+                    <span class="block leading-6">{{ service.label }}</span>
+                    <p
+                      v-if="service.eligible"
+                      class="mt-1 text-xs text-emerald-600"
+                    >
+                      Mos keladi
+                    </p>
+                    <div
+                      v-else
+                      class="mt-1 space-y-1"
+                    >
+                      <p
+                        v-for="reason in service.reasons"
+                        :key="`${service.id}-${reason}`"
+                        class="text-xs leading-5 text-rose-600"
+                      >
+                        {{ reason }}
+                      </p>
+                    </div>
+                  </div>
                   <Check
                     v-if="selectedServiceOptionId === service.id"
                     class="mt-1 h-4 w-4 shrink-0 text-primary"
@@ -3878,6 +4510,13 @@ watch(isIptkFlowDialogOpen, async (nextOpen) => {
               </div>
             </label>
           </div>
+
+          <p
+            v-if="selectedServiceEligibility && !selectedServiceEligibility.eligible"
+            class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          >
+            {{ selectedServiceEligibility.reasons.join(' ') }}
+          </p>
         </div>
 
         <div
