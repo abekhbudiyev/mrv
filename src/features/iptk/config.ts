@@ -42,6 +42,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: 'IPTK moduli uchun arizalar jadvali, filtrlar va amallar keyingi bosqichda qo‘shiladi.',
   },
   {
+    key: 'commissions-composition',
+    title: 'Komissiyalar tarkibi',
+    description: '',
+    route: '/apps/iptk/applications/commissions',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+    sectionTitle: 'Komissiyalar tarkibi',
+    sectionDescription: 'Komissiya raisi, rais o‘rinbosari, kotib va a’zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.',
+  },
+  {
     key: 'applications-report',
     title: 'Arizalar bo‘yicha hisobot',
     description: 'IPTK moduli bo‘yicha arizalar kesimidagi hisobotlar, eksportlar va agregatsiyalar uchun tayyor blok.',
@@ -92,6 +101,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         title: 'Arizalar',
         route: '/apps/iptk/applications/list',
         icon: ListChecks,
+      },
+      {
+        id: 'commissions-composition',
+        title: 'Komissiyalar tarkibi',
+        route: '/apps/iptk/applications/commissions',
+        icon: NotebookText,
       },
     ],
   },

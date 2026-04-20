@@ -123,6 +123,21 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/iptk/applications/commissions',
+        name: 'iptk-commissions-composition',
+        component: IPTKPage,
+        props: {
+          pageKey: 'commissions-composition',
+        },
+        meta: {
+          title: 'Komissiyalar tarkibi',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+        },
+      },
+      {
         path: 'apps/iptk/reports/applications',
         name: 'iptk-applications-report',
         component: IPTKPage,

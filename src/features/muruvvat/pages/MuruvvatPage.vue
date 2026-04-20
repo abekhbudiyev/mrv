@@ -82,6 +82,31 @@ type FlowStepInfo = {
   outcomes: string[]
 }
 
+type IptkGuideInfo = {
+  id: string
+  title: string
+  description: string
+  stepIds: string[]
+  items: string[]
+}
+
+type IptkQuestionnaireSectionInfo = {
+  id: string
+  title: string
+  description: string
+  stepIds: string[]
+  fields: string[]
+}
+
+type IptkAssessmentInfo = {
+  id: string
+  title: string
+  description: string
+  stepIds: string[]
+  purpose: string
+  usage: string[]
+}
+
 type ViewApplicationDetail = {
   applicant: ApplicantLookupResult
   applicantInitials: string
@@ -451,6 +476,153 @@ const iptkFlowSteps: FlowStepInfo[] = [
     outcomes: ['Rad etish bo‘yicha SMS xabarnoma yuboriladi', 'Yoki hujjatlar kamchiliklari bilan “Inson” markaziga qaytariladi'],
   },
 ]
+const iptkValidationGuides: IptkGuideInfo[] = [
+  {
+    id: 'person-validation',
+    title: 'Shaxs ma’lumotlarini tekshirish',
+    description: 'Ariza topshirilishidan oldin arizachi va xizmat oluvchining identifikatsiya ma’lumotlari to‘g‘ri kiritilgan bo‘lishi kerak.',
+    stepIds: ['A', 'C', 'R'],
+    items: [
+      'JSHSHIR faqat 14 ta raqamdan iborat bo‘lishi kerak.',
+      'Arizachi va xizmat oluvchi alohida qidiruv orqali aniqlanadi.',
+      'Xizmat oluvchi 18 yoshdan kichik shaxsga moslab tekshiriladi.',
+      'Manzil farq qilsa viloyat, tuman, MFY va to‘liq manzil majburiy to‘ldiriladi.',
+    ],
+  },
+  {
+    id: 'service-validation',
+    title: 'Xizmatga moslik validatsiyasi',
+    description: 'Xizmat tanlashda 4-ilovadagi tashxis va nogironlik guruhi mezonlari avtomatik tekshiriladi.',
+    stepIds: ['C', 'F', 'H', 'R'],
+    items: [
+      'Aniqlangan tashxis va nogironlik guruhi asosida faqat mos xizmatlar faollashadi.',
+      'Mos bo‘lmagan xizmatlar bloklanadi va sababi ko‘rsatiladi.',
+      'Uy sharoitida qarab turish xizmati faqat F73 tashxisi uchun ochiladi.',
+      'Mos bo‘lmagan tashxis yoki guruh holatida rad etish asosi shakllanadi.',
+    ],
+  },
+  {
+    id: 'document-validation',
+    title: 'Hujjatlar to‘liqligi',
+    description: 'Tanlangan xizmat turiga qarab 3-ilovadagi hujjatlar ro‘yxati tekshiriladi.',
+    stepIds: ['A', 'I', 'J', 'L', 'R'],
+    items: [
+      'Har bir xizmat turi uchun alohida tibbiy hujjatlar ro‘yxati shakllanadi.',
+      'Majburiy hujjatlar yuklanmaguncha arizani saqlash mumkin emas.',
+      'Tezkor guruh uchun qo‘shimcha hujjatlar alohida so‘raladi.',
+      'IPTK kotibi kamchilik topsa ish “Inson” markaziga qaytariladi.',
+    ],
+  },
+  {
+    id: 'confirmation-validation',
+    title: 'Tasdiqlash va rozilik',
+    description: 'So‘rovnoma yakunida arizachi SMS-kod orqali tasdiqlaydi va rozilik beradi.',
+    stepIds: ['A', 'J', 'N', 'T'],
+    items: [
+      'Telefon raqamida +998 prefiksi doimiy ko‘rsatiladi, foydalanuvchi 9 ta raqam kiritadi.',
+      'SMS-kod 6 xonali bo‘lishi kerak.',
+      'SMS-kod yuborilgach qayta yuborish taymeri ishga tushadi.',
+      'Barcha majburiy maydonlar to‘ldirilmaguncha arizani saqlash tugmasi ochilmaydi.',
+    ],
+  },
+]
+const iptkQuestionnaireSections: IptkQuestionnaireSectionInfo[] = [
+  {
+    id: 'applicant-section',
+    title: 'Arizachi bo‘limi',
+    description: 'Arizachi nomidan murojaat kiritiladi va uning identifikatsiya hamda manzil ma’lumotlari tekshiriladi.',
+    stepIds: ['A', 'C'],
+    fields: [
+      'JSHSHIR va qidiruv tugmasi',
+      'FIO, tug‘ilgan sana, JSHSHIR, vaqtinchalik manzil, manzil',
+      'Amaldagi yashash manzili farq qilsa qo‘shimcha manzil formasi',
+    ],
+  },
+  {
+    id: 'recipient-section',
+    title: 'Xizmat oluvchi bo‘limi',
+    description: 'Xizmat oluvchi topilgach uning tashxisi, nogironlik guruhi va rasm ma’lumoti asosiy tekshiruv uchun ishlatiladi.',
+    stepIds: ['A', 'C', 'F', 'R'],
+    fields: [
+      'JSHSHIR va qidiruv tugmasi',
+      'FIO, tug‘ilgan sana, tashxis, nogironlik guruhi, manzil',
+      'Rasm yuklash va preview',
+      'Xizmatga moslik paneli',
+    ],
+  },
+  {
+    id: 'service-section',
+    title: 'Xizmat turini tanlash',
+    description: 'Tashxis va nogironlik guruhiga mos xizmatlar orasidan bitta xizmat turi tanlanadi.',
+    stepIds: ['C', 'F', 'H', 'J'],
+    fields: [
+      'Custom dropdown ko‘rinishidagi xizmat tanlash maydoni',
+      'Har bir xizmat uchun moslik holati va izoh',
+      'Tanlangan xizmatga qarab hujjatlar ro‘yxati avtomatik almashadi',
+    ],
+  },
+  {
+    id: 'documents-section',
+    title: 'Tibbiy hujjatlar bo‘limi',
+    description: 'Xizmat turidan kelib chiqib 3-ilovadagi hujjatlar yuklanadi.',
+    stepIds: ['A', 'I', 'J', 'L'],
+    fields: [
+      '027-shakl va kasallik tarixidan ko‘chirma',
+      'Xizmat turiga mos qo‘shimcha laborator va dispanser xulosalari',
+      'Har bir hujjat uchun alohida fayl yuklash maydoni',
+    ],
+  },
+  {
+    id: 'confirmation-section',
+    title: 'Tasdiqlash bo‘limi',
+    description: 'So‘rovnoma SMS-kod bilan tasdiqlanadi va rozilik qayd etiladi.',
+    stepIds: ['A', 'J', 'N', 'T'],
+    fields: [
+      'Telefon raqami maydoni',
+      'SMS-kod yuborish va qayta yuborish taymeri',
+      '6 xonali SMS-kod kiritish',
+      'Arizani saqlash va tozalash tugmalari',
+    ],
+  },
+]
+const iptkAssessmentGuides: IptkAssessmentInfo[] = [
+  {
+    id: 'barthel-lawton',
+    title: 'Barthel va Lawton shkalalari',
+    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. Ayniqsa Huzur va Madad xizmatlari bo‘yicha muhim o‘rin tutadi.',
+    stepIds: ['F', 'H'],
+    purpose: 'Shaxsning o‘ziga-o‘zi xizmat ko‘rsatish, kundalik faoliyatlarni bajara olish va parvarishga ehtiyoj darajasini aniqlash.',
+    usage: [
+      'Huzur va Madad bo‘yicha ishchi guruh baholashida qo‘llanadi.',
+      'Huzur xizmati uchun tezkor yoki rejali guruhga ajratishda asosiy mezonlardan biri hisoblanadi.',
+      'Madad bo‘yicha 62 ballgacha bo‘lgan parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
+    ],
+  },
+  {
+    id: 'whodas',
+    title: 'WHODAS savolnomasi',
+    description: 'Jahon sog‘liqni saqlash tashkiloti savolnomasi bo‘lib, nogironligi bo‘lgan shaxsning kundalik funksional cheklovlari va ijtimoiy ishtirok darajasini baholashga xizmat qiladi.',
+    stepIds: ['Q', 'S'],
+    purpose: 'Kundalik hayotdagi qiyinchiliklar, muloqot, harakatlanish, o‘ziga qarash va ijtimoiy faollikni kompleks baholash.',
+    usage: [
+      'IPTK yig‘ilishida shaxsni ko‘rikdan o‘tkazishda qo‘llanadi.',
+      'Tibbiy kartadagi ma’lumotlar bilan birga komissiya xulosasini asoslashga yordam beradi.',
+      'Tanlangan xizmat turi mosligini aniqlashda qo‘shimcha funksional ko‘rsatkich beradi.',
+    ],
+  },
+  {
+    id: 'pps',
+    title: 'PPS shkalasi',
+    description: 'Palliative Performance Scale shaxsning umumiy funksional holati, harakatlanishi va o‘zini parvarish qila olish darajasini ko‘rsatadi.',
+    stepIds: ['Q', 'S'],
+    purpose: 'Jismoniy holat, yotoqda yotish darajasi, ovqatlanish va umumiy funksional imkoniyatlarni baholash.',
+    usage: [
+      'IPTK yig‘ilishida WHODAS bilan birga qo‘llanadi.',
+      'Shaxsning holatiga mos ijtimoiy xizmatni tavsiya qilishda yordam beradi.',
+      'Xulosa va bayonnomani asoslash uchun komissiya a’zolari tomonidan ko‘rib chiqiladi.',
+    ],
+  },
+]
 
 const iptkFlowMermaidDefinition = `
 flowchart TD
@@ -638,6 +810,15 @@ let notificationStartedAt = 0
 
 const selectedIptkFlowStep = computed(() => {
   return iptkFlowSteps.find((step) => step.id === selectedIptkFlowStepId.value) ?? iptkFlowSteps[0]
+})
+const selectedIptkStepGuides = computed(() => {
+  return iptkValidationGuides.filter((guide) => guide.stepIds.includes(selectedIptkFlowStepId.value))
+})
+const selectedIptkQuestionnaireGuides = computed(() => {
+  return iptkQuestionnaireSections.filter((section) => section.stepIds.includes(selectedIptkFlowStepId.value))
+})
+const selectedIptkAssessmentGuides = computed(() => {
+  return iptkAssessmentGuides.filter((assessment) => assessment.stepIds.includes(selectedIptkFlowStepId.value))
 })
 
 const filteredRows = computed(() => {
@@ -2898,6 +3079,192 @@ watch(serviceRecipientLookupResult, () => {
                         {{ outcome }}
                       </div>
                     </div>
+                  </div>
+
+                  <div
+                    v-if="selectedIptkStepGuides.length"
+                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                  >
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Shu bosqichdagi validatsiyalar
+                    </p>
+                    <div class="mt-3 space-y-3">
+                      <div
+                        v-for="guide in selectedIptkStepGuides"
+                        :key="guide.id"
+                        class="rounded-xl border border-border bg-background px-4 py-3"
+                      >
+                        <p class="text-sm font-semibold text-foreground">
+                          {{ guide.title }}
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                          {{ guide.description }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="selectedIptkQuestionnaireGuides.length"
+                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                  >
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Savolnoma bo‘limlari
+                    </p>
+                    <div class="mt-3 space-y-3">
+                      <div
+                        v-for="section in selectedIptkQuestionnaireGuides"
+                        :key="section.id"
+                        class="rounded-xl border border-border bg-background px-4 py-3"
+                      >
+                        <p class="text-sm font-semibold text-foreground">
+                          {{ section.title }}
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                          {{ section.description }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="selectedIptkAssessmentGuides.length"
+                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                  >
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Baholash metodikalari
+                    </p>
+                    <div class="mt-3 space-y-3">
+                      <div
+                        v-for="assessment in selectedIptkAssessmentGuides"
+                        :key="assessment.id"
+                        class="rounded-xl border border-border bg-background px-4 py-3"
+                      >
+                        <p class="text-sm font-semibold text-foreground">
+                          {{ assessment.title }}
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                          {{ assessment.description }}
+                        </p>
+                        <div class="mt-3 rounded-lg border border-border bg-card px-3 py-2">
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Maqsadi
+                          </p>
+                          <p class="mt-1 text-sm leading-6 text-foreground">
+                            {{ assessment.purpose }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 grid gap-4 xl:grid-cols-2">
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <p class="text-sm font-semibold text-foreground">
+                    Validatsiyalar
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Ariza yuborilishidan oldin va jarayon davomida ishlatiladigan asosiy tekshiruvlar.
+                  </p>
+                  <div class="mt-4 space-y-3">
+                    <div
+                      v-for="guide in iptkValidationGuides"
+                      :key="guide.id"
+                      class="rounded-xl border border-border bg-card px-4 py-3"
+                    >
+                      <p class="text-sm font-semibold text-foreground">
+                        {{ guide.title }}
+                      </p>
+                      <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                        {{ guide.description }}
+                      </p>
+                      <ul class="mt-3 space-y-2 text-sm text-foreground">
+                        <li
+                          v-for="item in guide.items"
+                          :key="`${guide.id}-${item}`"
+                          class="flex gap-2"
+                        >
+                          <span class="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                          <span class="leading-6">{{ item }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rounded-2xl border border-border bg-background p-4">
+                  <p class="text-sm font-semibold text-foreground">
+                    Savolnoma shakli
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Elektron sўrovnomada foydalanuvchi to‘ldiradigan asosiy bo‘limlar va maydonlar.
+                  </p>
+                  <div class="mt-4 space-y-3">
+                    <div
+                      v-for="section in iptkQuestionnaireSections"
+                      :key="section.id"
+                      class="rounded-xl border border-border bg-card px-4 py-3"
+                    >
+                      <p class="text-sm font-semibold text-foreground">
+                        {{ section.title }}
+                      </p>
+                      <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                        {{ section.description }}
+                      </p>
+                      <ul class="mt-3 space-y-2 text-sm text-foreground">
+                        <li
+                          v-for="field in section.fields"
+                          :key="`${section.id}-${field}`"
+                          class="flex gap-2"
+                        >
+                          <span class="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          <span class="leading-6">{{ field }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 rounded-2xl border border-border bg-background p-4">
+                <p class="text-sm font-semibold text-foreground">
+                  Baholash metodikalari
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  IPTK va ishchi guruh baholashida qo‘llanadigan asosiy shkala va savolnomalar.
+                </p>
+                <div class="mt-4 grid gap-3 xl:grid-cols-3">
+                  <div
+                    v-for="assessment in iptkAssessmentGuides"
+                    :key="assessment.id"
+                    class="rounded-xl border border-border bg-card px-4 py-3"
+                  >
+                    <p class="text-sm font-semibold text-foreground">
+                      {{ assessment.title }}
+                    </p>
+                    <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                      {{ assessment.description }}
+                    </p>
+                    <div class="mt-3 rounded-lg border border-border bg-background px-3 py-2">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Maqsadi
+                      </p>
+                      <p class="mt-1 text-sm leading-6 text-foreground">
+                        {{ assessment.purpose }}
+                      </p>
+                    </div>
+                    <ul class="mt-3 space-y-2 text-sm text-foreground">
+                      <li
+                        v-for="item in assessment.usage"
+                        :key="`${assessment.id}-${item}`"
+                        class="flex gap-2"
+                      >
+                        <span class="mt-1 h-1.5 w-1.5 rounded-full bg-sky-500" />
+                        <span class="leading-6">{{ item }}</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
