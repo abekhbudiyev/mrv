@@ -30,7 +30,7 @@ const route = useRoute()
 const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
 
-type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Rad etilgan'
+type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
 
 type ApplicationRow = {
   id: string
@@ -157,7 +157,7 @@ const applicationStatusCardMeta = [
   },
   {
     id: 'rejected',
-    title: 'Rad etilgan',
+    title: 'Bekor qilingan',
     tone: 'border-rose-200 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/20',
     badge: 'bg-rose-600',
   },
@@ -166,7 +166,7 @@ const applicationStatusCardMeta = [
 const statusStyles = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
-  'Rad etilgan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
+  'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 } as const
 
 const demoPeople = [
@@ -195,7 +195,7 @@ const demoRegions = [
   ['Xorazm viloyati', 'Urganch shahri'],
 ] as const
 
-const demoStatuses = ['Jarayonda', 'Tasdiqlangan', 'Rad etilgan'] as const
+const demoStatuses = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan'] as const
 const demoMahallas = [
   'Navbahor MFY',
   'Mustaqillik MFY',
@@ -467,7 +467,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   },
   {
     id: 'R',
-    title: 'Rad etildi yoki qaytarildi',
+    title: 'Bekor qilindi yoki qaytarildi',
     services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
     description: 'Ariza xizmat turiga mos kelmasa rad etiladi; hujjatlarda kamchilik bo‘lsa yoki ko‘rikka olib kelinmasa ish “Inson” markaziga qaytariladi.',
     responsible: '“Inson” markazi / IPTK / IPTK kotibi',
@@ -630,7 +630,7 @@ flowchart TD
     B --> C["Inson markazi tekshiruvi"]
     C --> D{"Rad etish asosi bormi?"}
 
-    D -->|Ha| R["Rad etildi"]
+    D -->|Ha| R["Bekor qilindi"]
     D -->|Yo'q| E{"Xizmat turi"}
 
     E -->|"Huzur"| F["Baholash va xulosa kiritish"]
@@ -659,7 +659,7 @@ flowchart TD
     Q --> S{"IPTK xulosasi"}
     S -->|"Tanlangan xizmat"| T["Inson markaziga yuborildi"]
     S -->|"Boshqa xizmat tavsiya qilindi"| T
-    S -->|"Rad etish"| W["Rad etildi"]
+    S -->|"Bekor qilish"| W["Bekor qilindi"]
     T --> X["Arizachi xabardor qilindi"]
 
     classDef neutral fill:#f8fafc,stroke:#cbd5e1,color:#0f172a,stroke-width:1.5px;
@@ -1716,11 +1716,7 @@ function applyFilters() {
 }
 
 function clearFilters() {
-  draftStatusFilter.value = 'all'
-  draftRegionFilter.value = 'all'
-  draftDistrictFilter.value = 'all'
-  draftStartDateFilter.value = ''
-  draftEndDateFilter.value = ''
+  clearSearchAndFilters()
 }
 
 function openCreateDialog() {
@@ -1999,7 +1995,7 @@ const applicationStatusCards = computed(() => {
   const total = filteredRows.value.length
   const inProgress = filteredRows.value.filter((row) => row.status === 'Jarayonda').length
   const approved = filteredRows.value.filter((row) => row.status === 'Tasdiqlangan').length
-  const rejected = filteredRows.value.filter((row) => row.status === 'Rad etilgan').length
+  const rejected = filteredRows.value.filter((row) => row.status === 'Bekor qilingan').length
 
   const formatShare = (count: number) => {
     if (total === 0) {
@@ -2530,16 +2526,16 @@ function confirmApprove(row: ApplicationRow) {
 function confirmReject(row: ApplicationRow) {
   openConfirmation({
     tone: 'destructive',
-    title: 'Rad etishni tasdiqlang',
-    description: `${row.id} arizasini rad etishni xohlaysizmi?`,
-    confirmLabel: 'Rad etish',
+    title: 'Bekor qilishni tasdiqlang',
+    description: `${row.id} arizasini bekor qilishni xohlaysizmi?`,
+    confirmLabel: 'Bekor qilish',
     action: () => {
       runTableLoading(() => {
-        updateRowStatus(row.id, 'Rad etilgan')
+        updateRowStatus(row.id, 'Bekor qilingan')
         showNotification({
           tone: 'destructive',
-          title: 'Ariza rad etildi',
-          description: `${row.id} rad etilgan holatiga o'tkazildi.`,
+          title: 'Ariza bekor qilindi',
+          description: `${row.id} bekor qilingan holatiga o'tkazildi.`,
         })
       })
     },
@@ -3440,7 +3436,7 @@ watch(serviceRecipientLookupResult, () => {
             </Card>
           </div>
 
-          <div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -3463,7 +3459,7 @@ watch(serviceRecipientLookupResult, () => {
                 <Info class="h-4 w-4" />
               </Button>
               <Button
-                class="gap-2"
+                class="h-10 gap-2"
                 @click="openCreateDialog"
               >
                 <Plus class="h-4 w-4" />
@@ -3481,7 +3477,7 @@ watch(serviceRecipientLookupResult, () => {
 
                 <Button
                   variant="outline"
-                  :class="isFiltersOpen ? 'gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'gap-2'"
+                  :class="isFiltersOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
                   @click="toggleFiltersFromMenu(!isFiltersOpen)"
                 >
                   <span
@@ -3910,7 +3906,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
               <Button
                 variant="outline"
-                class="gap-2"
+                class="h-10 gap-2"
                 :disabled="isExporting"
                 @click="downloadApplicationsAsExcel"
               >
@@ -4028,7 +4024,7 @@ watch(serviceRecipientLookupResult, () => {
                                     @click="confirmReject(row)"
                                   >
                                     <X class="h-4 w-4 shrink-0" />
-                                    <span>Rad etish</span>
+                                    <span>Bekor qilish</span>
                                   </DropdownMenuItem>
                                 </template>
                                 <DropdownMenuItem
@@ -4168,7 +4164,7 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="confirmReject(row)"
                                 >
                                   <X class="h-4 w-4 shrink-0" />
-                                  <span>Rad etish</span>
+                                  <span>Bekor qilish</span>
                                 </DropdownMenuItem>
                               </template>
                               <DropdownMenuItem
