@@ -21,6 +21,7 @@ import { Input } from '@/shared/ui/shadcn/input'
 
 type CommissionStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
 type CommissionWorkflowStage = 'Qoralama' | 'Tasdiqlashga yuborildi' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
 
 type PendingConfirmation = {
@@ -88,12 +89,57 @@ interface CommissionRecord {
   rejectedAt?: string
 }
 
+interface LocalizedValue {
+  uzLatn: string
+  uzCyrl: string
+  kaaLatn: string
+  ru: string
+}
+
+interface ServiceTypeRecord {
+  id: string
+  date: string
+  shortName: LocalizedValue
+  fullName: LocalizedValue
+  diagnosisIds: string[]
+  contraindicationIds: string[]
+  status: ServiceTypeStatus
+}
+
+interface ServiceTypeForm {
+  shortName: LocalizedValue
+  fullName: LocalizedValue
+  diagnosisIds: string[]
+  contraindicationIds: string[]
+  status: ServiceTypeStatus | ''
+}
+
+interface DiagnosisRecord {
+  id: string
+  date: string
+  shortName: LocalizedValue
+  fullName: LocalizedValue
+  icdCodes: string[]
+  status: ServiceTypeStatus
+}
+
+interface DiagnosisForm {
+  shortName: LocalizedValue
+  fullName: LocalizedValue
+  icdCodes: string[]
+  status: ServiceTypeStatus | ''
+}
+
 const props = defineProps<{
   pageKey: string
 }>()
 
 const page = computed(() => getIPTKPage(props.pageKey))
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
+const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
+const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
+const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
+const isMedicalReferencePage = computed(() => isDiagnosesPage.value || isContraindicationsPage.value)
 
 const regionOptions = [
   "Qoraqalpog'iston Respublikasi",
@@ -261,6 +307,275 @@ const commissions = ref<CommissionRecord[]>([
   },
 ])
 
+const serviceTypes = ref<ServiceTypeRecord[]>([
+  {
+    id: 'XIZ-2026-001',
+    date: '2026-04-10 09:30',
+    shortName: {
+      uzLatn: 'Huzur markazi',
+      uzCyrl: 'Ҳузур маркази',
+      kaaLatn: 'Huzur orayı',
+      ru: 'Центр Хузур',
+    },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни “Ҳузур” марказига жойлаштириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Huzur” orayına jaylastırıw',
+      ru: 'Размещение лица с инвалидностью в центр «Хузур»',
+    },
+    diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
+    contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    status: 'Faol',
+  },
+  {
+    id: 'XIZ-2026-002',
+    date: '2026-04-11 14:20',
+    shortName: {
+      uzLatn: 'Madad uylari',
+      uzCyrl: 'Мадад уйлари',
+      kaaLatn: 'Madad úyleri',
+      ru: 'Дома Мадад',
+    },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни кичик ҳажмли “Мадад” уйлари хизматига жойлаштириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı kishi kólemli “Madad” úyleri xızmetine jaylastırıw',
+      ru: 'Размещение лица с инвалидностью в услугу домов малого объема «Мадад»',
+    },
+    diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
+    contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    status: 'Faol',
+  },
+  {
+    id: 'XIZ-2026-003',
+    date: '2026-04-12 10:15',
+    shortName: {
+      uzLatn: 'Ijtimoiy ta’til',
+      uzCyrl: 'Ижтимоий таътил',
+      kaaLatn: 'Áleumetlik dem alıs',
+      ru: 'Социальный отпуск',
+    },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни “Ижтимоий таътил” қисқа муддатли жойлаштириш хизматига йўналтириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Áleumetlik dem alıs” qısqa múddetli jaylastırıw xızmetine jiberiw',
+      ru: 'Направление лица с инвалидностью в краткосрочную услугу «Социальный отпуск»',
+    },
+    diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
+    contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    status: 'Faol',
+  },
+  {
+    id: 'XIZ-2026-004',
+    date: '2026-04-13 11:40',
+    shortName: {
+      uzLatn: 'Uy sharoitida qarab turish',
+      uzCyrl: 'Уй шароитида қараб туриш',
+      kaaLatn: 'Úy sharayatında qarap turıw',
+      ru: 'Уход на дому',
+    },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни уй шароитида қараб туриш хизматига йўналтириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı úy sharayatında qarap turıw xızmetine jiberiw',
+      ru: 'Направление лица с инвалидностью на услугу ухода на дому',
+    },
+    diagnosisIds: ['TASH-2026-004'],
+    contraindicationIds: ['QK-2026-002', 'QK-2026-003'],
+    status: 'Faol',
+  },
+  {
+    id: 'XIZ-2026-005',
+    date: '2026-04-14 15:05',
+    shortName: {
+      uzLatn: 'Yangi kun',
+      uzCyrl: 'Янги кун',
+      kaaLatn: 'Jańa kún',
+      ru: 'Янги кун',
+    },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни “Янги кун” кундузги қараб туриш хизматига йўналтириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Jańa kún” kúndizgi qarap turıw xızmetine jiberiw',
+      ru: 'Направление лица с инвалидностью на дневную услугу ухода «Янги кун»',
+    },
+    diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
+    contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    status: 'Faol',
+  },
+])
+
+const diagnoses = ref<DiagnosisRecord[]>([
+  {
+    id: 'TASH-2026-001',
+    date: '2026-04-10 09:30',
+    shortName: {
+      uzLatn: 'F00-F03',
+      uzCyrl: 'F00-F03',
+      kaaLatn: 'F00-F03',
+      ru: 'F00-F03',
+    },
+    fullName: {
+      uzLatn: 'Demensiya',
+      uzCyrl: 'Деменция',
+      kaaLatn: 'Demensiya',
+      ru: 'Деменция',
+    },
+    icdCodes: [
+      'F00',
+      'F00.0',
+      'F00.1',
+      'F00.2',
+      'F00.9',
+      'F01',
+      'F01.0',
+      'F01.1',
+      'F01.2',
+      'F01.3',
+      'F01.8',
+      'F01.9',
+      'F02',
+      'F02.0',
+      'F02.1',
+      'F02.2',
+      'F02.3',
+      'F02.4',
+      'F02.8',
+      'F03',
+    ],
+    status: 'Faol',
+  },
+  {
+    id: 'TASH-2026-002',
+    date: '2026-04-11 14:20',
+    shortName: {
+      uzLatn: 'F71',
+      uzCyrl: 'F71',
+      kaaLatn: 'F71',
+      ru: 'F71',
+    },
+    fullName: {
+      uzLatn: "Mo'tadil darajadagi aqliy zaiflik",
+      uzCyrl: 'Мўътадил даражадаги ақлий заифлик',
+      kaaLatn: 'Ortasha dárejedegi aqıllıq ázizlik',
+      ru: 'Умеренная умственная отсталость',
+    },
+    icdCodes: ['F71', 'F71.0', 'F71.1', 'F71.8', 'F71.9'],
+    status: 'Faol',
+  },
+  {
+    id: 'TASH-2026-003',
+    date: '2026-04-12 10:15',
+    shortName: {
+      uzLatn: 'F72',
+      uzCyrl: 'F72',
+      kaaLatn: 'F72',
+      ru: 'F72',
+    },
+    fullName: {
+      uzLatn: "Og'ir darajadagi aqliy zaiflik",
+      uzCyrl: 'Оғир даражадаги ақлий заифлик',
+      kaaLatn: 'Awır dárejedegi aqıllıq ázizlik',
+      ru: 'Тяжелая умственная отсталость',
+    },
+    icdCodes: ['F72', 'F72.0', 'F72.1', 'F72.8', 'F72.9'],
+    status: 'Faol',
+  },
+  {
+    id: 'TASH-2026-004',
+    date: '2026-04-13 11:40',
+    shortName: {
+      uzLatn: 'F73',
+      uzCyrl: 'F73',
+      kaaLatn: 'F73',
+      ru: 'F73',
+    },
+    fullName: {
+      uzLatn: 'Chuqur darajadagi aqliy zaiflik',
+      uzCyrl: 'Чуқур даражадаги ақлий заифлик',
+      kaaLatn: 'Tereń dárejedegi aqıllıq ázizlik',
+      ru: 'Глубокая умственная отсталость',
+    },
+    icdCodes: ['F73', 'F73.0', 'F73.1', 'F73.8', 'F73.9'],
+    status: 'Faol',
+  },
+])
+
+const contraindications = ref<DiagnosisRecord[]>([
+  {
+    id: 'QK-2026-001',
+    date: '2026-04-10 09:30',
+    shortName: {
+      uzLatn: 'F40',
+      uzCyrl: 'F40',
+      kaaLatn: 'F40',
+      ru: 'F40',
+    },
+    fullName: {
+      uzLatn: "Tez-tez, har oyda ikki martadan ko'p tutqanoq xurujlari sodir bo'ladigan epilepsiya",
+      uzCyrl: "Тез-тез, ҳар ойда икки мартадан кўп тутқаноқ хуружлари содир бўладиган эпилепция",
+      kaaLatn: "Tez-tez, har ayda eki márteden kóp tutqanaq xurujları júz beretuǵın epilepsiya",
+      ru: "Эпилепсия с частыми приступами, более двух раз в месяц",
+    },
+    icdCodes: ['F40'],
+    status: 'Faol',
+  },
+  {
+    id: 'QK-2026-002',
+    date: '2026-04-11 14:20',
+    shortName: {
+      uzLatn: 'F20-F29',
+      uzCyrl: 'F20-F29',
+      kaaLatn: 'F20-F29',
+      ru: 'F20-F29',
+    },
+    fullName: {
+      uzLatn: "Shizofreniya, shizotipik va alahlashli buzilishlar",
+      uzCyrl: "Шизофрения, шизотипик ва алаҳлашли бузилишлар",
+      kaaLatn: "Shizofreniya, shizotipik hám alahlı buzılıslar",
+      ru: "Шизофрения, шизотипические и бредовые расстройства",
+    },
+    icdCodes: ['F20', 'F21', 'F22', 'F23', 'F24', 'F25', 'F28', 'F29'],
+    status: 'Faol',
+  },
+  {
+    id: 'QK-2026-003',
+    date: '2026-04-12 10:15',
+    shortName: {
+      uzLatn: 'F60-F69',
+      uzCyrl: 'F60-F69',
+      kaaLatn: 'F60-F69',
+      ru: 'F60-F69',
+    },
+    fullName: {
+      uzLatn: "Balog'at yoshida shaxsiyat va fe'l-atvor buzilishlari",
+      uzCyrl: "Балоғат ёшида шахсият ва феъл-атвор бузилишлари",
+      kaaLatn: "Erjetken jasta shaxsiyat hám minez-qulıq buzılısları",
+      ru: "Расстройства личности и поведения в зрелом возрасте",
+    },
+    icdCodes: ['F60', 'F61', 'F62', 'F63', 'F64', 'F65', 'F66', 'F68', 'F69'],
+    status: 'Faol',
+  },
+  {
+    id: 'QK-2026-004',
+    date: '2026-04-13 11:40',
+    shortName: {
+      uzLatn: 'F15-F19',
+      uzCyrl: 'F15-F19',
+      kaaLatn: 'F15-F19',
+      ru: 'F15-F19',
+    },
+    fullName: {
+      uzLatn: "Sil (tuberkulyoz)",
+      uzCyrl: "Сил (туберкулёз)",
+      kaaLatn: "Sil (tuberkulyoz)",
+      ru: "Туберкулез",
+    },
+    icdCodes: ['F15', 'F16', 'F17', 'F18', 'F19'],
+    status: 'Faol',
+  },
+])
+
 const isCreateDialogOpen = ref(false)
 const isFilterOpen = ref(false)
 const openFilterField = ref<'status' | 'region' | null>(null)
@@ -295,12 +610,50 @@ const chairSearch = ref<CommissionSearchState>(createSearchState())
 const deputyChairSearch = ref<CommissionSearchState>(createSearchState())
 const secretarySearch = ref<CommissionSearchState>(createSearchState())
 const formMembers = ref<CommissionMemberDraft[]>([createEmptyMember()])
+const serviceTypeSearchInput = ref('')
+const serviceTypeSearchQuery = ref('')
+const serviceTypeRowsPerPage = ref(20)
+const serviceTypeCurrentPage = ref(1)
+const isServiceTypeRowsPerPageOpen = ref(false)
+const openServiceTypeActionMenuId = ref<string | null>(null)
+const isServiceTypeDialogOpen = ref(false)
+const isServiceTypeStatusOpen = ref(false)
+const isServiceTypeDiagnosesOpen = ref(false)
+const isServiceTypeContraindicationsOpen = ref(false)
+const isServiceTypeTranslationsOpen = ref(false)
+const editingServiceTypeId = ref<string | null>(null)
+const selectedServiceTypeRecord = ref<ServiceTypeRecord | null>(null)
+const serviceTypeForm = ref<ServiceTypeForm>(createServiceTypeForm())
+const diagnosisSearchInput = ref('')
+const diagnosisSearchQuery = ref('')
+const diagnosisRowsPerPage = ref(20)
+const diagnosisCurrentPage = ref(1)
+const isDiagnosisRowsPerPageOpen = ref(false)
+const openDiagnosisActionMenuId = ref<string | null>(null)
+const isDiagnosisDialogOpen = ref(false)
+const isDiagnosisStatusOpen = ref(false)
+const isDiagnosisIcdOpen = ref(false)
+const isDiagnosisTranslationsOpen = ref(false)
+const editingDiagnosisId = ref<string | null>(null)
+const selectedDiagnosisRecord = ref<DiagnosisRecord | null>(null)
+const diagnosisForm = ref<DiagnosisForm>(createDiagnosisForm())
+const isAnyDialogOpen = computed(() => (
+  isCreateDialogOpen.value
+  || isServiceTypeDialogOpen.value
+  || isDiagnosisDialogOpen.value
+  || Boolean(selectedViewRecord.value)
+  || Boolean(selectedServiceTypeRecord.value)
+  || Boolean(selectedDiagnosisRecord.value)
+  || Boolean(pendingConfirmation.value)
+))
 
 let notificationTimer: ReturnType<typeof setTimeout> | null = null
 let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let serviceTypeSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let diagnosisSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 let isHydratingEditForm = false
 
@@ -510,6 +863,86 @@ function preventInvalidPhonePaste(event: ClipboardEvent) {
 function normalizeFullName(value: string) {
   return value.trim().toLocaleUpperCase('uz-UZ')
 }
+
+const serviceTypeStatusClassMap: Record<ServiceTypeStatus, string> = {
+  Faol: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+  Nofaol: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-300',
+}
+
+const localizedLanguageFields: { key: keyof LocalizedValue; label: string }[] = [
+  { key: 'uzLatn', label: "O'zbek lotin" },
+  { key: 'uzCyrl', label: "O'zbek kirill" },
+  { key: 'kaaLatn', label: 'Qoraqalpoq lotin' },
+  { key: 'ru', label: 'Rus tili' },
+]
+
+const optionalLocalizedLanguageFields = localizedLanguageFields.filter((field) => field.key !== 'uzLatn')
+
+const icdCodeOptions = [
+  'F00',
+  'F00.0',
+  'F00.1',
+  'F00.2',
+  'F00.9',
+  'F01',
+  'F01.0',
+  'F01.1',
+  'F01.2',
+  'F01.3',
+  'F01.8',
+  'F01.9',
+  'F02',
+  'F02.0',
+  'F02.1',
+  'F02.2',
+  'F02.3',
+  'F02.4',
+  'F02.8',
+  'F03',
+  'F10',
+  'F11',
+  'F12',
+  'F13',
+  'F14',
+  'F15',
+  'F16',
+  'F17',
+  'F18',
+  'F19',
+  'F20',
+  'F21',
+  'F22',
+  'F23',
+  'F24',
+  'F25',
+  'F28',
+  'F29',
+  'F40',
+  'F60',
+  'F61',
+  'F62',
+  'F63',
+  'F64',
+  'F65',
+  'F66',
+  'F68',
+  'F69',
+  'F71',
+  'F71.0',
+  'F71.1',
+  'F71.8',
+  'F71.9',
+  'F72',
+  'F72.0',
+  'F72.1',
+  'F72.8',
+  'F72.9',
+  'F73',
+  'F73.0',
+  'F73.1',
+  'F73.8',
+  'F73.9',
+] as const
 
 function formatDateDisplay(value: string) {
   const [datePart = ''] = value.split(' ')
@@ -729,6 +1162,143 @@ const invalidMember = normalizedMembers.value.some((member) =>
 
 const canSave = computed(() => !formError.value)
 
+const serviceTypeFormError = computed(() => {
+  const values = [
+    serviceTypeForm.value.shortName.uzLatn,
+    serviceTypeForm.value.fullName.uzLatn,
+    serviceTypeForm.value.status,
+  ]
+
+  if (!values.every((value) => String(value).trim())) {
+    return "Qisqa nomi, to'liq nomi va status to'ldirilishi kerak."
+  }
+
+  if (serviceTypeForm.value.diagnosisIds.length === 0) {
+    return 'Kamida bitta mos tashxis tanlanishi kerak.'
+  }
+
+  if (serviceTypeForm.value.contraindicationIds.length === 0) {
+    return "Kamida bitta qarshi ko'rsatma tanlanishi kerak."
+  }
+
+  return ''
+})
+
+const canSaveServiceType = computed(() => !serviceTypeFormError.value)
+
+const filteredServiceTypes = computed(() => {
+  const query = serviceTypeSearchQuery.value.trim().toLowerCase()
+
+  if (!query) {
+    return serviceTypes.value
+  }
+
+  return serviceTypes.value.filter((record) => [
+    record.id,
+    record.date,
+    formatDateDisplay(record.date),
+    record.status,
+    ...Object.values(record.shortName),
+    ...Object.values(record.fullName),
+    ...getServiceTypeDiagnoses(record).map(medicalReferenceLabel),
+    ...getServiceTypeContraindications(record).map(medicalReferenceLabel),
+  ].some((value) => value.toLowerCase().includes(query)))
+})
+
+const serviceTypeTotalRows = computed(() => filteredServiceTypes.value.length)
+const serviceTypeTotalPages = computed(() => Math.max(1, Math.ceil(serviceTypeTotalRows.value / serviceTypeRowsPerPage.value)))
+const paginatedServiceTypes = computed(() => {
+  const start = (serviceTypeCurrentPage.value - 1) * serviceTypeRowsPerPage.value
+  return filteredServiceTypes.value.slice(start, start + serviceTypeRowsPerPage.value)
+})
+const serviceTypePaginationRange = computed(() => {
+  const start = serviceTypeTotalRows.value === 0 ? 0 : (serviceTypeCurrentPage.value - 1) * serviceTypeRowsPerPage.value + 1
+  const end = Math.min(serviceTypeCurrentPage.value * serviceTypeRowsPerPage.value, serviceTypeTotalRows.value)
+  return { start, end }
+})
+const serviceTypeCurrentPageSummary = computed(() => `${serviceTypeCurrentPage.value}/${serviceTypeTotalPages.value}`)
+
+const medicalReferenceTitle = computed(() => isContraindicationsPage.value ? "Qarshi ko'rsatma" : 'Mos tashxis')
+const medicalReferenceCreateTitle = computed(() => `${medicalReferenceTitle.value} yaratish`)
+const medicalReferenceEditTitle = computed(() => `${medicalReferenceTitle.value}ni tahrirlash`)
+const medicalReferenceDeleteTitle = computed(() => `${medicalReferenceTitle.value} o'chirilsinmi?`)
+const medicalReferenceExportName = computed(() => isContraindicationsPage.value ? 'iptk-qarshi-korsatmalar.xlsx' : 'iptk-mos-tashxislar.xlsx')
+const medicalReferenceSheetName = computed(() => isContraindicationsPage.value ? "Qarshi ko'rsatmalar" : 'Mos tashxislar')
+
+function medicalReferenceLabel(record: DiagnosisRecord) {
+  return `${record.shortName.uzLatn} - ${record.fullName.uzLatn}`
+}
+
+function resolveMedicalReference(ids: string[], records: DiagnosisRecord[]) {
+  return ids
+    .map((id) => records.find((record) => record.id === id))
+    .filter((record): record is DiagnosisRecord => Boolean(record))
+}
+
+function getServiceTypeDiagnoses(record: Pick<ServiceTypeRecord, 'diagnosisIds'>) {
+  return resolveMedicalReference(record.diagnosisIds, diagnoses.value)
+}
+
+function getServiceTypeContraindications(record: Pick<ServiceTypeRecord, 'contraindicationIds'>) {
+  return resolveMedicalReference(record.contraindicationIds, contraindications.value)
+}
+
+function getActiveMedicalReferenceRecords() {
+  return isContraindicationsPage.value ? contraindications : diagnoses
+}
+
+const diagnosisFormError = computed(() => {
+  const values = [
+    diagnosisForm.value.shortName.uzLatn,
+    diagnosisForm.value.fullName.uzLatn,
+    diagnosisForm.value.status,
+  ]
+
+  if (!values.every((value) => String(value).trim())) {
+    return "Qisqa nomi, to'liq nomi va status to'ldirilishi kerak."
+  }
+
+  if (diagnosisForm.value.icdCodes.length === 0) {
+    return "Kamida bitta ICD-10 kodi tanlanishi kerak."
+  }
+
+  return ''
+})
+
+const canSaveDiagnosis = computed(() => !diagnosisFormError.value)
+
+const filteredDiagnoses = computed(() => {
+  const query = diagnosisSearchQuery.value.trim().toLowerCase()
+  const records = getActiveMedicalReferenceRecords().value
+
+  if (!query) {
+    return records
+  }
+
+  return records.filter((record) => [
+    record.id,
+    record.date,
+    formatDateDisplay(record.date),
+    record.status,
+    record.icdCodes.join(' '),
+    ...Object.values(record.shortName),
+    ...Object.values(record.fullName),
+  ].some((value) => value.toLowerCase().includes(query)))
+})
+
+const diagnosisTotalRows = computed(() => filteredDiagnoses.value.length)
+const diagnosisTotalPages = computed(() => Math.max(1, Math.ceil(diagnosisTotalRows.value / diagnosisRowsPerPage.value)))
+const paginatedDiagnoses = computed(() => {
+  const start = (diagnosisCurrentPage.value - 1) * diagnosisRowsPerPage.value
+  return filteredDiagnoses.value.slice(start, start + diagnosisRowsPerPage.value)
+})
+const diagnosisPaginationRange = computed(() => {
+  const start = diagnosisTotalRows.value === 0 ? 0 : (diagnosisCurrentPage.value - 1) * diagnosisRowsPerPage.value + 1
+  const end = Math.min(diagnosisCurrentPage.value * diagnosisRowsPerPage.value, diagnosisTotalRows.value)
+  return { start, end }
+})
+const diagnosisCurrentPageSummary = computed(() => `${diagnosisCurrentPage.value}/${diagnosisTotalPages.value}`)
+
 const filteredCommissions = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
@@ -749,60 +1319,6 @@ const filteredCommissions = computed(() => {
 
     return matchesQuery && matchesStatus && matchesRegion && matchesStartDate && matchesEndDate
   })
-})
-
-const commissionStats = computed(() => {
-  const rows = filteredCommissions.value
-  const total = rows.length
-  const inProgress = rows.filter((item) => item.status === 'Jarayonda').length
-  const approved = rows.filter((item) => item.status === 'Tasdiqlangan').length
-  const rejected = rows.filter((item) => item.status === 'Bekor qilingan').length
-
-  return { total, inProgress, approved, rejected }
-})
-
-const commissionStatusCards = computed(() => {
-  const total = commissionStats.value.total
-
-  const buildShare = (value: number) => {
-    if (!total) return '0%'
-    return `${Math.round((value / total) * 100)}%`
-  }
-
-  return [
-    {
-      id: 'total',
-      title: 'Jami hujjatlar',
-      value: total,
-      share: buildShare(total),
-      tone: 'border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40',
-      badge: 'bg-slate-600',
-    },
-    {
-      id: 'in-progress',
-      title: 'Jarayonda',
-      value: commissionStats.value.inProgress,
-      share: buildShare(commissionStats.value.inProgress),
-      tone: 'border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/20',
-      badge: 'bg-amber-500',
-    },
-    {
-      id: 'approved',
-      title: 'Tasdiqlangan',
-      value: commissionStats.value.approved,
-      share: buildShare(commissionStats.value.approved),
-      tone: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20',
-      badge: 'bg-emerald-600',
-    },
-    {
-      id: 'rejected',
-      title: 'Bekor qilingan',
-      value: commissionStats.value.rejected,
-      share: buildShare(commissionStats.value.rejected),
-      tone: 'border-rose-200 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/20',
-      badge: 'bg-rose-600',
-    },
-  ]
 })
 
 const totalRows = computed(() => filteredCommissions.value.length)
@@ -1304,6 +1820,34 @@ function handleStartDateFilterChange(value: unknown) {
   }
 }
 
+function createLocalizedValue(): LocalizedValue {
+  return {
+    uzLatn: '',
+    uzCyrl: '',
+    kaaLatn: '',
+    ru: '',
+  }
+}
+
+function createServiceTypeForm(): ServiceTypeForm {
+  return {
+    shortName: createLocalizedValue(),
+    fullName: createLocalizedValue(),
+    diagnosisIds: [],
+    contraindicationIds: [],
+    status: 'Faol',
+  }
+}
+
+function createDiagnosisForm(): DiagnosisForm {
+  return {
+    shortName: createLocalizedValue(),
+    fullName: createLocalizedValue(),
+    icdCodes: [],
+    status: 'Faol',
+  }
+}
+
 function handleEndDateFilterChange(value: unknown) {
   const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
   draftEndDateFilter.value = normalizedValue
@@ -1453,6 +1997,416 @@ async function downloadCommissions() {
   xlsx.writeFile(workbook, 'iptk-komissiyalar-tarkibi.xlsx')
 }
 
+function nextServiceTypeId() {
+  const nextIndex = serviceTypes.value.length + 1
+  return `XIZ-2026-${String(nextIndex).padStart(3, '0')}`
+}
+
+function resetServiceTypeForm() {
+  editingServiceTypeId.value = null
+  isServiceTypeStatusOpen.value = false
+  isServiceTypeDiagnosesOpen.value = false
+  isServiceTypeContraindicationsOpen.value = false
+  isServiceTypeTranslationsOpen.value = false
+  serviceTypeForm.value = createServiceTypeForm()
+}
+
+function openCreateServiceTypeDialog() {
+  resetServiceTypeForm()
+  isServiceTypeDialogOpen.value = true
+}
+
+function closeServiceTypeDialog() {
+  isServiceTypeDialogOpen.value = false
+  resetServiceTypeForm()
+}
+
+function editServiceType(record: ServiceTypeRecord) {
+  editingServiceTypeId.value = record.id
+  openServiceTypeActionMenuId.value = null
+  isServiceTypeStatusOpen.value = false
+  isServiceTypeDiagnosesOpen.value = false
+  isServiceTypeContraindicationsOpen.value = false
+  isServiceTypeTranslationsOpen.value = false
+  serviceTypeForm.value = {
+    shortName: { ...record.shortName },
+    fullName: { ...record.fullName },
+    diagnosisIds: [...record.diagnosisIds],
+    contraindicationIds: [...record.contraindicationIds],
+    status: record.status,
+  }
+  isServiceTypeDialogOpen.value = true
+}
+
+function viewServiceType(record: ServiceTypeRecord) {
+  selectedServiceTypeRecord.value = record
+  openServiceTypeActionMenuId.value = null
+}
+
+function closeServiceTypeViewDialog() {
+  selectedServiceTypeRecord.value = null
+}
+
+function saveServiceType() {
+  if (serviceTypeFormError.value) {
+    pushFeedback('error', serviceTypeFormError.value)
+    return
+  }
+
+  const payload = {
+    shortName: {
+      uzLatn: serviceTypeForm.value.shortName.uzLatn.trim(),
+      uzCyrl: serviceTypeForm.value.shortName.uzCyrl.trim(),
+      kaaLatn: serviceTypeForm.value.shortName.kaaLatn.trim(),
+      ru: serviceTypeForm.value.shortName.ru.trim(),
+    },
+    fullName: {
+      uzLatn: serviceTypeForm.value.fullName.uzLatn.trim(),
+      uzCyrl: serviceTypeForm.value.fullName.uzCyrl.trim(),
+      kaaLatn: serviceTypeForm.value.fullName.kaaLatn.trim(),
+      ru: serviceTypeForm.value.fullName.ru.trim(),
+    },
+    diagnosisIds: [...serviceTypeForm.value.diagnosisIds],
+    contraindicationIds: [...serviceTypeForm.value.contraindicationIds],
+    status: serviceTypeForm.value.status as ServiceTypeStatus,
+  }
+
+  if (editingServiceTypeId.value) {
+    const target = serviceTypes.value.find((record) => record.id === editingServiceTypeId.value)
+    if (!target) return
+
+    target.shortName = payload.shortName
+    target.fullName = payload.fullName
+    target.diagnosisIds = payload.diagnosisIds
+    target.contraindicationIds = payload.contraindicationIds
+    target.status = payload.status
+    pushFeedback('success', `${target.id} yangilandi.`)
+  } else {
+    const createdRecord: ServiceTypeRecord = {
+      id: nextServiceTypeId(),
+      date: nowLabel(),
+      ...payload,
+    }
+
+    serviceTypes.value.unshift(createdRecord)
+    pushFeedback('success', `${createdRecord.id} yaratildi.`)
+  }
+
+  closeServiceTypeDialog()
+}
+
+function requestDeleteServiceType(record: ServiceTypeRecord) {
+  openServiceTypeActionMenuId.value = null
+  openConfirmation({
+    tone: 'destructive',
+    title: "Xizmat turi o'chirilsinmi?",
+    description: `${record.id} ro'yxatdan o'chiriladi.`,
+    confirmLabel: "O'chirish",
+    action: () => deleteServiceType(record.id),
+  })
+}
+
+function deleteServiceType(recordId: string) {
+  serviceTypes.value = serviceTypes.value.filter((record) => record.id !== recordId)
+  pushFeedback('success', `${recordId} o'chirildi.`)
+}
+
+function handleServiceTypeSearchInput(value: string) {
+  serviceTypeSearchInput.value = value
+
+  if (serviceTypeSearchDebounceTimer) {
+    clearTimeout(serviceTypeSearchDebounceTimer)
+  }
+
+  serviceTypeSearchDebounceTimer = setTimeout(() => {
+    serviceTypeSearchQuery.value = serviceTypeSearchInput.value
+    serviceTypeCurrentPage.value = 1
+    serviceTypeSearchDebounceTimer = null
+  }, 1000)
+}
+
+function goToServiceTypePage(page: number) {
+  if (page < 1 || page > serviceTypeTotalPages.value || page === serviceTypeCurrentPage.value) return
+  serviceTypeCurrentPage.value = page
+}
+
+function setServiceTypeRowsPerPageOpen(nextOpen: boolean) {
+  isServiceTypeRowsPerPageOpen.value = nextOpen
+}
+
+function setServiceTypeRowsPerPage(nextValue: number) {
+  serviceTypeRowsPerPage.value = nextValue
+  serviceTypeCurrentPage.value = 1
+}
+
+function setServiceTypeActionMenuOpen(recordId: string, nextOpen: boolean) {
+  openServiceTypeActionMenuId.value = nextOpen ? recordId : (openServiceTypeActionMenuId.value === recordId ? null : openServiceTypeActionMenuId.value)
+}
+
+type ServiceTypeDropdown = 'diagnoses' | 'contraindications' | 'status'
+
+function closeServiceTypeDropdowns(except?: ServiceTypeDropdown) {
+  if (except !== 'diagnoses') isServiceTypeDiagnosesOpen.value = false
+  if (except !== 'contraindications') isServiceTypeContraindicationsOpen.value = false
+  if (except !== 'status') isServiceTypeStatusOpen.value = false
+}
+
+function toggleServiceTypeDropdown(dropdown: ServiceTypeDropdown) {
+  const isOpening = dropdown === 'diagnoses'
+    ? !isServiceTypeDiagnosesOpen.value
+    : dropdown === 'contraindications'
+      ? !isServiceTypeContraindicationsOpen.value
+      : !isServiceTypeStatusOpen.value
+
+  closeServiceTypeDropdowns(isOpening ? dropdown : undefined)
+
+  if (dropdown === 'diagnoses') isServiceTypeDiagnosesOpen.value = isOpening
+  if (dropdown === 'contraindications') isServiceTypeContraindicationsOpen.value = isOpening
+  if (dropdown === 'status') isServiceTypeStatusOpen.value = isOpening
+}
+
+function toggleServiceTypeTranslations() {
+  closeServiceTypeDropdowns()
+  isServiceTypeTranslationsOpen.value = !isServiceTypeTranslationsOpen.value
+}
+
+function selectServiceTypeStatus(status: ServiceTypeStatus) {
+  serviceTypeForm.value.status = status
+  isServiceTypeStatusOpen.value = false
+}
+
+function toggleServiceTypeDiagnosis(diagnosisId: string) {
+  const selected = serviceTypeForm.value.diagnosisIds
+  serviceTypeForm.value.diagnosisIds = selected.includes(diagnosisId)
+    ? selected.filter((id) => id !== diagnosisId)
+    : [...selected, diagnosisId]
+}
+
+function toggleServiceTypeContraindication(contraindicationId: string) {
+  const selected = serviceTypeForm.value.contraindicationIds
+  serviceTypeForm.value.contraindicationIds = selected.includes(contraindicationId)
+    ? selected.filter((id) => id !== contraindicationId)
+    : [...selected, contraindicationId]
+}
+
+async function downloadServiceTypes() {
+  const xlsx = await import('xlsx')
+
+  const exportRows = filteredServiceTypes.value.map((record) => ({
+    ID: record.id,
+    Sana: formatDateDisplay(record.date),
+    'Qisqa nomi': record.shortName.uzLatn,
+    "To'liq nomi": record.fullName.uzLatn,
+    'Mos tashxislar': getServiceTypeDiagnoses(record).map(medicalReferenceLabel).join('; '),
+    "Qarshi ko'rsatmalar": getServiceTypeContraindications(record).map(medicalReferenceLabel).join('; '),
+    Status: record.status,
+  }))
+
+  const worksheet = xlsx.utils.json_to_sheet(exportRows)
+  const workbook = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Xizmat turlari')
+  xlsx.writeFile(workbook, 'iptk-xizmat-turlari.xlsx')
+}
+
+function nextDiagnosisId() {
+  const records = getActiveMedicalReferenceRecords().value
+  const prefix = isContraindicationsPage.value ? 'QK' : 'TASH'
+  const nextIndex = records.length + 1
+  return `${prefix}-2026-${String(nextIndex).padStart(3, '0')}`
+}
+
+function resetDiagnosisForm() {
+  editingDiagnosisId.value = null
+  isDiagnosisStatusOpen.value = false
+  isDiagnosisIcdOpen.value = false
+  isDiagnosisTranslationsOpen.value = false
+  diagnosisForm.value = createDiagnosisForm()
+}
+
+function openCreateDiagnosisDialog() {
+  resetDiagnosisForm()
+  isDiagnosisDialogOpen.value = true
+}
+
+function closeDiagnosisDialog() {
+  isDiagnosisDialogOpen.value = false
+  resetDiagnosisForm()
+}
+
+function editDiagnosis(record: DiagnosisRecord) {
+  editingDiagnosisId.value = record.id
+  openDiagnosisActionMenuId.value = null
+  isDiagnosisStatusOpen.value = false
+  isDiagnosisIcdOpen.value = false
+  isDiagnosisTranslationsOpen.value = false
+  diagnosisForm.value = {
+    shortName: { ...record.shortName },
+    fullName: { ...record.fullName },
+    icdCodes: [...record.icdCodes],
+    status: record.status,
+  }
+  isDiagnosisDialogOpen.value = true
+}
+
+function viewDiagnosis(record: DiagnosisRecord) {
+  selectedDiagnosisRecord.value = record
+  openDiagnosisActionMenuId.value = null
+}
+
+function closeDiagnosisViewDialog() {
+  selectedDiagnosisRecord.value = null
+}
+
+function saveDiagnosis() {
+  if (diagnosisFormError.value) {
+    pushFeedback('error', diagnosisFormError.value)
+    return
+  }
+
+  const payload = {
+    shortName: {
+      uzLatn: diagnosisForm.value.shortName.uzLatn.trim(),
+      uzCyrl: diagnosisForm.value.shortName.uzCyrl.trim(),
+      kaaLatn: diagnosisForm.value.shortName.kaaLatn.trim(),
+      ru: diagnosisForm.value.shortName.ru.trim(),
+    },
+    fullName: {
+      uzLatn: diagnosisForm.value.fullName.uzLatn.trim(),
+      uzCyrl: diagnosisForm.value.fullName.uzCyrl.trim(),
+      kaaLatn: diagnosisForm.value.fullName.kaaLatn.trim(),
+      ru: diagnosisForm.value.fullName.ru.trim(),
+    },
+    icdCodes: [...diagnosisForm.value.icdCodes],
+    status: diagnosisForm.value.status as ServiceTypeStatus,
+  }
+
+  if (editingDiagnosisId.value) {
+    const target = getActiveMedicalReferenceRecords().value.find((record) => record.id === editingDiagnosisId.value)
+    if (!target) return
+
+    target.shortName = payload.shortName
+    target.fullName = payload.fullName
+    target.icdCodes = payload.icdCodes
+    target.status = payload.status
+    pushFeedback('success', `${target.id} yangilandi.`)
+  } else {
+    const createdRecord: DiagnosisRecord = {
+      id: nextDiagnosisId(),
+      date: nowLabel(),
+      ...payload,
+    }
+
+    getActiveMedicalReferenceRecords().value.unshift(createdRecord)
+    pushFeedback('success', `${createdRecord.id} yaratildi.`)
+  }
+
+  closeDiagnosisDialog()
+}
+
+function requestDeleteDiagnosis(record: DiagnosisRecord) {
+  openDiagnosisActionMenuId.value = null
+  openConfirmation({
+    tone: 'destructive',
+    title: medicalReferenceDeleteTitle.value,
+    description: `${record.id} ro'yxatdan o'chiriladi.`,
+    confirmLabel: "O'chirish",
+    action: () => deleteDiagnosis(record.id),
+  })
+}
+
+function deleteDiagnosis(recordId: string) {
+  const records = getActiveMedicalReferenceRecords()
+  records.value = records.value.filter((record) => record.id !== recordId)
+  pushFeedback('success', `${recordId} o'chirildi.`)
+}
+
+function toggleDiagnosisIcdCode(code: string) {
+  if (diagnosisForm.value.icdCodes.includes(code)) {
+    diagnosisForm.value.icdCodes = diagnosisForm.value.icdCodes.filter((item) => item !== code)
+    return
+  }
+
+  diagnosisForm.value.icdCodes = [...diagnosisForm.value.icdCodes, code]
+}
+
+type DiagnosisDropdown = 'icd' | 'status'
+
+function closeDiagnosisDropdowns(except?: DiagnosisDropdown) {
+  if (except !== 'icd') isDiagnosisIcdOpen.value = false
+  if (except !== 'status') isDiagnosisStatusOpen.value = false
+}
+
+function toggleDiagnosisDropdown(dropdown: DiagnosisDropdown) {
+  const isOpening = dropdown === 'icd'
+    ? !isDiagnosisIcdOpen.value
+    : !isDiagnosisStatusOpen.value
+
+  closeDiagnosisDropdowns(isOpening ? dropdown : undefined)
+
+  if (dropdown === 'icd') isDiagnosisIcdOpen.value = isOpening
+  if (dropdown === 'status') isDiagnosisStatusOpen.value = isOpening
+}
+
+function toggleDiagnosisTranslations() {
+  closeDiagnosisDropdowns()
+  isDiagnosisTranslationsOpen.value = !isDiagnosisTranslationsOpen.value
+}
+
+function selectDiagnosisStatus(status: ServiceTypeStatus) {
+  diagnosisForm.value.status = status
+  isDiagnosisStatusOpen.value = false
+}
+
+function handleDiagnosisSearchInput(value: string) {
+  diagnosisSearchInput.value = value
+
+  if (diagnosisSearchDebounceTimer) {
+    clearTimeout(diagnosisSearchDebounceTimer)
+  }
+
+  diagnosisSearchDebounceTimer = setTimeout(() => {
+    diagnosisSearchQuery.value = diagnosisSearchInput.value
+    diagnosisCurrentPage.value = 1
+    diagnosisSearchDebounceTimer = null
+  }, 1000)
+}
+
+function goToDiagnosisPage(page: number) {
+  if (page < 1 || page > diagnosisTotalPages.value || page === diagnosisCurrentPage.value) return
+  diagnosisCurrentPage.value = page
+}
+
+function setDiagnosisRowsPerPageOpen(nextOpen: boolean) {
+  isDiagnosisRowsPerPageOpen.value = nextOpen
+}
+
+function setDiagnosisRowsPerPage(nextValue: number) {
+  diagnosisRowsPerPage.value = nextValue
+  diagnosisCurrentPage.value = 1
+}
+
+function setDiagnosisActionMenuOpen(recordId: string, nextOpen: boolean) {
+  openDiagnosisActionMenuId.value = nextOpen ? recordId : (openDiagnosisActionMenuId.value === recordId ? null : openDiagnosisActionMenuId.value)
+}
+
+async function downloadDiagnoses() {
+  const xlsx = await import('xlsx')
+
+  const exportRows = filteredDiagnoses.value.map((record) => ({
+    ID: record.id,
+    Sana: formatDateDisplay(record.date),
+    'Qisqa nomi': record.shortName.uzLatn,
+    "To'liq nomi": record.fullName.uzLatn,
+    'ICD-10 kodlari': record.icdCodes.join(', '),
+    Status: record.status,
+  }))
+
+  const worksheet = xlsx.utils.json_to_sheet(exportRows)
+  const workbook = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(workbook, worksheet, medicalReferenceSheetName.value)
+  xlsx.writeFile(workbook, medicalReferenceExportName.value)
+}
+
 watch(formRegion, (nextRegion, previousRegion) => {
   if (isHydratingEditForm || !nextRegion || nextRegion === previousRegion) {
     return
@@ -1470,16 +2424,46 @@ watch(totalPages, (nextTotal) => {
   }
 })
 
+watch(serviceTypeTotalPages, (nextTotal) => {
+  if (serviceTypeCurrentPage.value > nextTotal) {
+    serviceTypeCurrentPage.value = nextTotal
+  }
+})
+
+watch(diagnosisTotalPages, (nextTotal) => {
+  if (diagnosisCurrentPage.value > nextTotal) {
+    diagnosisCurrentPage.value = nextTotal
+  }
+})
+
+watch(() => props.pageKey, () => {
+  runTableLoading(() => {})
+}, { immediate: true })
+
+watch(isAnyDialogOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
+}, { immediate: true })
+
 onUnmounted(() => {
   clearNotificationTimers()
+  document.body.style.overflow = ''
 
   if (searchDebounceTimer) {
     clearTimeout(searchDebounceTimer)
   }
 
+  if (serviceTypeSearchDebounceTimer) {
+    clearTimeout(serviceTypeSearchDebounceTimer)
+  }
+
+  if (diagnosisSearchDebounceTimer) {
+    clearTimeout(diagnosisSearchDebounceTimer)
+  }
+
   if (loadingTimer) {
     clearTimeout(loadingTimer)
   }
+
 })
 </script>
 
@@ -1535,44 +2519,6 @@ onUnmounted(() => {
       </div>
 
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
-        <div
-          v-if="isTableLoading"
-          class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-background/70 backdrop-blur-sm"
-        >
-          <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
-            <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-            <span>Yuklanmoqda...</span>
-          </div>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <Card
-            v-for="card in commissionStatusCards"
-            :key="card.id"
-            :class="card.tone"
-          >
-            <CardContent class="space-y-2 pt-4">
-              <div class="flex items-start justify-between gap-3">
-                <div class="flex items-center gap-2">
-                  <span
-                    :class="['h-2.5 w-2.5 rounded-full', card.badge]"
-                  />
-                  <p class="text-xs font-medium text-muted-foreground">
-                    {{ card.title }}
-                  </p>
-                </div>
-                <p class="text-lg font-semibold tracking-tight text-foreground">
-                  {{ card.value }}
-                </p>
-              </div>
-              <div class="flex items-center justify-between border-t border-border pt-2 text-xs">
-                <span class="text-muted-foreground">Ulushi</span>
-                <span class="font-medium text-foreground">{{ card.share }}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1981,7 +2927,16 @@ onUnmounted(() => {
 
         <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
           <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
-            <div class="flex-1 xl:hidden">
+            <div class="relative flex-1 xl:hidden">
+              <div
+                v-if="isTableLoading"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+              >
+                <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                  <span>Yuklanmoqda...</span>
+                </div>
+              </div>
               <div
                 v-if="paginatedCommissions.length === 0"
                 class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
@@ -2148,7 +3103,16 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+              <div
+                v-if="isTableLoading"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+              >
+                <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                  <span>Yuklanmoqda...</span>
+                </div>
+              </div>
               <table class="min-w-[1380px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
@@ -2383,10 +3347,10 @@ onUnmounted(() => {
 
       <div
         v-if="selectedViewRecord"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
         @click.self="closeViewDialog"
       >
-        <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-[28px] border border-border bg-background shadow-2xl">
+        <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
@@ -2546,10 +3510,10 @@ onUnmounted(() => {
 
       <div
         v-if="isCreateDialogOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
         @click.self="closeCreateDialog"
       >
-        <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[28px] border border-border bg-background shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
@@ -3054,6 +4018,1140 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+    </template>
+
+    <template v-else-if="isServiceTypesPage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div class="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-lg bg-transparent">
+          <div
+            :class="[
+              'h-full transition-[width] duration-200 ease-out',
+              feedback.type === 'success' && 'bg-emerald-500',
+              feedback.type === 'error' && 'bg-rose-500',
+              feedback.type === 'info' && 'bg-sky-500',
+            ]"
+            :style="{ width: `${notificationProgress}%` }"
+          />
+        </div>
+        <div
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedbackTitleMap[feedback.type] }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="serviceTypeSearchInput"
+              class="pl-9"
+              placeholder="Qidirish"
+              @update:model-value="handleServiceTypeSearchInput(String($event ?? ''))"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              class="h-10 gap-2"
+              @click="openCreateServiceTypeDialog"
+            >
+              <Plus class="h-4 w-4" />
+              Yaratish
+            </Button>
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              @click="downloadServiceTypes"
+            >
+              <Download class="h-4 w-4" />
+              Yuklab olish
+            </Button>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>Yuklanmoqda...</span>
+              </div>
+            </div>
+            <table class="min-w-[980px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedServiceTypes.length === 0">
+                  <td
+                    colspan="6"
+                    class="border-b border-border px-4 py-12 text-center"
+                  >
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
+                      <p class="text-sm text-muted-foreground">Qidiruv shartlariga mos yozuv topilmadi.</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedServiceTypes"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setServiceTypeActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openServiceTypeActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="viewServiceType(record)"
+                          >
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="editServiceType(record)"
+                          >
+                            <Pencil class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                            @click="requestDeleteServiceType(record)"
+                          >
+                            <Trash2 class="h-4 w-4 shrink-0" />
+                            <span>O'chirish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-semibold text-foreground">{{ record.id }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ formatDateDisplay(record.date) }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="relative grid gap-3 p-3 xl:hidden">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>Yuklanmoqda...</span>
+              </div>
+            </div>
+            <Card
+              v-for="record in paginatedServiceTypes"
+              :key="record.id"
+              class="border-border"
+            >
+              <CardContent class="space-y-4 pt-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ID</p>
+                    <p class="mt-1 font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.date) }}</p>
+                  </div>
+                  <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                    {{ record.status }}
+                  </span>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
+                  <p class="mt-1 font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
+                  <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    @click="viewServiceType(record)"
+                  >
+                    <Eye class="h-4 w-4" />
+                    Ko'rish
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    @click="editServiceType(record)"
+                  >
+                    <Pencil class="h-4 w-4" />
+                    Tahrirlash
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2 text-destructive"
+                    @click="requestDeleteServiceType(record)"
+                  >
+                    <Trash2 class="h-4 w-4" />
+                    O'chirish
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border bg-card p-4 text-sm md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Qatorlar soni</span>
+                <DropdownMenuRoot @update:open="setServiceTypeRowsPerPageOpen">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isServiceTypeRowsPerPageOpen ? 'h-9 min-w-16 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-9 min-w-16'"
+                    >
+                      {{ serviceTypeRowsPerPage }}
+                      <ChevronDown class="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      side="top"
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 min-w-24 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @click="setServiceTypeRowsPerPage(option)"
+                      >
+                        {{ option }}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+              <span class="text-muted-foreground">
+                Sahifada:
+                <strong class="font-semibold text-foreground">
+                  {{ serviceTypePaginationRange.start }}-{{ serviceTypePaginationRange.end }} / {{ serviceTypeTotalRows }}
+                </strong>
+              </span>
+            </div>
+
+            <div class="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-9 w-9 p-0"
+                :disabled="serviceTypeCurrentPage === 1"
+                @click="goToServiceTypePage(1)"
+              >
+                <ChevronsLeft class="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-9 w-9 p-0"
+                :disabled="serviceTypeCurrentPage === 1"
+                @click="goToServiceTypePage(serviceTypeCurrentPage - 1)"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </Button>
+              <span class="min-w-16 text-center font-semibold text-foreground">{{ serviceTypeCurrentPageSummary }}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-9 w-9 p-0"
+                :disabled="serviceTypeCurrentPage === serviceTypeTotalPages"
+                @click="goToServiceTypePage(serviceTypeCurrentPage + 1)"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-9 w-9 p-0"
+                :disabled="serviceTypeCurrentPage === serviceTypeTotalPages"
+                @click="goToServiceTypePage(serviceTypeTotalPages)"
+              >
+                <ChevronsRight class="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="isServiceTypeDialogOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        @click.self="closeServiceTypeDialog"
+      >
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
+            <div>
+              <h2 class="text-lg font-semibold text-foreground">
+                {{ editingServiceTypeId ? 'Xizmat turini tahrirlash' : 'Xizmat turi yaratish' }}
+              </h2>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Asosiy nomlar majburiy, tarjimalar ixtiyoriy.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              @click="closeServiceTypeDialog"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="space-y-6 px-6 py-5">
+            <section class="space-y-4 rounded-2xl border border-border bg-card p-4">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Qisqa nomi</span>
+                  <Input
+                    v-model="serviceTypeForm.shortName.uzLatn"
+                    placeholder="Qisqa nomini kiriting"
+                  />
+                </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">To'liq nomi</span>
+                  <Input
+                    v-model="serviceTypeForm.fullName.uzLatn"
+                    placeholder="To'liq nomini kiriting"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                class="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+                @click="toggleServiceTypeTranslations"
+              >
+                <span>Tarjimalar (ixtiyoriy)</span>
+                <ChevronDown :class="['h-4 w-4 text-muted-foreground transition-transform', isServiceTypeTranslationsOpen && 'rotate-180']" />
+              </button>
+
+              <div v-if="isServiceTypeTranslationsOpen" class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                  <h4 class="text-sm font-semibold text-foreground">Qisqa nomi tarjimalari</h4>
+                  <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
+                    <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
+                    <Input v-model="serviceTypeForm.shortName[field.key]" placeholder="Ixtiyoriy" />
+                  </label>
+                </div>
+                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                  <h4 class="text-sm font-semibold text-foreground">To'liq nomi tarjimalari</h4>
+                  <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
+                    <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
+                    <Input v-model="serviceTypeForm.fullName[field.key]" placeholder="Ixtiyoriy" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Mos tashxislar</span>
+                <div class="relative">
+                  <button
+                    type="button"
+                    :class="[
+                      'flex min-h-10 w-full items-center justify-between gap-3 rounded-md border border-input bg-background px-3 py-2 text-left text-sm transition',
+                      isServiceTypeDiagnosesOpen && 'border-ring ring-2 ring-ring/20',
+                    ]"
+                    @click="toggleServiceTypeDropdown('diagnoses')"
+                  >
+                    <span class="flex flex-wrap gap-1.5">
+                      <span v-if="serviceTypeForm.diagnosisIds.length === 0" class="text-muted-foreground">Mos tashxislarni tanlang</span>
+                      <span
+                        v-for="record in getServiceTypeDiagnoses(serviceTypeForm)"
+                        :key="record.id"
+                        class="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
+                      >
+                        {{ record.shortName.uzLatn }}
+                      </span>
+                    </span>
+                    <ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div
+                    v-if="isServiceTypeDiagnosesOpen"
+                    class="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                  >
+                    <button
+                      v-for="record in diagnoses"
+                      :key="record.id"
+                      type="button"
+                      class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                      @click="toggleServiceTypeDiagnosis(record.id)"
+                    >
+                      <span>
+                        <span class="block font-semibold">{{ record.shortName.uzLatn }}</span>
+                        <span class="block text-xs text-muted-foreground">{{ record.fullName.uzLatn }}</span>
+                      </span>
+                      <Check v-if="serviceTypeForm.diagnosisIds.includes(record.id)" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Qarshi ko'rsatmalar</span>
+                <div class="relative">
+                  <button
+                    type="button"
+                    :class="[
+                      'flex min-h-10 w-full items-center justify-between gap-3 rounded-md border border-input bg-background px-3 py-2 text-left text-sm transition',
+                      isServiceTypeContraindicationsOpen && 'border-ring ring-2 ring-ring/20',
+                    ]"
+                    @click="toggleServiceTypeDropdown('contraindications')"
+                  >
+                    <span class="flex flex-wrap gap-1.5">
+                      <span v-if="serviceTypeForm.contraindicationIds.length === 0" class="text-muted-foreground">Qarshi ko'rsatmalarni tanlang</span>
+                      <span
+                        v-for="record in getServiceTypeContraindications(serviceTypeForm)"
+                        :key="record.id"
+                        class="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
+                      >
+                        {{ record.shortName.uzLatn }}
+                      </span>
+                    </span>
+                    <ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div
+                    v-if="isServiceTypeContraindicationsOpen"
+                    class="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                  >
+                    <button
+                      v-for="record in contraindications"
+                      :key="record.id"
+                      type="button"
+                      class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                      @click="toggleServiceTypeContraindication(record.id)"
+                    >
+                      <span>
+                        <span class="block font-semibold">{{ record.shortName.uzLatn }}</span>
+                        <span class="block text-xs text-muted-foreground">{{ record.fullName.uzLatn }}</span>
+                      </span>
+                      <Check v-if="serviceTypeForm.contraindicationIds.includes(record.id)" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Status</span>
+              <div class="relative max-w-sm">
+                <button
+                  type="button"
+                  :class="[
+                    'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm transition',
+                    isServiceTypeStatusOpen && 'border-ring ring-2 ring-ring/20',
+                  ]"
+                  @click="toggleServiceTypeDropdown('status')"
+                >
+                  <span>{{ serviceTypeForm.status || 'Statusni tanlang' }}</span>
+                  <ChevronDown class="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div
+                  v-if="isServiceTypeStatusOpen"
+                  class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                >
+                  <button
+                    v-for="status in ['Faol', 'Nofaol'] as ServiceTypeStatus[]"
+                    :key="status"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    @click="selectServiceTypeStatus(status)"
+                  >
+                    <span>{{ status }}</span>
+                    <Check
+                      v-if="serviceTypeForm.status === status"
+                      class="h-4 w-4 text-primary"
+                    />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+              <p
+                v-if="serviceTypeFormError"
+                class="text-sm text-rose-600"
+              >
+                {{ serviceTypeFormError }}
+              </p>
+              <p
+                v-else
+                class="text-sm text-muted-foreground"
+              >
+                Barcha ma'lumotlar to'ldirildi.
+              </p>
+
+              <div class="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  @click="resetServiceTypeForm"
+                >
+                  Tozalash
+                </Button>
+                <Button
+                  :disabled="!canSaveServiceType"
+                  @click="saveServiceType"
+                >
+                  Saqlash
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedServiceTypeRecord"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        @click.self="closeServiceTypeViewDialog"
+      >
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
+            <div>
+              <h2 class="text-lg font-semibold text-foreground">{{ selectedServiceTypeRecord.id }}</h2>
+              <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(selectedServiceTypeRecord.date) }}</p>
+            </div>
+            <button
+              type="button"
+              class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              @click="closeServiceTypeViewDialog"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+          <div class="space-y-5 px-6 py-5">
+            <div>
+              <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[selectedServiceTypeRecord.status]]">
+                {{ selectedServiceTypeRecord.status }}
+              </span>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Qisqa nomi</h3>
+                <div class="mt-4 divide-y divide-border text-sm">
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">O'zbek lotin</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.shortName.uzLatn }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">O'zbek kirill</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.shortName.uzCyrl }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">Qoraqalpoq lotin</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.shortName.kaaLatn }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">Rus tili</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.shortName.ru }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">To'liq nomi</h3>
+                <div class="mt-4 divide-y divide-border text-sm">
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">O'zbek lotin</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.fullName.uzLatn }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">O'zbek kirill</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.fullName.uzCyrl }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">Qoraqalpoq lotin</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.fullName.kaaLatn }}</span>
+                  </div>
+                  <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">Rus tili</span>
+                    <span class="font-medium text-foreground">{{ selectedServiceTypeRecord.fullName.ru }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Mos tashxislar</h3>
+                <div class="mt-4 space-y-2">
+                  <div
+                    v-for="record in getServiceTypeDiagnoses(selectedServiceTypeRecord)"
+                    :key="record.id"
+                    class="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.fullName.uzLatn }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Qarshi ko'rsatmalar</h3>
+                <div class="mt-4 space-y-2">
+                  <div
+                    v-for="record in getServiceTypeContraindications(selectedServiceTypeRecord)"
+                    :key="record.id"
+                    class="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  >
+                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.fullName.uzLatn }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        :open="Boolean(pendingConfirmation)"
+        :tone="pendingConfirmation?.tone"
+        :title="pendingConfirmation?.title ?? ''"
+        :description="pendingConfirmation?.description ?? ''"
+        :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        @close="closeConfirmation"
+        @confirm="confirmPendingAction"
+      />
+    </template>
+
+    <template v-else-if="isMedicalReferencePage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div class="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-lg bg-transparent">
+          <div
+            :class="[
+              'h-full transition-[width] duration-200 ease-out',
+              feedback.type === 'success' && 'bg-emerald-500',
+              feedback.type === 'error' && 'bg-rose-500',
+              feedback.type === 'info' && 'bg-sky-500',
+            ]"
+            :style="{ width: `${notificationProgress}%` }"
+          />
+        </div>
+        <div
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedbackTitleMap[feedback.type] }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="diagnosisSearchInput"
+              class="pl-9"
+              placeholder="Qidirish"
+              @update:model-value="handleDiagnosisSearchInput(String($event ?? ''))"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              class="h-10 gap-2"
+              @click="openCreateDiagnosisDialog"
+            >
+              <Plus class="h-4 w-4" />
+              Yaratish
+            </Button>
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              @click="downloadDiagnoses"
+            >
+              <Download class="h-4 w-4" />
+              Yuklab olish
+            </Button>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>Yuklanmoqda...</span>
+              </div>
+            </div>
+            <table class="min-w-[1040px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedDiagnoses.length === 0">
+                  <td
+                    colspan="6"
+                    class="border-b border-border px-4 py-12 text-center"
+                  >
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
+                      <p class="text-sm text-muted-foreground">Qidiruv shartlariga mos yozuv topilmadi.</p>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedDiagnoses"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setDiagnosisActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openDiagnosisActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewDiagnosis(record)">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editDiagnosis(record)">
+                            <Pencil class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestDeleteDiagnosis(record)">
+                            <Trash2 class="h-4 w-4 shrink-0" />
+                            <span>O'chirish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-semibold text-foreground">{{ record.id }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">{{ formatDateDisplay(record.date) }}</td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="relative grid gap-3 p-3 xl:hidden">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>Yuklanmoqda...</span>
+              </div>
+            </div>
+            <Card
+              v-for="record in paginatedDiagnoses"
+              :key="record.id"
+              class="border-border"
+            >
+              <CardContent class="space-y-4 pt-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ID</p>
+                    <p class="mt-1 font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.date) }}</p>
+                  </div>
+                  <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">{{ record.status }}</span>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
+                  <p class="mt-1 font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
+                  <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border bg-card p-4 text-sm md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Qatorlar soni</span>
+                <DropdownMenuRoot @update:open="setDiagnosisRowsPerPageOpen">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isDiagnosisRowsPerPageOpen ? 'h-9 min-w-16 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-9 min-w-16'"
+                    >
+                      {{ diagnosisRowsPerPage }}
+                      <ChevronDown class="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent side="top" align="start" :side-offset="6" class="z-50 min-w-24 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none">
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @click="setDiagnosisRowsPerPage(option)"
+                      >
+                        {{ option }}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+              <span class="text-muted-foreground">
+                Sahifada:
+                <strong class="font-semibold text-foreground">{{ diagnosisPaginationRange.start }}-{{ diagnosisPaginationRange.end }} / {{ diagnosisTotalRows }}</strong>
+              </span>
+            </div>
+            <div class="flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" class="h-9 w-9 p-0" :disabled="diagnosisCurrentPage === 1" @click="goToDiagnosisPage(1)">
+                <ChevronsLeft class="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" class="h-9 w-9 p-0" :disabled="diagnosisCurrentPage === 1" @click="goToDiagnosisPage(diagnosisCurrentPage - 1)">
+                <ChevronLeft class="h-4 w-4" />
+              </Button>
+              <span class="min-w-16 text-center font-semibold text-foreground">{{ diagnosisCurrentPageSummary }}</span>
+              <Button variant="outline" size="sm" class="h-9 w-9 p-0" :disabled="diagnosisCurrentPage === diagnosisTotalPages" @click="goToDiagnosisPage(diagnosisCurrentPage + 1)">
+                <ChevronRight class="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" class="h-9 w-9 p-0" :disabled="diagnosisCurrentPage === diagnosisTotalPages" @click="goToDiagnosisPage(diagnosisTotalPages)">
+                <ChevronsRight class="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="isDiagnosisDialogOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        @click.self="closeDiagnosisDialog"
+      >
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
+            <div>
+              <h2 class="text-lg font-semibold text-foreground">{{ editingDiagnosisId ? medicalReferenceEditTitle : medicalReferenceCreateTitle }}</h2>
+              <p class="mt-1 text-sm text-muted-foreground">Asosiy nomlar va ICD-10 kodlari majburiy, tarjimalar ixtiyoriy.</p>
+            </div>
+            <button type="button" class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground" @click="closeDiagnosisDialog">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="space-y-6 px-6 py-5">
+            <section class="space-y-4 rounded-2xl border border-border bg-card p-4">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Qisqa nomi</span>
+                  <Input v-model="diagnosisForm.shortName.uzLatn" placeholder="Qisqa nomini kiriting" />
+                </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">To'liq nomi</span>
+                  <Input v-model="diagnosisForm.fullName.uzLatn" placeholder="To'liq nomini kiriting" />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                class="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+                @click="toggleDiagnosisTranslations"
+              >
+                <span>Tarjimalar (ixtiyoriy)</span>
+                <ChevronDown :class="['h-4 w-4 text-muted-foreground transition-transform', isDiagnosisTranslationsOpen && 'rotate-180']" />
+              </button>
+
+              <div v-if="isDiagnosisTranslationsOpen" class="grid gap-4 md:grid-cols-2">
+                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                  <h4 class="text-sm font-semibold text-foreground">Qisqa nomi tarjimalari</h4>
+                  <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
+                    <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
+                    <Input v-model="diagnosisForm.shortName[field.key]" placeholder="Ixtiyoriy" />
+                  </label>
+                </div>
+                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                  <h4 class="text-sm font-semibold text-foreground">To'liq nomi tarjimalari</h4>
+                  <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
+                    <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
+                    <Input v-model="diagnosisForm.fullName[field.key]" placeholder="Ixtiyoriy" />
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-2">
+                <span class="text-sm font-medium text-foreground">ICD-10 kodlari</span>
+                <div class="relative">
+                  <button
+                    type="button"
+                    :class="[
+                      'flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm transition',
+                      isDiagnosisIcdOpen && 'border-ring ring-2 ring-ring/20',
+                    ]"
+                    @click="toggleDiagnosisDropdown('icd')"
+                  >
+                    <span class="flex flex-wrap gap-1.5">
+                      <span v-if="diagnosisForm.icdCodes.length === 0" class="text-muted-foreground">ICD-10 kodlarini tanlang</span>
+                      <span
+                        v-for="code in diagnosisForm.icdCodes"
+                        :key="code"
+                        class="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
+                      >
+                        {{ code }}
+                      </span>
+                    </span>
+                    <ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div
+                    v-if="isDiagnosisIcdOpen"
+                    class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                  >
+                    <button
+                      v-for="code in icdCodeOptions"
+                      :key="code"
+                      type="button"
+                      class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                      @click="toggleDiagnosisIcdCode(code)"
+                    >
+                      <span>{{ code }}</span>
+                      <Check v-if="diagnosisForm.icdCodes.includes(code)" class="h-4 w-4 text-primary" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Status</span>
+                <div class="relative">
+                  <button
+                    type="button"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 text-left text-sm transition',
+                      isDiagnosisStatusOpen && 'border-ring ring-2 ring-ring/20',
+                    ]"
+                    @click="toggleDiagnosisDropdown('status')"
+                  >
+                    <span>{{ diagnosisForm.status || 'Statusni tanlang' }}</span>
+                    <ChevronDown class="h-4 w-4 text-muted-foreground" />
+                  </button>
+                  <div v-if="isDiagnosisStatusOpen" class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
+                    <button
+                      v-for="status in ['Faol', 'Nofaol'] as ServiceTypeStatus[]"
+                      :key="status"
+                      type="button"
+                      class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                      @click="selectDiagnosisStatus(status)"
+                    >
+                      <span>{{ status }}</span>
+                      <Check v-if="diagnosisForm.status === status" class="h-4 w-4 text-primary" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+              <p v-if="diagnosisFormError" class="text-sm text-rose-600">{{ diagnosisFormError }}</p>
+              <p v-else class="text-sm text-muted-foreground">Barcha ma'lumotlar to'ldirildi.</p>
+              <div class="flex items-center gap-3">
+                <Button variant="outline" @click="resetDiagnosisForm">Tozalash</Button>
+                <Button :disabled="!canSaveDiagnosis" @click="saveDiagnosis">Saqlash</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedDiagnosisRecord"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        @click.self="closeDiagnosisViewDialog"
+      >
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
+            <div>
+              <h2 class="text-lg font-semibold text-foreground">{{ selectedDiagnosisRecord.id }}</h2>
+              <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(selectedDiagnosisRecord.date) }}</p>
+            </div>
+            <button type="button" class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground" @click="closeDiagnosisViewDialog">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+          <div class="space-y-5 px-6 py-5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[selectedDiagnosisRecord.status]]">{{ selectedDiagnosisRecord.status }}</span>
+              <span
+                v-for="code in selectedDiagnosisRecord.icdCodes"
+                :key="code"
+                class="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold text-foreground"
+              >
+                {{ code }}
+              </span>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Qisqa nomi</h3>
+                <div class="mt-4 divide-y divide-border text-sm">
+                  <div v-for="field in localizedLanguageFields" :key="field.key" class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">{{ field.label }}</span>
+                    <span class="font-medium text-foreground">{{ selectedDiagnosisRecord.shortName[field.key] }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">To'liq nomi</h3>
+                <div class="mt-4 divide-y divide-border text-sm">
+                  <div v-for="field in localizedLanguageFields" :key="field.key" class="grid grid-cols-[150px_1fr] gap-3 py-2">
+                    <span class="text-muted-foreground">{{ field.label }}</span>
+                    <span class="font-medium text-foreground">{{ selectedDiagnosisRecord.fullName[field.key] }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        :open="Boolean(pendingConfirmation)"
+        :tone="pendingConfirmation?.tone"
+        :title="pendingConfirmation?.title ?? ''"
+        :description="pendingConfirmation?.description ?? ''"
+        :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        @close="closeConfirmation"
+        @confirm="confirmPendingAction"
+      />
     </template>
 
     <SectionBlock

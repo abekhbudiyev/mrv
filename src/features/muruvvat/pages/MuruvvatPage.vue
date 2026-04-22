@@ -136,33 +136,6 @@ const page = computed(() => getMuruvvatPage(props.pageKey))
 const isApplicationsListPage = computed(() => props.pageKey === 'applications-list')
 const isIptkApplicationsListPage = computed(() => isApplicationsListPage.value && route.meta.moduleKey === 'iptk')
 
-const applicationStatusCardMeta = [
-  {
-    id: 'total',
-    title: 'Jami arizalar',
-    tone: 'border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40',
-    badge: 'bg-slate-600',
-  },
-  {
-    id: 'in-progress',
-    title: 'Jarayonda',
-    tone: 'border-amber-200 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/20',
-    badge: 'bg-amber-500',
-  },
-  {
-    id: 'approved',
-    title: 'Tasdiqlangan',
-    tone: 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20',
-    badge: 'bg-emerald-600',
-  },
-  {
-    id: 'rejected',
-    title: 'Bekor qilingan',
-    tone: 'border-rose-200 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/20',
-    badge: 'bg-rose-600',
-  },
-] as const
-
 const statusStyles = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
@@ -774,6 +747,12 @@ const filterAnchorRef = ref<HTMLElement | null>(null)
 const paginationRef = ref<HTMLElement | null>(null)
 const desktopFilterMaxHeight = ref<number | null>(null)
 const isCreateDialogOpen = ref(false)
+const isAnyDialogOpen = computed(() => (
+  Boolean(pendingConfirmation.value)
+  || Boolean(selectedViewRow.value)
+  || isIptkFlowDialogOpen.value
+  || isCreateDialogOpen.value
+))
 const applicantPinflInput = ref('')
 const applicantLookupResult = ref<ApplicantLookupResult | null>(null)
 const applicantLookupError = ref('')
@@ -1991,37 +1970,6 @@ function clearSearchAndFilters() {
 
 const totalRows = computed(() => filteredRows.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
-const applicationStatusCards = computed(() => {
-  const total = filteredRows.value.length
-  const inProgress = filteredRows.value.filter((row) => row.status === 'Jarayonda').length
-  const approved = filteredRows.value.filter((row) => row.status === 'Tasdiqlangan').length
-  const rejected = filteredRows.value.filter((row) => row.status === 'Bekor qilingan').length
-
-  const formatShare = (count: number) => {
-    if (total === 0) {
-      return '0%'
-    }
-
-    return `${Math.round((count / total) * 100)}%`
-  }
-
-  return applicationStatusCardMeta.map((card) => {
-    const countMap = {
-      total,
-      'in-progress': inProgress,
-      approved,
-      rejected,
-    } as const
-
-    const value = countMap[card.id]
-
-    return {
-      ...card,
-      value: String(value),
-      share: card.id === 'total' ? '100%' : formatShare(value),
-    }
-  })
-})
 const paginatedRows = computed(() => {
   const start = (currentPage.value - 1) * selectedRowsPerPage.value
   const end = start + selectedRowsPerPage.value
@@ -2661,6 +2609,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   delete (window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick
+  document.body.style.overflow = ''
 
   if (loadingTimer) {
     clearTimeout(loadingTimer)
@@ -2694,6 +2643,14 @@ watch(isFiltersOpen, async (nextOpen) => {
   updateDesktopFilterMaxHeight()
 })
 
+watch(() => props.pageKey, () => {
+  runTableLoading(() => {})
+})
+
+watch(isAnyDialogOpen, (isOpen) => {
+  document.body.style.overflow = isOpen ? 'hidden' : ''
+}, { immediate: true })
+
 watch(isIptkFlowDialogOpen, async (nextOpen) => {
   if (!nextOpen) {
     iptkFlowMermaidSvg.value = ''
@@ -2725,7 +2682,7 @@ watch(serviceRecipientLookupResult, () => {
     <div class="relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col xl:min-h-0">
       <div
         v-if="pendingConfirmation"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
       >
         <div class="w-full max-w-md rounded-xl border border-border bg-card p-5">
           <div class="flex items-start gap-3">
@@ -2764,7 +2721,7 @@ watch(serviceRecipientLookupResult, () => {
 
       <div
         v-if="selectedViewRow && selectedViewDetail"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
         @click.self="closeViewDialog"
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
@@ -2973,7 +2930,7 @@ watch(serviceRecipientLookupResult, () => {
 
       <div
         v-if="isIptkFlowDialogOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-background/55 p-4 backdrop-blur-sm"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
         @click.self="closeIptkFlowDialog"
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
@@ -3387,16 +3344,6 @@ watch(serviceRecipientLookupResult, () => {
         </button>
       </div>
 
-      <div
-        v-if="isTableLoading"
-        class="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-sm"
-      >
-        <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
-          <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-          <span>Yuklanmoqda...</span>
-        </div>
-      </div>
-
       <SectionBlock
         :class="isApplicationsListPage
           ? 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible'
@@ -3408,34 +3355,6 @@ watch(serviceRecipientLookupResult, () => {
         :description="page.sectionDescription ?? ''"
       >
         <template v-if="isApplicationsListPage">
-          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Card
-              v-for="card in applicationStatusCards"
-              :key="card.id"
-              :class="card.tone"
-            >
-              <CardContent class="space-y-2 pt-4">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="flex items-center gap-2">
-                    <span
-                      :class="['h-2.5 w-2.5 rounded-full', card.badge]"
-                    />
-                    <p class="text-xs font-medium text-muted-foreground">
-                      {{ card.title }}
-                    </p>
-                  </div>
-                  <p class="text-lg font-semibold tracking-tight text-foreground">
-                    {{ card.value }}
-                  </p>
-                </div>
-                <div class="flex items-center justify-between border-t border-border pt-2 text-xs">
-                  <span class="text-muted-foreground">Ulushi</span>
-                  <span class="font-medium text-foreground">{{ card.share }}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -3925,7 +3844,16 @@ watch(serviceRecipientLookupResult, () => {
 
           <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
             <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
-              <div class="flex-1 xl:hidden">
+              <div class="relative flex-1 xl:hidden">
+                <div
+                  v-if="isTableLoading"
+                  class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+                >
+                  <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
+                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                    <span>Yuklanmoqda...</span>
+                  </div>
+                </div>
                 <div
                   v-if="paginatedRows.length === 0"
                   class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
@@ -4079,7 +4007,16 @@ watch(serviceRecipientLookupResult, () => {
                 </div>
               </div>
 
-              <div class="hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+              <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+                <div
+                  v-if="isTableLoading"
+                  class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+                >
+                  <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
+                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                    <span>Yuklanmoqda...</span>
+                  </div>
+                </div>
                 <table class="min-w-[1260px] border-separate border-spacing-0 text-sm xl:min-w-full">
                   <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                     <tr>
@@ -4326,7 +4263,7 @@ watch(serviceRecipientLookupResult, () => {
 
   <div
     v-if="isCreateDialogOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-background/50 px-4 py-6 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
     @click.self="closeCreateDialog"
   >
     <div class="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
