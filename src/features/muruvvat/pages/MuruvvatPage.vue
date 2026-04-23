@@ -11,7 +11,13 @@ import {
 } from 'reka-ui'
 import { useRoute } from 'vue-router'
 import { getMuruvvatPage } from '@/features/muruvvat/config'
-import { allAssessmentQuestions, getAssessmentCategory, type AssessmentQuestion } from '@/features/muruvvat/assessment'
+import {
+  allAssessmentQuestions,
+  barthelAssessmentQuestions,
+  getAssessmentCategory,
+  lawtonAssessmentQuestions,
+  type AssessmentQuestion,
+} from '@/features/muruvvat/assessment'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
@@ -903,16 +909,16 @@ const selectedIptkQuestionnaireGuides = computed(() => {
 const selectedIptkAssessmentGuides = computed(() => {
   return iptkAssessmentGuides.filter((assessment) => assessment.stepIds.includes(selectedIptkFlowStepId.value))
 })
-const barthelQuestions = computed(() => allAssessmentQuestions.filter((question) => question.scale === 'barthel'))
-const lawtonQuestions = computed(() => allAssessmentQuestions.filter((question) => question.scale === 'lawton'))
+const barthelQuestions = barthelAssessmentQuestions
+const lawtonQuestions = lawtonAssessmentQuestions
 const assessmentBarthelTotal = computed(() => {
-  return barthelQuestions.value.reduce((total, question) => {
+  return barthelQuestions.reduce((total, question) => {
     const option = getAssessmentSelectedOption(question)
     return total + (option?.score ?? 0)
   }, 0)
 })
 const assessmentLawtonTotal = computed(() => {
-  return lawtonQuestions.value.reduce((total, question) => {
+  return lawtonQuestions.reduce((total, question) => {
     const option = getAssessmentSelectedOption(question)
     return total + (option?.score ?? 0)
   }, 0)
@@ -2763,6 +2769,18 @@ function openConfirmation(confirmation: PendingConfirmation) {
   pendingConfirmation.value = confirmation
 }
 
+function buildConfirmationCopy(
+  documentType: string,
+  actionTitleStem: string,
+  actionBodyName: string,
+  documentId: string,
+) {
+  return {
+    title: `${documentType} ${actionTitleStem}sinmi?`,
+    description: `${documentId} raqamli ${documentType.toLowerCase()} bo'yicha ${actionBodyName} amalini bajarishni tasdiqlang.`,
+  }
+}
+
 function closeConfirmation() {
   pendingConfirmation.value = null
 }
@@ -2819,10 +2837,11 @@ function canRejectApplication(row: ApplicationRow) {
 }
 
 function confirmApprove(row: ApplicationRow) {
+  const copy = buildConfirmationCopy('Ariza', 'tasdiqlan', 'tasdiqlash', row.id)
   openConfirmation({
     tone: 'success',
-    title: 'Tasdiqlashni tasdiqlang',
-    description: `${row.id} arizasini tasdiqlashni xohlaysizmi?`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: 'Tasdiqlash',
     action: () => {
       runTableLoading(() => {
@@ -2843,10 +2862,11 @@ function confirmStartAssessment(row: ApplicationRow) {
 }
 
 function confirmSendToIptk(row: ApplicationRow) {
+  const copy = buildConfirmationCopy('Ariza', 'IPTKga yuboril', 'IPTKga yuborish', row.id)
   openConfirmation({
     tone: 'success',
-    title: 'IPTKga yuborilsinmi?',
-    description: `${row.id} arizasi bevosita IPTKga yuboriladi.`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: 'IPTKga yuborish',
     action: () => {
       runTableLoading(() => {
@@ -2887,10 +2907,11 @@ function createAssessmentAndSendToIptk() {
 }
 
 function confirmReject(row: ApplicationRow) {
+  const copy = buildConfirmationCopy('Ariza', 'bekor qilin', 'bekor qilish', row.id)
   openConfirmation({
     tone: 'destructive',
-    title: 'Bekor qilishni tasdiqlang',
-    description: `${row.id} arizasini bekor qilishni xohlaysizmi?`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: 'Bekor qilish',
     action: () => {
       runTableLoading(() => {

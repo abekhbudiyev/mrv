@@ -123,6 +123,36 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/iptk/info/info-5',
+        name: 'iptk-info-5',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-5',
+        },
+        meta: {
+          title: "So'rovnoma shabloni",
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', "So'rovnoma shabloni"],
+        },
+      },
+      {
+        path: 'apps/iptk/info/info-6',
+        name: 'iptk-info-6',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-6',
+        },
+        meta: {
+          title: "Toifa guruhlari",
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', "Toifa guruhlari"],
+        },
+      },
+      {
         path: 'apps/iptk/applications/list',
         name: 'iptk-applications-list',
         component: MuruvvatPage,

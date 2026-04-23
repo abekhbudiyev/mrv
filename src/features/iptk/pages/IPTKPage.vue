@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from 'reka-ui'
 import { getIPTKPage } from '@/features/iptk/config'
+import { barthelAssessmentQuestions, lawtonAssessmentQuestions } from '@/features/muruvvat/assessment'
 import { cn } from '@/shared/lib/utils'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
@@ -121,6 +122,8 @@ interface ServiceTypeRecord {
   date: string
   shortName: LocalizedValue
   fullName: LocalizedValue
+  minAge: number
+  maxAge: number | null
   diagnosisIds: string[]
   contraindicationIds: string[]
   documentIds: string[]
@@ -130,6 +133,8 @@ interface ServiceTypeRecord {
 interface ServiceTypeForm {
   shortName: LocalizedValue
   fullName: LocalizedValue
+  minAge: string
+  maxAge: string
   diagnosisIds: string[]
   contraindicationIds: string[]
   documentIds: string[]
@@ -145,11 +150,59 @@ interface DiagnosisRecord {
   status: ServiceTypeStatus
 }
 
+interface QuestionnaireTemplateAnswer {
+  id: string
+  text: string
+  score: number
+}
+
+interface QuestionnaireTemplateQuestion {
+  id: string
+  text: string
+  answers: QuestionnaireTemplateAnswer[]
+}
+
+interface QuestionnaireTemplateGroup {
+  id: string
+  title: string
+  questions: QuestionnaireTemplateQuestion[]
+}
+
+interface QuestionnaireTemplateAnswerDraft {
+  id: string
+  text: string
+  score: string
+}
+
+interface QuestionnaireTemplateQuestionDraft {
+  id: string
+  text: string
+  answers: QuestionnaireTemplateAnswerDraft[]
+}
+
+interface QuestionnaireTemplateGroupDraft {
+  id: string
+  title: string
+  questions: QuestionnaireTemplateQuestionDraft[]
+}
+
+interface QuestionnaireTemplateRecord extends DiagnosisRecord {
+  questionGroups: QuestionnaireTemplateGroup[]
+}
+
+interface CategoryGroupRecord extends DiagnosisRecord {
+  minScore: number
+  maxScore: number
+}
+
 interface DiagnosisForm {
   shortName: LocalizedValue
   fullName: LocalizedValue
   icdCodes: string[]
   status: ServiceTypeStatus | ''
+  questionGroups: QuestionnaireTemplateGroupDraft[]
+  minScore: string
+  maxScore: string
 }
 
 const props = defineProps<{
@@ -163,7 +216,16 @@ const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
 const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
 const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
 const isDocumentsPage = computed(() => props.pageKey === 'info-4')
-const isMedicalReferencePage = computed(() => isDiagnosesPage.value || isContraindicationsPage.value || isDocumentsPage.value)
+const isQuestionnaireTemplatesPage = computed(() => props.pageKey === 'info-5')
+const isCategoryGroupsPage = computed(() => props.pageKey === 'info-6')
+const isMedicalReferencePage = computed(() => (
+  isDiagnosesPage.value
+  || isContraindicationsPage.value
+  || isDocumentsPage.value
+  || isQuestionnaireTemplatesPage.value
+  || isCategoryGroupsPage.value
+))
+const requiresMedicalReferenceIcd = computed(() => isDiagnosesPage.value || isContraindicationsPage.value)
 
 const regionOptions = [
   "Qoraqalpog'iston Respublikasi",
@@ -398,6 +460,8 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
       kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Huzur” orayına jaylastırıw',
       ru: 'Размещение лица с инвалидностью в центр «Хузур»',
     },
+    minAge: 18,
+    maxAge: null,
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
     documentIds: ['HUJ-2026-001', 'HUJ-2026-002', 'HUJ-2026-003', 'HUJ-2026-004', 'HUJ-2026-005'],
@@ -418,6 +482,8 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
       kaaLatn: 'Mayıplıǵı bolǵan shaxstı kishi kólemli “Madad” úyleri xızmetine jaylastırıw',
       ru: 'Размещение лица с инвалидностью в услугу домов малого объема «Мадад»',
     },
+    minAge: 18,
+    maxAge: null,
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
     documentIds: ['HUJ-2026-001', 'HUJ-2026-002', 'HUJ-2026-006', 'HUJ-2026-007', 'HUJ-2026-008', 'HUJ-2026-009', 'HUJ-2026-010', 'HUJ-2026-011', 'HUJ-2026-012', 'HUJ-2026-013', 'HUJ-2026-014', 'HUJ-2026-015', 'HUJ-2026-016', 'HUJ-2026-003', 'HUJ-2026-004', 'HUJ-2026-005'],
@@ -438,6 +504,8 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
       kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Áleumetlik dem alıs” qısqa múddetli jaylastırıw xızmetine jiberiw',
       ru: 'Направление лица с инвалидностью в краткосрочную услугу «Социальный отпуск»',
     },
+    minAge: 18,
+    maxAge: null,
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
     documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
@@ -458,6 +526,8 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
       kaaLatn: 'Mayıplıǵı bolǵan shaxstı úy sharayatında qarap turıw xızmetine jiberiw',
       ru: 'Направление лица с инвалидностью на услугу ухода на дому',
     },
+    minAge: 18,
+    maxAge: null,
     diagnosisIds: ['TASH-2026-004'],
     contraindicationIds: ['QK-2026-002', 'QK-2026-003'],
     documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
@@ -478,6 +548,8 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
       kaaLatn: 'Mayıplıǵı bolǵan shaxstı “Jańa kún” kúndizgi qarap turıw xızmetine jiberiw',
       ru: 'Направление лица с инвалидностью на дневную услугу ухода «Янги кун»',
     },
+    minAge: 18,
+    maxAge: null,
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
     documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
@@ -812,6 +884,141 @@ const documents = ref<DiagnosisRecord[]>([
   },
 ])
 
+const questionnaireTemplates = ref<QuestionnaireTemplateRecord[]>([
+  {
+    id: 'SOR-2026-001',
+    date: '2026-04-20 09:00',
+    shortName: {
+      uzLatn: 'Barthel va Lawton',
+      uzCyrl: 'Бартел ва Лоутон',
+      kaaLatn: 'Barthel hám Lawton',
+      ru: 'Бартел и Лоутон',
+    },
+    fullName: {
+      uzLatn: "Barthel va Lawton baholash so'rovnomasi shabloni",
+      uzCyrl: 'Бартел ва Лоутон баҳолаш сўровномаси шаблони',
+      kaaLatn: 'Barthel hám Lawton bahalaw sorawnaması shablonı',
+      ru: 'Шаблон опросника оценки Бартел и Лоутон',
+    },
+    icdCodes: [],
+    status: 'Faol',
+    questionGroups: createBarthelLawtonQuestionnaireGroups(),
+  },
+  {
+    id: 'SOR-2026-002',
+    date: '2026-04-20 09:10',
+    shortName: {
+      uzLatn: 'WHODAS',
+      uzCyrl: 'WHODAS',
+      kaaLatn: 'WHODAS',
+      ru: 'WHODAS',
+    },
+    fullName: {
+      uzLatn: 'WHODAS funksional holatni baholash so‘rovnomasi shabloni',
+      uzCyrl: 'WHODAS функционал ҳолатни баҳолаш сўровномаси шаблони',
+      kaaLatn: 'WHODAS funktsional jaǵdaydı bahalaw sorawnaması shablonı',
+      ru: 'Шаблон опросника оценки функционального состояния WHODAS',
+    },
+    icdCodes: [],
+    status: 'Faol',
+    questionGroups: [
+      {
+        id: crypto.randomUUID(),
+        title: 'Funktsional baholash',
+        questions: [
+          {
+            id: crypto.randomUUID(),
+            text: 'Harakatlanish darajasi',
+            answers: [
+              { id: crypto.randomUUID(), text: 'Yuqori', score: 5 },
+              { id: crypto.randomUUID(), text: "O'rta", score: 3 },
+              { id: crypto.randomUUID(), text: 'Past', score: 1 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'SOR-2026-003',
+    date: '2026-04-20 09:20',
+    shortName: {
+      uzLatn: 'PPS',
+      uzCyrl: 'PPS',
+      kaaLatn: 'PPS',
+      ru: 'PPS',
+    },
+    fullName: {
+      uzLatn: 'PPS palyativ funksional holat shkalasi shabloni',
+      uzCyrl: 'PPS паллиатив функционал ҳолат шкаласи шаблони',
+      kaaLatn: 'PPS palliyativ funktsional jaǵday shkalası shablonı',
+      ru: 'Шаблон шкалы паллиативного функционального состояния PPS',
+    },
+    icdCodes: [],
+    status: 'Faol',
+    questionGroups: [
+      {
+        id: crypto.randomUUID(),
+        title: 'Palyativ holat',
+        questions: [
+          {
+            id: crypto.randomUUID(),
+            text: 'Faollik darajasi',
+            answers: [
+              { id: crypto.randomUUID(), text: 'Faol', score: 100 },
+              { id: crypto.randomUUID(), text: 'Qisman cheklangan', score: 60 },
+              { id: crypto.randomUUID(), text: 'To‘liq qaram', score: 30 },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+])
+
+const categoryGroups = ref<CategoryGroupRecord[]>([
+  {
+    id: 'TOI-2026-001',
+    date: '2026-04-21 09:00',
+    shortName: {
+      uzLatn: 'Tezkor',
+      uzCyrl: 'Тезкор',
+      kaaLatn: 'Tezkor',
+      ru: 'Срочная',
+    },
+    fullName: {
+      uzLatn: "Tezkor toifa guruhi",
+      uzCyrl: 'Тезкор тоифа гуруҳи',
+      kaaLatn: 'Tezkor toifa toparı',
+      ru: 'Срочная категория',
+    },
+    icdCodes: [],
+    minScore: 0,
+    maxScore: 62,
+    status: 'Faol',
+  },
+  {
+    id: 'TOI-2026-002',
+    date: '2026-04-21 09:10',
+    shortName: {
+      uzLatn: 'Rejali',
+      uzCyrl: 'Режали',
+      kaaLatn: 'Rejeli',
+      ru: 'Плановая',
+    },
+    fullName: {
+      uzLatn: "Rejali toifa guruhi",
+      uzCyrl: 'Режали тоифа гуруҳи',
+      kaaLatn: 'Rejeli toifa toparı',
+      ru: 'Плановая категория',
+    },
+    icdCodes: [],
+    minScore: 63,
+    maxScore: 999,
+    status: 'Faol',
+  },
+])
+
 const isCreateDialogOpen = ref(false)
 const isFilterOpen = ref(false)
 const openFilterField = ref<'status' | 'region' | null>(null)
@@ -889,7 +1096,7 @@ const isDiagnosisStatusOpen = ref(false)
 const isDiagnosisIcdOpen = ref(false)
 const isDiagnosisTranslationsOpen = ref(false)
 const editingDiagnosisId = ref<string | null>(null)
-const selectedDiagnosisRecord = ref<DiagnosisRecord | null>(null)
+const selectedDiagnosisRecord = ref<DiagnosisRecord | QuestionnaireTemplateRecord | CategoryGroupRecord | null>(null)
 const diagnosisForm = ref<DiagnosisForm>(createDiagnosisForm())
 const isAnyDialogOpen = computed(() => (
   isCreateDialogOpen.value
@@ -1482,6 +1689,25 @@ const serviceTypeFormError = computed(() => {
     return "Qisqa nomi, to'liq nomi va status to'ldirilishi kerak."
   }
 
+  if (!serviceTypeForm.value.minAge.trim()) {
+    return "Minimal yosh kiritilishi kerak."
+  }
+
+  const minAge = Number(serviceTypeForm.value.minAge)
+  const maxAge = serviceTypeForm.value.maxAge.trim() ? Number(serviceTypeForm.value.maxAge) : null
+
+  if (!Number.isInteger(minAge) || minAge < 0) {
+    return "Minimal yosh manfiy bo'lmagan butun son bo'lishi kerak."
+  }
+
+  if (maxAge !== null && (!Number.isInteger(maxAge) || maxAge < 0)) {
+    return "Maksimal yosh manfiy bo'lmagan butun son bo'lishi kerak."
+  }
+
+  if (maxAge !== null && minAge > maxAge) {
+    return "Minimal yosh maksimal yoshdan katta bo'lishi mumkin emas."
+  }
+
   if (serviceTypeForm.value.diagnosisIds.length === 0) {
     return 'Kamida bitta mos tashxis tanlanishi kerak.'
   }
@@ -1534,22 +1760,101 @@ const serviceTypeCurrentPageSummary = computed(() => `${serviceTypeCurrentPage.v
 
 const medicalReferenceTitle = computed(() => {
   if (isDocumentsPage.value) return 'Hujjat'
+  if (isQuestionnaireTemplatesPage.value) return "So'rovnoma shabloni"
+  if (isCategoryGroupsPage.value) return 'Toifa guruhi'
   return isContraindicationsPage.value ? "Qarshi ko'rsatma" : 'Mos tashxis'
 })
 const medicalReferenceCreateTitle = computed(() => `${medicalReferenceTitle.value} yaratish`)
 const medicalReferenceEditTitle = computed(() => `${medicalReferenceTitle.value}ni tahrirlash`)
-const medicalReferenceDeleteTitle = computed(() => `${medicalReferenceTitle.value} o'chirilsinmi?`)
 const medicalReferenceExportName = computed(() => {
   if (isDocumentsPage.value) return 'iptk-hujjatlar.xlsx'
+  if (isQuestionnaireTemplatesPage.value) return 'iptk-sorovnoma-shablonlari.xlsx'
+  if (isCategoryGroupsPage.value) return 'iptk-toifa-guruhlari.xlsx'
   return isContraindicationsPage.value ? 'iptk-qarshi-korsatmalar.xlsx' : 'iptk-mos-tashxislar.xlsx'
 })
 const medicalReferenceSheetName = computed(() => {
   if (isDocumentsPage.value) return 'Hujjatlar'
+  if (isQuestionnaireTemplatesPage.value) return "So'rovnoma shablonlari"
+  if (isCategoryGroupsPage.value) return 'Toifa guruhlari'
   return isContraindicationsPage.value ? "Qarshi ko'rsatmalar" : 'Mos tashxislar'
 })
 
 function medicalReferenceLabel(record: DiagnosisRecord) {
   return `${record.shortName.uzLatn} - ${record.fullName.uzLatn}`
+}
+
+function isQuestionnaireTemplateRecord(
+  record: DiagnosisRecord | QuestionnaireTemplateRecord | CategoryGroupRecord,
+): record is QuestionnaireTemplateRecord {
+  return 'questionGroups' in record
+}
+
+function isCategoryGroupRecord(
+  record: DiagnosisRecord | QuestionnaireTemplateRecord | CategoryGroupRecord,
+): record is CategoryGroupRecord {
+  return 'minScore' in record && 'maxScore' in record
+}
+
+function cloneQuestionnaireGroups(
+  groups: QuestionnaireTemplateGroup[],
+): QuestionnaireTemplateGroupDraft[] {
+  return groups.map((group) => ({
+    id: group.id,
+    title: group.title,
+    questions: group.questions.map((question) => ({
+      id: question.id,
+      text: question.text,
+      answers: question.answers.map((answer) => ({
+        id: answer.id,
+        text: answer.text,
+        score: String(answer.score),
+      })),
+    })),
+  }))
+}
+
+function buildQuestionnaireGroupsPayload(
+  groups: QuestionnaireTemplateGroupDraft[],
+): QuestionnaireTemplateGroup[] {
+  return groups.map((group) => ({
+    id: group.id,
+    title: group.title.trim(),
+    questions: group.questions.map((question) => ({
+      id: question.id,
+      text: question.text.trim(),
+      answers: question.answers.map((answer) => ({
+        id: answer.id,
+        text: answer.text.trim(),
+        score: Number(answer.score),
+      })),
+    })),
+  }))
+}
+
+function mapAssessmentQuestionsToGroup(
+  title: string,
+  questions: Array<{ title: string, options: Array<{ label: string, score: number }> }>,
+): QuestionnaireTemplateGroup {
+  return {
+    id: crypto.randomUUID(),
+    title,
+    questions: questions.map((question) => ({
+      id: crypto.randomUUID(),
+      text: question.title,
+      answers: question.options.map((option) => ({
+        id: crypto.randomUUID(),
+        text: option.label,
+        score: option.score,
+      })),
+    })),
+  }
+}
+
+function createBarthelLawtonQuestionnaireGroups(): QuestionnaireTemplateGroup[] {
+  return [
+    mapAssessmentQuestionsToGroup('Elementar harakatlar', barthelAssessmentQuestions),
+    mapAssessmentQuestionsToGroup('Murakkab harakatlar', lawtonAssessmentQuestions),
+  ]
 }
 
 function resolveMedicalReference(ids: string[], records: DiagnosisRecord[]) {
@@ -1572,6 +1877,8 @@ function getServiceTypeDocuments(record: Pick<ServiceTypeRecord, 'documentIds'>)
 
 function getActiveMedicalReferenceRecords() {
   if (isDocumentsPage.value) return documents
+  if (isQuestionnaireTemplatesPage.value) return questionnaireTemplates
+  if (isCategoryGroupsPage.value) return categoryGroups
   return isContraindicationsPage.value ? contraindications : diagnoses
 }
 
@@ -1586,8 +1893,55 @@ const diagnosisFormError = computed(() => {
     return "Qisqa nomi, to'liq nomi va status to'ldirilishi kerak."
   }
 
-  if (!isDocumentsPage.value && diagnosisForm.value.icdCodes.length === 0) {
+  if (requiresMedicalReferenceIcd.value && diagnosisForm.value.icdCodes.length === 0) {
     return "Kamida bitta ICD-10 kodi tanlanishi kerak."
+  }
+
+  if (isCategoryGroupsPage.value) {
+    if (diagnosisForm.value.minScore === '' || diagnosisForm.value.maxScore === '') {
+      return "Minimal va maksimal ball kiritilishi kerak."
+    }
+
+    const minScore = Number(diagnosisForm.value.minScore)
+    const maxScore = Number(diagnosisForm.value.maxScore)
+
+    if (Number.isNaN(minScore) || Number.isNaN(maxScore)) {
+      return "Minimal va maksimal ball son bo'lishi kerak."
+    }
+
+    if (minScore > maxScore) {
+      return "Minimal ball maksimal balldan katta bo'lishi mumkin emas."
+    }
+  }
+
+  if (isQuestionnaireTemplatesPage.value) {
+    if (diagnosisForm.value.questionGroups.length === 0) {
+      return "Kamida bitta savollar guruhi qo'shilishi kerak."
+    }
+
+    const hasInvalidGroup = diagnosisForm.value.questionGroups.some((group) => {
+      if (!group.title.trim() || group.questions.length === 0) {
+        return true
+      }
+
+      return group.questions.some((question) => {
+        if (!question.text.trim() || question.answers.length === 0) {
+          return true
+        }
+
+        return question.answers.some((answer) => {
+          if (!answer.text.trim() || answer.score === '') {
+            return true
+          }
+
+          return Number.isNaN(Number(answer.score))
+        })
+      })
+    })
+
+    if (hasInvalidGroup) {
+      return "Savollar guruhi, savollar va javoblar to'liq kiritilishi kerak."
+    }
   }
 
   return ''
@@ -1609,6 +1963,8 @@ const filteredDiagnoses = computed(() => {
     formatDateDisplay(record.date),
     record.status,
     record.icdCodes.join(' '),
+    isCategoryGroupRecord(record) ? String(record.minScore) : '',
+    isCategoryGroupRecord(record) ? String(record.maxScore) : '',
     ...Object.values(record.shortName),
     ...Object.values(record.fullName),
   ].some((value) => value.toLowerCase().includes(query)))
@@ -2118,6 +2474,18 @@ function openConfirmation(confirmation: PendingConfirmation) {
   openActionMenuId.value = null
 }
 
+function buildConfirmationCopy(
+  documentType: string,
+  actionTitleStem: string,
+  actionBodyName: string,
+  documentId: string,
+) {
+  return {
+    title: `${documentType} ${actionTitleStem}sinmi?`,
+    description: `${documentId} raqamli ${documentType.toLowerCase()} bo'yicha ${actionBodyName} amalini bajarishni tasdiqlang.`,
+  }
+}
+
 function closeConfirmation() {
   pendingConfirmation.value = null
 }
@@ -2131,20 +2499,22 @@ function confirmPendingAction() {
 }
 
 function requestApproveCommission(record: CommissionRecord) {
+  const copy = buildConfirmationCopy('Hujjat', 'tasdiqlan', 'tasdiqlash', record.documentNumber)
   openConfirmation({
     tone: 'success',
-    title: 'Hujjat tasdiqlansinmi?',
-    description: `${record.documentNumber} tasdiqlangandan keyin faqat ko'rish mumkin bo'ladi.`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: 'Tasdiqlash',
     action: () => approveCommission(record.id),
   })
 }
 
 function requestRejectCommission(record: CommissionRecord) {
+  const copy = buildConfirmationCopy('Hujjat', 'bekor qilin', 'bekor qilish', record.documentNumber)
   openConfirmation({
     tone: 'destructive',
-    title: 'Hujjat rad etilsinmi?',
-    description: `${record.documentNumber} bekor qilingandan keyin uni qayta tahrirlash mumkin bo'ladi.`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: 'Bekor qilish',
     action: () => rejectCommission(record.id),
   })
@@ -2281,10 +2651,36 @@ function createServiceTypeForm(): ServiceTypeForm {
   return {
     shortName: createLocalizedValue(),
     fullName: createLocalizedValue(),
+    minAge: '18',
+    maxAge: '',
     diagnosisIds: [],
     contraindicationIds: [],
     documentIds: [],
     status: 'Faol',
+  }
+}
+
+function createQuestionnaireAnswerDraft(): QuestionnaireTemplateAnswerDraft {
+  return {
+    id: crypto.randomUUID(),
+    text: '',
+    score: '',
+  }
+}
+
+function createQuestionnaireQuestionDraft(): QuestionnaireTemplateQuestionDraft {
+  return {
+    id: crypto.randomUUID(),
+    text: '',
+    answers: [createQuestionnaireAnswerDraft()],
+  }
+}
+
+function createQuestionnaireGroupDraft(): QuestionnaireTemplateGroupDraft {
+  return {
+    id: crypto.randomUUID(),
+    title: '',
+    questions: [createQuestionnaireQuestionDraft()],
   }
 }
 
@@ -2294,6 +2690,9 @@ function createDiagnosisForm(): DiagnosisForm {
     fullName: createLocalizedValue(),
     icdCodes: [],
     status: 'Faol',
+    questionGroups: [createQuestionnaireGroupDraft()],
+    minScore: '',
+    maxScore: '',
   }
 }
 
@@ -2699,6 +3098,8 @@ function editServiceType(record: ServiceTypeRecord) {
   serviceTypeForm.value = {
     shortName: { ...record.shortName },
     fullName: { ...record.fullName },
+    minAge: String(record.minAge),
+    maxAge: record.maxAge === null ? '' : String(record.maxAge),
     diagnosisIds: [...record.diagnosisIds],
     contraindicationIds: [...record.contraindicationIds],
     documentIds: [...record.documentIds],
@@ -2735,6 +3136,8 @@ function saveServiceType() {
       kaaLatn: serviceTypeForm.value.fullName.kaaLatn.trim(),
       ru: serviceTypeForm.value.fullName.ru.trim(),
     },
+    minAge: Number(serviceTypeForm.value.minAge),
+    maxAge: serviceTypeForm.value.maxAge.trim() ? Number(serviceTypeForm.value.maxAge) : null,
     diagnosisIds: [...serviceTypeForm.value.diagnosisIds],
     contraindicationIds: [...serviceTypeForm.value.contraindicationIds],
     documentIds: [...serviceTypeForm.value.documentIds],
@@ -2747,6 +3150,8 @@ function saveServiceType() {
 
     target.shortName = payload.shortName
     target.fullName = payload.fullName
+    target.minAge = payload.minAge
+    target.maxAge = payload.maxAge
     target.diagnosisIds = payload.diagnosisIds
     target.contraindicationIds = payload.contraindicationIds
     target.documentIds = payload.documentIds
@@ -2768,10 +3173,11 @@ function saveServiceType() {
 
 function requestDeleteServiceType(record: ServiceTypeRecord) {
   openServiceTypeActionMenuId.value = null
+  const copy = buildConfirmationCopy('Xizmat turi', "o'chiril", "o'chirish", record.id)
   openConfirmation({
     tone: 'destructive',
-    title: "Xizmat turi o'chirilsinmi?",
-    description: `${record.id} ro'yxatdan o'chiriladi.`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: "O'chirish",
     action: () => deleteServiceType(record.id),
   })
@@ -2879,6 +3285,8 @@ async function downloadServiceTypes() {
     Sana: formatDateDisplay(record.date),
     'Qisqa nomi': record.shortName.uzLatn,
     "To'liq nomi": record.fullName.uzLatn,
+    'Minimal yosh': String(record.minAge),
+    'Maksimal yosh': record.maxAge === null ? '-' : String(record.maxAge),
     'Mos tashxislar': getServiceTypeDiagnoses(record).map(medicalReferenceLabel).join('; '),
     "Qarshi ko'rsatmalar": getServiceTypeContraindications(record).map(medicalReferenceLabel).join('; '),
     'Talab etiladigan hujjatlar': getServiceTypeDocuments(record).map(medicalReferenceLabel).join('; '),
@@ -2893,7 +3301,15 @@ async function downloadServiceTypes() {
 
 function nextDiagnosisId() {
   const records = getActiveMedicalReferenceRecords().value
-  const prefix = isDocumentsPage.value ? 'HUJ' : isContraindicationsPage.value ? 'QK' : 'TASH'
+  const prefix = isDocumentsPage.value
+    ? 'HUJ'
+    : isQuestionnaireTemplatesPage.value
+      ? 'SOR'
+      : isCategoryGroupsPage.value
+        ? 'TOI'
+      : isContraindicationsPage.value
+        ? 'QK'
+        : 'TASH'
   const nextIndex = records.length + 1
   return `${prefix}-2026-${String(nextIndex).padStart(3, '0')}`
 }
@@ -2927,6 +3343,11 @@ function editDiagnosis(record: DiagnosisRecord) {
     fullName: { ...record.fullName },
     icdCodes: [...record.icdCodes],
     status: record.status,
+    questionGroups: isQuestionnaireTemplateRecord(record)
+      ? cloneQuestionnaireGroups(record.questionGroups)
+      : [createQuestionnaireGroupDraft()],
+    minScore: isCategoryGroupRecord(record) ? String(record.minScore) : '',
+    maxScore: isCategoryGroupRecord(record) ? String(record.maxScore) : '',
   }
   isDiagnosisDialogOpen.value = true
 }
@@ -2961,6 +3382,9 @@ function saveDiagnosis() {
     },
     icdCodes: [...diagnosisForm.value.icdCodes],
     status: diagnosisForm.value.status as ServiceTypeStatus,
+    questionGroups: buildQuestionnaireGroupsPayload(diagnosisForm.value.questionGroups),
+    minScore: Number(diagnosisForm.value.minScore),
+    maxScore: Number(diagnosisForm.value.maxScore),
   }
 
   if (editingDiagnosisId.value) {
@@ -2971,13 +3395,44 @@ function saveDiagnosis() {
     target.fullName = payload.fullName
     target.icdCodes = payload.icdCodes
     target.status = payload.status
+    if (isQuestionnaireTemplateRecord(target)) {
+      target.questionGroups = payload.questionGroups
+    }
+    if (isCategoryGroupRecord(target)) {
+      target.minScore = payload.minScore
+      target.maxScore = payload.maxScore
+    }
     pushFeedback('success', `${target.id} yangilandi.`)
   } else {
-    const createdRecord: DiagnosisRecord = {
-      id: nextDiagnosisId(),
-      date: nowLabel(),
-      ...payload,
-    }
+    const createdRecord = isQuestionnaireTemplatesPage.value
+      ? {
+          id: nextDiagnosisId(),
+          date: nowLabel(),
+          shortName: payload.shortName,
+          fullName: payload.fullName,
+          icdCodes: [],
+          status: payload.status,
+          questionGroups: payload.questionGroups,
+        } satisfies QuestionnaireTemplateRecord
+      : isCategoryGroupsPage.value
+        ? {
+            id: nextDiagnosisId(),
+            date: nowLabel(),
+            shortName: payload.shortName,
+            fullName: payload.fullName,
+            icdCodes: [],
+            minScore: payload.minScore,
+            maxScore: payload.maxScore,
+            status: payload.status,
+          } satisfies CategoryGroupRecord
+      : {
+          id: nextDiagnosisId(),
+          date: nowLabel(),
+          shortName: payload.shortName,
+          fullName: payload.fullName,
+          icdCodes: payload.icdCodes,
+          status: payload.status,
+        } satisfies DiagnosisRecord
 
     getActiveMedicalReferenceRecords().value.unshift(createdRecord)
     pushFeedback('success', `${createdRecord.id} yaratildi.`)
@@ -2986,12 +3441,104 @@ function saveDiagnosis() {
   closeDiagnosisDialog()
 }
 
+function addQuestionnaireGroup() {
+  diagnosisForm.value.questionGroups = [...diagnosisForm.value.questionGroups, createQuestionnaireGroupDraft()]
+}
+
+function removeQuestionnaireGroup(groupId: string) {
+  if (diagnosisForm.value.questionGroups.length === 1) {
+    diagnosisForm.value.questionGroups = [createQuestionnaireGroupDraft()]
+    return
+  }
+
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.filter((group) => group.id !== groupId)
+}
+
+function addQuestionnaireQuestion(groupId: string) {
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.map((group) => (
+    group.id === groupId
+      ? { ...group, questions: [...group.questions, createQuestionnaireQuestionDraft()] }
+      : group
+  ))
+}
+
+function removeQuestionnaireQuestion(groupId: string, questionId: string) {
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.map((group) => {
+    if (group.id !== groupId) return group
+
+    if (group.questions.length === 1) {
+      return { ...group, questions: [createQuestionnaireQuestionDraft()] }
+    }
+
+    return { ...group, questions: group.questions.filter((question) => question.id !== questionId) }
+  })
+}
+
+function addQuestionnaireAnswer(groupId: string, questionId: string) {
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.map((group) => {
+    if (group.id !== groupId) return group
+
+    return {
+      ...group,
+      questions: group.questions.map((question) => (
+        question.id === questionId
+          ? { ...question, answers: [...question.answers, createQuestionnaireAnswerDraft()] }
+          : question
+      )),
+    }
+  })
+}
+
+function removeQuestionnaireAnswer(groupId: string, questionId: string, answerId: string) {
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.map((group) => {
+    if (group.id !== groupId) return group
+
+    return {
+      ...group,
+      questions: group.questions.map((question) => {
+        if (question.id !== questionId) return question
+
+        if (question.answers.length === 1) {
+          return { ...question, answers: [createQuestionnaireAnswerDraft()] }
+        }
+
+        return { ...question, answers: question.answers.filter((answer) => answer.id !== answerId) }
+      }),
+    }
+  })
+}
+
+function normalizeQuestionnaireScore(groupId: string, questionId: string, answerId: string, value: string) {
+  const normalized = value.replace(/[^\d.-]/g, '')
+
+  diagnosisForm.value.questionGroups = diagnosisForm.value.questionGroups.map((group) => {
+    if (group.id !== groupId) return group
+
+    return {
+      ...group,
+      questions: group.questions.map((question) => {
+        if (question.id !== questionId) return question
+
+        return {
+          ...question,
+          answers: question.answers.map((answer) => (
+            answer.id === answerId
+              ? { ...answer, score: normalized }
+              : answer
+          )),
+        }
+      }),
+    }
+  })
+}
+
 function requestDeleteDiagnosis(record: DiagnosisRecord) {
   openDiagnosisActionMenuId.value = null
+  const copy = buildConfirmationCopy(medicalReferenceTitle.value, "o'chiril", "o'chirish", record.id)
   openConfirmation({
     tone: 'destructive',
-    title: medicalReferenceDeleteTitle.value,
-    description: `${record.id} ro'yxatdan o'chiriladi.`,
+    title: copy.title,
+    description: copy.description,
     confirmLabel: "O'chirish",
     action: () => deleteDiagnosis(record.id),
   })
@@ -3084,8 +3631,13 @@ async function downloadDiagnoses() {
       Status: record.status,
     }
 
-    if (!isDocumentsPage.value) {
+    if (requiresMedicalReferenceIcd.value) {
       row['ICD-10 kodlari'] = record.icdCodes.join(', ')
+    }
+
+    if (isCategoryGroupRecord(record)) {
+      row['Minimal ball'] = String(record.minScore)
+      row['Maksimal ball'] = String(record.maxScore)
     }
 
     return row
@@ -5339,13 +5891,15 @@ onUnmounted(() => {
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Minimal yosh</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Maksimal yosh</th>
                   <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="paginatedServiceTypes.length === 0">
                   <td
-                    colspan="6"
+                    colspan="8"
                     class="border-b border-border px-4 py-12 text-center"
                   >
                     <div class="mx-auto flex max-w-md flex-col items-center gap-2">
@@ -5414,6 +5968,12 @@ onUnmounted(() => {
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ record.minAge }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ record.maxAge ?? '-' }}
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
@@ -5493,6 +6053,16 @@ onUnmounted(() => {
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Minimal yosh</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">{{ record.minAge }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Maksimal yosh</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">{{ record.maxAge ?? '-' }}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -5595,7 +6165,7 @@ onUnmounted(() => {
                 {{ editingServiceTypeId ? 'Xizmat turini tahrirlash' : 'Xizmat turi yaratish' }}
               </h2>
               <p class="mt-1 text-sm text-muted-foreground">
-                Asosiy nomlar majburiy, tarjimalar ixtiyoriy.
+                Asosiy nomlar va minimal yosh majburiy, tarjimalar ixtiyoriy.
               </p>
             </div>
             <button
@@ -5622,6 +6192,25 @@ onUnmounted(() => {
                   <Input
                     v-model="serviceTypeForm.fullName.uzLatn"
                     placeholder="To'liq nomini kiriting"
+                  />
+                </label>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Minimal yosh</span>
+                  <Input
+                    v-model="serviceTypeForm.minAge"
+                    inputmode="numeric"
+                    placeholder="Masalan: 18"
+                  />
+                </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Maksimal yosh</span>
+                  <Input
+                    v-model="serviceTypeForm.maxAge"
+                    inputmode="numeric"
+                    placeholder="Ixtiyoriy"
                   />
                 </label>
               </div>
@@ -5928,6 +6517,17 @@ onUnmounted(() => {
 
             <div class="grid gap-4 md:grid-cols-2">
               <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Minimal yosh</h3>
+                <p class="mt-4 text-sm font-medium text-foreground">{{ selectedServiceTypeRecord.minAge }}</p>
+              </div>
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Maksimal yosh</h3>
+                <p class="mt-4 text-sm font-medium text-foreground">{{ selectedServiceTypeRecord.maxAge ?? '-' }}</p>
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="rounded-2xl border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Mos tashxislar</h3>
                 <div class="mt-4 space-y-2">
                   <div
@@ -5967,6 +6567,54 @@ onUnmounted(() => {
                   <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
                   <p class="mt-1 text-muted-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
+              </div>
+            </div>
+
+            <div
+              v-if="selectedDiagnosisRecord && isQuestionnaireTemplateRecord(selectedDiagnosisRecord)"
+              class="rounded-2xl border border-border bg-card p-4"
+            >
+              <h3 class="font-semibold text-foreground">Savollar shabloni</h3>
+              <div class="mt-4 space-y-4">
+                <div
+                  v-for="(group, groupIndex) in selectedDiagnosisRecord.questionGroups"
+                  :key="group.id"
+                  class="rounded-xl border border-border bg-background p-4"
+                >
+                  <p class="text-sm font-semibold text-foreground">{{ groupIndex + 1 }}. {{ group.title }}</p>
+                  <div class="mt-3 space-y-3">
+                    <div
+                      v-for="(question, questionIndex) in group.questions"
+                      :key="question.id"
+                      class="rounded-lg border border-border bg-card p-3"
+                    >
+                      <p class="text-sm font-medium text-foreground">{{ groupIndex + 1 }}.{{ questionIndex + 1 }} {{ question.text }}</p>
+                      <div class="mt-3 grid gap-2">
+                        <div
+                          v-for="answer in question.answers"
+                          :key="answer.id"
+                          class="flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm"
+                        >
+                          <span class="text-foreground">{{ answer.text }}</span>
+                          <span class="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold text-foreground">{{ answer.score }} ball</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              v-if="selectedDiagnosisRecord && isCategoryGroupRecord(selectedDiagnosisRecord)"
+              class="grid gap-4 md:grid-cols-2"
+            >
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Minimal ball</h3>
+                <p class="mt-4 text-sm font-medium text-foreground">{{ selectedDiagnosisRecord.minScore }}</p>
+              </div>
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="font-semibold text-foreground">Maksimal ball</h3>
+                <p class="mt-4 text-sm font-medium text-foreground">{{ selectedDiagnosisRecord.maxScore }}</p>
               </div>
             </div>
           </div>
@@ -6078,13 +6726,15 @@ onUnmounted(() => {
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
+                  <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Minimal ball</th>
+                  <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Maksimal ball</th>
                   <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="paginatedDiagnoses.length === 0">
                   <td
-                    colspan="6"
+                    :colspan="isCategoryGroupsPage ? 8 : 6"
                     class="border-b border-border px-4 py-12 text-center"
                   >
                     <div class="mx-auto flex max-w-md flex-col items-center gap-2">
@@ -6142,6 +6792,12 @@ onUnmounted(() => {
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.minScore : '' }}</p>
+                  </td>
+                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.maxScore : '' }}</p>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
@@ -6220,6 +6876,16 @@ onUnmounted(() => {
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
+                <div v-if="isCategoryGroupsPage && isCategoryGroupRecord(record)" class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Minimal ball</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">{{ record.minScore }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Maksimal ball</p>
+                    <p class="mt-1 text-sm font-medium text-foreground">{{ record.maxScore }}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -6287,7 +6953,7 @@ onUnmounted(() => {
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ editingDiagnosisId ? medicalReferenceEditTitle : medicalReferenceCreateTitle }}</h2>
               <p class="mt-1 text-sm text-muted-foreground">
-                {{ isDocumentsPage ? 'Asosiy nomlar majburiy, tarjimalar ixtiyoriy.' : 'Asosiy nomlar va ICD-10 kodlari majburiy, tarjimalar ixtiyoriy.' }}
+                {{ isCategoryGroupsPage ? "Asosiy nomlar, minimal va maksimal ball majburiy, tarjimalar ixtiyoriy." : requiresMedicalReferenceIcd ? 'Asosiy nomlar va ICD-10 kodlari majburiy, tarjimalar ixtiyoriy.' : 'Asosiy nomlar majburiy, tarjimalar ixtiyoriy.' }}
               </p>
             </div>
             <button type="button" class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground" @click="closeDiagnosisDialog">
@@ -6335,8 +7001,132 @@ onUnmounted(() => {
               </div>
             </section>
 
-            <section :class="['grid gap-4', isDocumentsPage ? 'md:grid-cols-1' : 'md:grid-cols-2']">
-              <div v-if="!isDocumentsPage" class="space-y-2">
+            <section
+              v-if="isCategoryGroupsPage"
+              class="grid gap-4 rounded-2xl border border-border bg-card p-4 md:grid-cols-2"
+            >
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Minimal ball</span>
+                <Input v-model="diagnosisForm.minScore" inputmode="numeric" placeholder="Masalan: 0" />
+              </label>
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Maksimal ball</span>
+                <Input v-model="diagnosisForm.maxScore" inputmode="numeric" placeholder="Masalan: 62" />
+              </label>
+            </section>
+
+            <section
+              v-if="isQuestionnaireTemplatesPage"
+              class="space-y-4 rounded-2xl border border-border bg-card p-4"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-sm font-semibold text-foreground">Savollar shabloni</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">Savollar guruhi, savollar va javob variantlarini ballari bilan kiriting.</p>
+                </div>
+                <Button variant="outline" class="gap-2" @click="addQuestionnaireGroup">
+                  <Plus class="h-4 w-4" />
+                  Guruh qo'shish
+                </Button>
+              </div>
+
+              <div class="space-y-4">
+                <div
+                  v-for="(group, groupIndex) in diagnosisForm.questionGroups"
+                  :key="group.id"
+                  class="space-y-4 rounded-xl border border-border bg-background p-4"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <label class="flex-1 space-y-2">
+                      <span class="text-sm font-medium text-foreground">Savollar guruhi {{ groupIndex + 1 }}</span>
+                      <Input v-model="group.title" placeholder="Masalan: Elementar harakatlar" />
+                    </label>
+                    <Button
+                      variant="ghost"
+                      class="mt-7 gap-2 text-destructive hover:text-destructive"
+                      @click="removeQuestionnaireGroup(group.id)"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                      Olib tashlash
+                    </Button>
+                  </div>
+
+                  <div class="space-y-3 rounded-xl border border-dashed border-border p-3">
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm font-semibold text-foreground">Savollar</p>
+                      <Button variant="outline" size="sm" class="gap-2" @click="addQuestionnaireQuestion(group.id)">
+                        <Plus class="h-4 w-4" />
+                        Savol qo'shish
+                      </Button>
+                    </div>
+
+                    <div
+                      v-for="(question, questionIndex) in group.questions"
+                      :key="question.id"
+                      class="space-y-3 rounded-lg border border-border bg-card p-3"
+                    >
+                      <div class="flex items-center justify-between gap-3">
+                        <label class="flex-1 space-y-2">
+                          <span class="text-sm font-medium text-foreground">Savol {{ questionIndex + 1 }}</span>
+                          <Input v-model="question.text" placeholder="Savol matnini kiriting" />
+                        </label>
+                        <Button
+                          variant="ghost"
+                          class="mt-7 gap-2 text-destructive hover:text-destructive"
+                          @click="removeQuestionnaireQuestion(group.id, question.id)"
+                        >
+                          <Trash2 class="h-4 w-4" />
+                          Olib tashlash
+                        </Button>
+                      </div>
+
+                      <div class="space-y-2 rounded-lg border border-dashed border-border p-3">
+                        <div class="flex items-center justify-between gap-3">
+                          <p class="text-sm font-medium text-foreground">Javob variantlari</p>
+                          <Button variant="outline" size="sm" class="gap-2" @click="addQuestionnaireAnswer(group.id, question.id)">
+                            <Plus class="h-4 w-4" />
+                            Javob qo'shish
+                          </Button>
+                        </div>
+
+                        <div
+                          v-for="(answer, answerIndex) in question.answers"
+                          :key="answer.id"
+                          class="grid gap-3 rounded-lg border border-border bg-background p-3 md:grid-cols-[minmax(0,1fr)_140px_auto]"
+                        >
+                          <label class="space-y-2">
+                            <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Javob {{ answerIndex + 1 }}</span>
+                            <Input v-model="answer.text" placeholder="Javob variantini kiriting" />
+                          </label>
+                          <label class="space-y-2">
+                            <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ball</span>
+                            <Input
+                              :model-value="answer.score"
+                              inputmode="decimal"
+                              placeholder="Masalan: 5"
+                              @update:model-value="normalizeQuestionnaireScore(group.id, question.id, answer.id, String($event ?? ''))"
+                            />
+                          </label>
+                          <div class="flex items-end">
+                            <Button
+                              variant="ghost"
+                              class="w-full gap-2 text-destructive hover:text-destructive md:w-auto"
+                              @click="removeQuestionnaireAnswer(group.id, question.id, answer.id)"
+                            >
+                              <Trash2 class="h-4 w-4" />
+                              Olib tashlash
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section :class="['grid gap-4', requiresMedicalReferenceIcd ? 'md:grid-cols-2' : 'md:grid-cols-1']">
+              <div v-if="requiresMedicalReferenceIcd" class="space-y-2">
                 <span class="text-sm font-medium text-foreground">ICD-10 kodlari</span>
                 <div class="relative">
                   <button
@@ -6438,7 +7228,7 @@ onUnmounted(() => {
             <div class="flex flex-wrap items-center gap-2">
               <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[selectedDiagnosisRecord.status]]">{{ selectedDiagnosisRecord.status }}</span>
               <span
-                v-for="code in selectedDiagnosisRecord.icdCodes"
+                v-for="code in requiresMedicalReferenceIcd ? selectedDiagnosisRecord.icdCodes : []"
                 :key="code"
                 class="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-semibold text-foreground"
               >
