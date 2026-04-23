@@ -11,6 +11,7 @@ import {
 } from 'reka-ui'
 import { useRoute } from 'vue-router'
 import { getMuruvvatPage } from '@/features/muruvvat/config'
+import { allAssessmentQuestions, getAssessmentCategory, type AssessmentQuestion } from '@/features/muruvvat/assessment'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
@@ -50,6 +51,7 @@ type ApplicationRow = {
   date: string
   fullName: string
   pinfl: string
+  serviceId: ServiceOption['id']
   serviceType: string
   region: string
   district: string
@@ -153,6 +155,8 @@ type PendingConfirmation = {
   confirmLabel: string
   action: () => void
 }
+
+type AssessmentAnswers = Record<string, string>
 
 const page = computed(() => getMuruvvatPage(props.pageKey))
 const isApplicationsListPage = computed(() => props.pageKey === 'applications-list')
@@ -789,6 +793,7 @@ const applicationRows = ref(demoApplicationCases.map(({ step, serviceId }, index
     date: `${day}.${month}.${year}`,
     fullName: person,
     pinfl: pinflSeed,
+    serviceId: service?.id ?? 'huzur',
     serviceType: service?.label ?? 'Xizmat turi belgilanmagan',
     region,
     district,
@@ -827,6 +832,11 @@ const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const selectedViewRow = ref<ApplicationRow | null>(null)
 const isIptkFlowDialogOpen = ref(false)
+const selectedAssessmentCreateRow = ref<ApplicationRow | null>(null)
+const assessmentAnswers = ref<AssessmentAnswers>({})
+const assessmentHasNoRelatives = ref(false)
+const assessmentHousingCondition = ref<'valid' | 'none' | 'unfit' | 'emergency'>('valid')
+const assessmentConclusionNote = ref('')
 const iptkFlowMermaidSvg = ref('')
 const selectedIptkFlowStepId = ref('A')
 const iptkFlowDiagramRef = ref<HTMLElement | null>(null)
@@ -842,6 +852,7 @@ const isAnyDialogOpen = computed(() => (
   || Boolean(selectedViewRow.value)
   || isIptkFlowDialogOpen.value
   || isCreateDialogOpen.value
+  || Boolean(selectedAssessmentCreateRow.value)
 ))
 const applicantPinflInput = ref('')
 const applicantLookupResult = ref<ApplicantLookupResult | null>(null)
@@ -892,6 +903,52 @@ const selectedIptkQuestionnaireGuides = computed(() => {
 const selectedIptkAssessmentGuides = computed(() => {
   return iptkAssessmentGuides.filter((assessment) => assessment.stepIds.includes(selectedIptkFlowStepId.value))
 })
+const barthelQuestions = computed(() => allAssessmentQuestions.filter((question) => question.scale === 'barthel'))
+const lawtonQuestions = computed(() => allAssessmentQuestions.filter((question) => question.scale === 'lawton'))
+const assessmentBarthelTotal = computed(() => {
+  return barthelQuestions.value.reduce((total, question) => {
+    const option = getAssessmentSelectedOption(question)
+    return total + (option?.score ?? 0)
+  }, 0)
+})
+const assessmentLawtonTotal = computed(() => {
+  return lawtonQuestions.value.reduce((total, question) => {
+    const option = getAssessmentSelectedOption(question)
+    return total + (option?.score ?? 0)
+  }, 0)
+})
+const assessmentGrandTotal = computed(() => assessmentBarthelTotal.value + assessmentLawtonTotal.value)
+const assessmentCategory = computed(() => getAssessmentCategory(assessmentGrandTotal.value))
+const isAssessmentComplete = computed(() => {
+  return allAssessmentQuestions.every((question) => Boolean(assessmentAnswers.value[question.id]))
+})
+const isAssessmentForHuzur = computed(() => selectedAssessmentCreateRow.value?.serviceId === 'huzur')
+const requiresGroupDecision = computed(() => isAssessmentForHuzur.value)
+const assessmentHousingConditionLabel = computed(() => {
+  switch (assessmentHousingCondition.value) {
+    case 'none':
+      return "Turar joy mavjud emas"
+    case 'unfit':
+      return "Yashash uchun yaroqsiz"
+    case 'emergency':
+      return 'Avariya holatidagi turar joy'
+    default:
+      return "Turar joy mavjud va yaroqli"
+  }
+})
+const isAssessmentEmergencyGroup = computed(() => (
+  requiresGroupDecision.value
+  && assessmentGrandTotal.value <= 62
+  && assessmentHasNoRelatives.value
+  && assessmentHousingCondition.value !== 'valid'
+))
+const assessmentGroupLabel = computed(() => {
+  if (!requiresGroupDecision.value) {
+    return null
+  }
+
+  return isAssessmentEmergencyGroup.value ? 'Tezkor guruh' : 'Rejali guruh'
+})
 
 const filteredRows = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
@@ -939,6 +996,29 @@ function getApplicationServiceTypeLabel(row: ApplicationRow) {
   }
 
   return serviceOptions.find((service) => service.label === row.serviceType)?.shortLabel ?? row.serviceType
+}
+
+function formatAssessmentScore(score: number) {
+  return Number.isInteger(score) ? String(score) : String(score).replace('.', ',')
+}
+
+function getAssessmentSelectedOption(question: AssessmentQuestion) {
+  const selectedOptionId = assessmentAnswers.value[question.id]
+  return question.options.find((option) => option.id === selectedOptionId)
+}
+
+function setAssessmentAnswer(questionId: string, optionId: string) {
+  assessmentAnswers.value = {
+    ...assessmentAnswers.value,
+    [questionId]: optionId,
+  }
+}
+
+function resetAssessmentDialogState() {
+  assessmentAnswers.value = {}
+  assessmentHasNoRelatives.value = false
+  assessmentHousingCondition.value = 'valid'
+  assessmentConclusionNote.value = ''
 }
 
 const regionOptions = computed(() => {
@@ -1149,6 +1229,39 @@ const selectedViewApplicantImage = computed(() => {
   }
 
   return getApplicantImageByFullName(selectedViewDetail.value.applicant.fullName)
+})
+const selectedAssessmentImage = computed(() => {
+  if (!selectedAssessmentCreateRow.value) {
+    return ''
+  }
+
+  return getApplicantImageByFullName(selectedAssessmentCreateRow.value.fullName)
+})
+const selectedAssessmentServiceRecipient = computed(() => {
+  if (!selectedAssessmentCreateRow.value) {
+    return null
+  }
+
+  return buildLookupResultFromRow(selectedAssessmentCreateRow.value, 7, true)
+})
+const selectedAssessmentServiceRecipientRows = computed(() => {
+  if (!selectedAssessmentServiceRecipient.value) {
+    return []
+  }
+
+  const serviceRecipient = selectedAssessmentServiceRecipient.value
+
+  return [
+    ['FIO', normalizeFullName(serviceRecipient.fullName)],
+    ["Tug'ilgan sanasi", serviceRecipient.birthDate],
+    ['Tashxis', `${serviceRecipient.diagnosisLabel} (${serviceRecipient.diagnosisCode})`],
+    ['Nogironlik guruhi', serviceRecipient.disabilityGroup ?? '—'],
+    ['JSHSHIR', serviceRecipient.pinfl],
+    ...(serviceRecipient.temporaryAddress
+      ? [["Vaqtinchalik manzili", serviceRecipient.temporaryAddress] as const]
+      : []),
+    ['Manzil', serviceRecipient.permanentAddress],
+  ] as const
 })
 
 function buildBirthDate(indexSeed: number, isMinor = false) {
@@ -2684,6 +2797,14 @@ function canEditApplication(row: ApplicationRow) {
   ].includes(row.step)
 }
 
+function requiresAssessmentBeforeIptk(row: ApplicationRow) {
+  return row.step === 'Ariza yaratildi' && ['huzur', 'madad'].includes(row.serviceId)
+}
+
+function canSendDirectlyToIptk(row: ApplicationRow) {
+  return row.step === 'Ariza yaratildi' && !['huzur', 'madad'].includes(row.serviceId)
+}
+
 function canApproveApplication(row: ApplicationRow) {
   return row.step === 'IPTK tekshiruvi o‘tkazildi'
 }
@@ -2713,6 +2834,55 @@ function confirmApprove(row: ApplicationRow) {
         })
       })
     },
+  })
+}
+
+function confirmStartAssessment(row: ApplicationRow) {
+  resetAssessmentDialogState()
+  selectedAssessmentCreateRow.value = row
+}
+
+function confirmSendToIptk(row: ApplicationRow) {
+  openConfirmation({
+    tone: 'success',
+    title: 'IPTKga yuborilsinmi?',
+    description: `${row.id} arizasi bevosita IPTKga yuboriladi.`,
+    confirmLabel: 'IPTKga yuborish',
+    action: () => {
+      runTableLoading(() => {
+        updateRowStatus(row.id, 'Jarayonda', 'IPTKga yuborildi')
+        showNotification({
+          tone: 'success',
+          title: 'Ariza IPTKga yuborildi',
+          description: `${row.id} IPTK bosqichiga o'tkazildi.`,
+        })
+      })
+    },
+  })
+}
+
+function closeAssessmentCreateDialog() {
+  selectedAssessmentCreateRow.value = null
+  resetAssessmentDialogState()
+}
+
+function createAssessmentAndSendToIptk() {
+  const row = selectedAssessmentCreateRow.value
+
+  if (!row || !isAssessmentComplete.value) {
+    return
+  }
+
+  selectedAssessmentCreateRow.value = null
+  resetAssessmentDialogState()
+
+  runTableLoading(() => {
+    updateRowStatus(row.id, 'Jarayonda', 'Baholash jarayoni')
+    showNotification({
+      tone: 'success',
+      title: 'Baholash hujjati yaratildi',
+      description: `${row.id} bo'yicha baholash hujjati yaratilib, baholash jarayoniga yuborildi.`,
+    })
   })
 }
 
@@ -4295,6 +4465,22 @@ watch(serviceRecipientLookupResult, () => {
                                   <span>Tahrirlash</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  v-if="requiresAssessmentBeforeIptk(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                  @click="confirmStartAssessment(row)"
+                                >
+                                  <CalendarDays class="h-4 w-4 shrink-0" />
+                                  <span>Baholashdan o'tkazish</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  v-if="canSendDirectlyToIptk(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                  @click="confirmSendToIptk(row)"
+                                >
+                                  <Check class="h-4 w-4 shrink-0" />
+                                  <span>IPTKga yuborish</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   v-if="canApproveApplication(row)"
                                   class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                   @click="confirmApprove(row)"
@@ -4438,6 +4624,22 @@ watch(serviceRecipientLookupResult, () => {
                               >
                                 <FilePenLine class="h-4 w-4 shrink-0" />
                                 <span>Tahrirlash</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="requiresAssessmentBeforeIptk(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="confirmStartAssessment(row)"
+                              >
+                                <CalendarDays class="h-4 w-4 shrink-0" />
+                                <span>Baholashdan o'tkazish</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="canSendDirectlyToIptk(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="confirmSendToIptk(row)"
+                              >
+                                <Check class="h-4 w-4 shrink-0" />
+                                <span>IPTKga yuborish</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canApproveApplication(row)"
@@ -5345,6 +5547,405 @@ watch(serviceRecipientLookupResult, () => {
             @click="saveApplicationDraft"
           >
             Arizani saqlash
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    v-if="selectedAssessmentCreateRow"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.self="closeAssessmentCreateDialog"
+  >
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <p class="text-lg font-semibold text-foreground">
+            Barthel va Lawton baholashi
+          </p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{ selectedAssessmentCreateRow.id }} bo'yicha parvarishga muhtojlik va kundalik mustaqillik baholanadi.
+          </p>
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          class="h-9 w-9 p-0"
+          aria-label="Oynani yopish"
+          @click="closeAssessmentCreateDialog"
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div class="flex-1 space-y-6 overflow-y-auto p-5">
+        <div class="space-y-3">
+          <div class="rounded-2xl border border-border bg-card p-4">
+            <p class="text-base font-semibold text-foreground">
+              Xizmat oluvchi
+            </p>
+            <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+              <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
+                <img
+                  :src="selectedAssessmentImage"
+                  alt="Xizmat oluvchi rasmi"
+                  class="h-32 w-24 rounded-2xl border border-border/60 object-cover"
+                >
+                <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
+              </div>
+
+              <div class="overflow-hidden rounded-2xl border border-border bg-background">
+                <div
+                  v-for="[label, value] in selectedAssessmentServiceRecipientRows"
+                  :key="`assessment-service-recipient-${label}`"
+                  class="grid border-b border-border last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)]"
+                >
+                  <div class="bg-muted/35 px-4 py-3 text-sm font-medium text-muted-foreground">
+                    {{ label }}
+                  </div>
+                  <div class="px-4 py-3 text-sm text-foreground">
+                    {{ value }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Elementar harakatlarni baholash
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Barthel shkalasi bo'yicha 10 ta savol. Har bir savolda bitta variant tanlanadi.
+              </p>
+            </div>
+            <div class="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground">
+              {{ formatAssessmentScore(assessmentBarthelTotal) }} ball
+            </div>
+          </div>
+
+          <div class="mt-4 space-y-4">
+            <div
+              v-for="question in barthelQuestions"
+              :key="question.id"
+              class="rounded-2xl border border-border bg-background p-4"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-foreground">
+                    {{ question.order }}. {{ question.title }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Tanlangan ball:
+                    {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-3 grid gap-2">
+                <button
+                  v-for="option in question.options"
+                  :key="option.id"
+                  type="button"
+                  :class="[
+                    'rounded-xl border px-3 py-3 text-left transition-colors',
+                    getAssessmentSelectedOption(question)?.id === option.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card hover:bg-muted/40',
+                  ]"
+                  @click="setAssessmentAnswer(question.id, option.id)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-medium text-foreground">
+                        {{ option.label }}
+                      </p>
+                      <p
+                        v-if="option.suggestedService"
+                        class="mt-1 text-xs text-muted-foreground"
+                      >
+                        Tavsiya: {{ option.suggestedService }}
+                      </p>
+                    </div>
+                    <span class="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+                      {{ formatAssessmentScore(option.score) }} ball
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Murakkab harakatlarni baholash
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Lawton shkalasi bo'yicha 9 ta savol. Har bir savolda bitta variant tanlanadi.
+              </p>
+            </div>
+            <div class="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground">
+              {{ formatAssessmentScore(assessmentLawtonTotal) }} ball
+            </div>
+          </div>
+
+          <div class="mt-4 space-y-4">
+            <div
+              v-for="question in lawtonQuestions"
+              :key="question.id"
+              class="rounded-2xl border border-border bg-background p-4"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-sm font-semibold text-foreground">
+                    {{ question.order }}. {{ question.title }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Tanlangan ball:
+                    {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-3 grid gap-2">
+                <button
+                  v-for="option in question.options"
+                  :key="option.id"
+                  type="button"
+                  :class="[
+                    'rounded-xl border px-3 py-3 text-left transition-colors',
+                    getAssessmentSelectedOption(question)?.id === option.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card hover:bg-muted/40',
+                  ]"
+                  @click="setAssessmentAnswer(question.id, option.id)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-medium text-foreground">
+                        {{ option.label }}
+                      </p>
+                      <p
+                        v-if="option.suggestedService"
+                        class="mt-1 text-xs text-muted-foreground"
+                      >
+                        Tavsiya: {{ option.suggestedService }}
+                      </p>
+                    </div>
+                    <span class="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">
+                      {{ formatAssessmentScore(option.score) }} ball
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Baholash xulosasi
+              </p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Ishchi guruh 5 ish kuni ichida parvarishga muhtojlik va yashash sharoitini baholab, natijani axborot moduliga kiritadi.
+              </p>
+            </div>
+            <div class="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
+              Ishchi guruh
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-3 lg:grid-cols-3">
+            <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Tarkib
+              </p>
+              <p class="mt-2 text-sm text-foreground">
+                Ijtimoiy xodim, oilaviy shifokor va FYO'B organi raisi
+              </p>
+            </div>
+            <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Baholash balli
+              </p>
+              <p class="mt-2 text-sm text-foreground">
+                Barthel va Lawton natijasi asosida {{ formatAssessmentScore(assessmentGrandTotal) }} ball
+              </p>
+            </div>
+            <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Xulosa
+              </p>
+              <p class="mt-2 text-sm text-foreground">
+                {{ assessmentCategory.label }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <label class="space-y-2 rounded-xl border border-border bg-background px-4 py-4">
+              <span class="text-sm font-medium text-foreground">
+                Nogironligi bo'lgan shaxsning yaqin qarindoshlari mavjud emas
+              </span>
+              <button
+                type="button"
+                :class="[
+                  'flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors',
+                  assessmentHasNoRelatives ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground',
+                ]"
+                @click="assessmentHasNoRelatives = !assessmentHasNoRelatives"
+              >
+                <span>{{ assessmentHasNoRelatives ? 'Ha' : "Yo'q" }}</span>
+                <Check
+                  v-if="assessmentHasNoRelatives"
+                  class="h-4 w-4 text-primary"
+                />
+              </button>
+            </label>
+
+            <label class="space-y-2 rounded-xl border border-border bg-background px-4 py-4">
+              <span class="text-sm font-medium text-foreground">
+                Turar joy holati
+              </span>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  :class="[
+                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                    assessmentHousingCondition === 'valid' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
+                  ]"
+                  @click="assessmentHousingCondition = 'valid'"
+                >
+                  Turar joy mavjud va yaroqli
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                    assessmentHousingCondition === 'none' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
+                  ]"
+                  @click="assessmentHousingCondition = 'none'"
+                >
+                  Turar joy mavjud emas
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                    assessmentHousingCondition === 'unfit' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
+                  ]"
+                  @click="assessmentHousingCondition = 'unfit'"
+                >
+                  Yashash uchun yaroqsiz
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                    assessmentHousingCondition === 'emergency' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
+                  ]"
+                  @click="assessmentHousingCondition = 'emergency'"
+                >
+                  Avariya holatidagi turar joy
+                </button>
+              </div>
+            </label>
+          </div>
+
+          <div
+            v-if="requiresGroupDecision"
+            class="mt-4 rounded-xl border border-border bg-background p-4"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-foreground">
+                  Huzur bo'yicha guruh aniqlanishi
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Tezkor guruh uchun 62 ballgacha, yaqin qarindosh yo'qligi va turar joy muammosi bir vaqtda bo'lishi kerak.
+                </p>
+              </div>
+              <span
+                :class="[
+                  'inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium',
+                  isAssessmentEmergencyGroup
+                    ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200'
+                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200',
+                ]"
+              >
+                {{ assessmentGroupLabel }}
+              </span>
+            </div>
+
+            <div class="mt-4 grid gap-3 md:grid-cols-3">
+              <div class="rounded-lg border border-border bg-card px-3 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Ball mezoni
+                </p>
+                <p class="mt-2 text-sm text-foreground">
+                  {{ assessmentGrandTotal <= 62 ? 'Mos keladi' : 'Mos kelmaydi' }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-border bg-card px-3 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Yaqin qarindoshlar
+                </p>
+                <p class="mt-2 text-sm text-foreground">
+                  {{ assessmentHasNoRelatives ? "Mavjud emas" : 'Mavjud' }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-border bg-card px-3 py-3">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Turar joy holati
+                </p>
+                <p class="mt-2 text-sm text-foreground">
+                  {{ assessmentHousingConditionLabel }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <label class="mt-4 block space-y-2">
+            <span class="text-sm font-medium text-foreground">
+              Baholash izohi
+            </span>
+            <textarea
+              v-model="assessmentConclusionNote"
+              rows="3"
+              class="flex min-h-[88px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
+              placeholder="Yashash sharoiti va parvarishga muhtojlik bo'yicha qo'shimcha izoh kiriting"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 border-t border-border px-5 py-4">
+        <p class="text-sm text-muted-foreground">
+          {{ isAssessmentComplete ? 'Barcha savollar to‘ldirildi.' : `${Object.keys(assessmentAnswers).length}/${allAssessmentQuestions.length} savol to‘ldirildi.` }}
+        </p>
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            @click="closeAssessmentCreateDialog"
+          >
+            Bekor qilish
+          </Button>
+          <Button
+            :disabled="!isAssessmentComplete"
+            @click="createAssessmentAndSendToIptk"
+          >
+            Baholashni saqlash
           </Button>
         </div>
       </div>

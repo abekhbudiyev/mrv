@@ -830,6 +830,18 @@ const searchInput = ref('')
 const searchQuery = ref('')
 const assessmentSearchInput = ref('')
 const assessmentSearchQuery = ref('')
+const isAssessmentFilterOpen = ref(false)
+const openAssessmentFilterField = ref<'status' | 'region' | null>(null)
+const openAssessmentCalendarField = ref<'start' | 'end' | null>(null)
+const assessmentCalendarMonth = ref('')
+const draftAssessmentStatusFilter = ref<'all' | CommissionStatus>('all')
+const appliedAssessmentStatusFilter = ref<'all' | CommissionStatus>('all')
+const draftAssessmentRegionFilter = ref<'all' | string>('all')
+const appliedAssessmentRegionFilter = ref<'all' | string>('all')
+const draftAssessmentStartDateFilter = ref('')
+const appliedAssessmentStartDateFilter = ref('')
+const draftAssessmentEndDateFilter = ref('')
+const appliedAssessmentEndDateFilter = ref('')
 const draftStatusFilter = ref<'all' | CommissionStatus>('all')
 const appliedStatusFilter = ref<'all' | CommissionStatus>('all')
 const draftRegionFilter = ref<'all' | string>('all')
@@ -1639,23 +1651,30 @@ const filteredCommissions = computed(() => {
 
 const filteredAssessments = computed(() => {
   const query = assessmentSearchQuery.value.trim().toLowerCase()
+  return assessments.value.filter((record) => {
+    const matchesQuery = !query || [
+      record.documentNumber,
+      record.createdAt,
+      formatDateDisplay(record.createdAt),
+      record.serviceRecipient,
+      record.serviceRecipientPinfl,
+      record.serviceType,
+      record.result,
+      record.region,
+      record.district,
+      record.status,
+    ].some((value) => value.toLowerCase().includes(query))
 
-  if (!query) {
-    return assessments.value
-  }
+    const matchesStatus = appliedAssessmentStatusFilter.value === 'all' || record.status === appliedAssessmentStatusFilter.value
+    const matchesRegion = appliedAssessmentRegionFilter.value === 'all' || record.region === appliedAssessmentRegionFilter.value
+    const recordDate = parseRecordDate(record.createdAt)
+    const startDate = parseDisplayDate(appliedAssessmentStartDateFilter.value)
+    const endDate = parseDisplayDate(appliedAssessmentEndDateFilter.value)
+    const matchesStartDate = !startDate || !recordDate || recordDate >= startDate
+    const matchesEndDate = !endDate || !recordDate || recordDate <= endDate
 
-  return assessments.value.filter((record) => [
-    record.documentNumber,
-    record.createdAt,
-    formatDateDisplay(record.createdAt),
-    record.serviceRecipient,
-    record.serviceRecipientPinfl,
-    record.serviceType,
-    record.result,
-    record.region,
-    record.district,
-    record.status,
-  ].some((value) => value.toLowerCase().includes(query)))
+    return matchesQuery && matchesStatus && matchesRegion && matchesStartDate && matchesEndDate
+  })
 })
 
 const totalRows = computed(() => filteredCommissions.value.length)
@@ -1682,6 +1701,84 @@ const assessmentPaginationRange = computed(() => {
   return { start, end }
 })
 const assessmentCurrentPageSummary = computed(() => `${assessmentCurrentPage.value}/${assessmentTotalPages.value}`)
+const assessmentActiveFilterCount = computed(() => {
+  let count = 0
+  if (appliedAssessmentStatusFilter.value !== 'all') count += 1
+  if (appliedAssessmentRegionFilter.value !== 'all') count += 1
+  if (appliedAssessmentStartDateFilter.value) count += 1
+  if (appliedAssessmentEndDateFilter.value) count += 1
+  return count
+})
+const assessmentHasActiveFilters = computed(() => {
+  return appliedAssessmentStatusFilter.value !== 'all'
+    || appliedAssessmentRegionFilter.value !== 'all'
+    || Boolean(appliedAssessmentStartDateFilter.value)
+    || Boolean(appliedAssessmentEndDateFilter.value)
+})
+const assessmentHasPendingFilterChanges = computed(() => {
+  return draftAssessmentStatusFilter.value !== appliedAssessmentStatusFilter.value
+    || draftAssessmentRegionFilter.value !== appliedAssessmentRegionFilter.value
+    || draftAssessmentStartDateFilter.value !== appliedAssessmentStartDateFilter.value
+    || draftAssessmentEndDateFilter.value !== appliedAssessmentEndDateFilter.value
+})
+const draftAssessmentStatusLabel = computed(() => (
+  draftAssessmentStatusFilter.value === 'all' ? 'Barchasi' : draftAssessmentStatusFilter.value
+))
+const draftAssessmentRegionLabel = computed(() => (
+  draftAssessmentRegionFilter.value === 'all' ? 'Barchasi' : draftAssessmentRegionFilter.value
+))
+const assessmentCalendarMonthLabel = computed(() => {
+  const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [year, month] = monthValue.split('-')
+  const monthIndex = Number(month) - 1
+
+  if (!year || Number.isNaN(monthIndex) || monthIndex < 0 || monthIndex > 11) {
+    return ''
+  }
+
+  return `${monthNames[monthIndex]} ${year}`
+})
+const assessmentCalendarDays = computed(() => {
+  const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return []
+  }
+
+  const year = Number(yearString)
+  const monthIndex = Number(monthString) - 1
+
+  if (Number.isNaN(year) || Number.isNaN(monthIndex)) {
+    return []
+  }
+
+  const firstDay = new Date(year, monthIndex, 1)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const offset = (firstDay.getDay() + 6) % 7
+  const totalCells = Math.ceil((offset + daysInMonth) / 7) * 7
+
+  return Array.from({ length: totalCells }, (_, index) => {
+    const dayNumber = index - offset + 1
+
+    if (dayNumber < 1 || dayNumber > daysInMonth) {
+      return {
+        key: `empty-${index}`,
+        label: '',
+        value: '',
+        isCurrentMonth: false,
+      }
+    }
+
+    const value = `${String(dayNumber).padStart(2, '0')}.${String(monthIndex + 1).padStart(2, '0')}.${year}`
+    return {
+      key: value,
+      label: String(dayNumber),
+      value,
+      isCurrentMonth: true,
+    }
+  })
+})
 const activeFilterCount = computed(() => {
   let count = 0
 
@@ -2340,6 +2437,188 @@ function setAssessmentRowsPerPage(nextValue: number) {
     assessmentRowsPerPage.value = nextValue
     assessmentCurrentPage.value = 1
   })
+}
+
+function applyAssessmentFilters() {
+  isAssessmentFilterOpen.value = false
+  openAssessmentFilterField.value = null
+  openAssessmentCalendarField.value = null
+
+  runTableLoading(() => {
+    appliedAssessmentStatusFilter.value = draftAssessmentStatusFilter.value
+    appliedAssessmentRegionFilter.value = draftAssessmentRegionFilter.value
+    appliedAssessmentStartDateFilter.value = draftAssessmentStartDateFilter.value
+    appliedAssessmentEndDateFilter.value = draftAssessmentEndDateFilter.value
+    assessmentCurrentPage.value = 1
+  })
+}
+
+function resetAssessmentSearchAndFilters() {
+  assessmentSearchInput.value = ''
+  assessmentSearchQuery.value = ''
+  draftAssessmentStatusFilter.value = 'all'
+  draftAssessmentRegionFilter.value = 'all'
+  draftAssessmentStartDateFilter.value = ''
+  draftAssessmentEndDateFilter.value = ''
+  isAssessmentFilterOpen.value = false
+  openAssessmentFilterField.value = null
+  openAssessmentCalendarField.value = null
+
+  runTableLoading(() => {
+    appliedAssessmentStatusFilter.value = 'all'
+    appliedAssessmentRegionFilter.value = 'all'
+    appliedAssessmentStartDateFilter.value = ''
+    appliedAssessmentEndDateFilter.value = ''
+    assessmentCurrentPage.value = 1
+  })
+}
+
+function clearAssessmentFilters() {
+  resetAssessmentSearchAndFilters()
+}
+
+function closeAssessmentFilters() {
+  isAssessmentFilterOpen.value = false
+  openAssessmentFilterField.value = null
+  openAssessmentCalendarField.value = null
+}
+
+function toggleAssessmentFiltersFromMenu(nextOpen: boolean) {
+  if (nextOpen) {
+    draftAssessmentStatusFilter.value = appliedAssessmentStatusFilter.value
+    draftAssessmentRegionFilter.value = appliedAssessmentRegionFilter.value
+    draftAssessmentStartDateFilter.value = appliedAssessmentStartDateFilter.value
+    draftAssessmentEndDateFilter.value = appliedAssessmentEndDateFilter.value
+    openAssessmentFilterField.value = null
+    openAssessmentCalendarField.value = null
+  } else {
+    openAssessmentFilterField.value = null
+    openAssessmentCalendarField.value = null
+  }
+
+  isAssessmentFilterOpen.value = nextOpen
+}
+
+function toggleAssessmentFilterField(field: 'status' | 'region') {
+  openAssessmentFilterField.value = openAssessmentFilterField.value === field ? null : field
+}
+
+function selectAssessmentStatusFilter(value: 'all' | CommissionStatus) {
+  draftAssessmentStatusFilter.value = value
+  openAssessmentFilterField.value = null
+}
+
+function selectAssessmentRegionFilter(value: 'all' | string) {
+  draftAssessmentRegionFilter.value = value
+  openAssessmentFilterField.value = null
+}
+
+function handleAssessmentStartDateFilterChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftAssessmentStartDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftAssessmentEndDateFilter.value.length === 10
+    && parseDisplayDate(draftAssessmentEndDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(draftAssessmentEndDateFilter.value)! < parseDisplayDate(normalizedValue)!
+  ) {
+    draftAssessmentEndDateFilter.value = normalizedValue
+  }
+}
+
+function handleAssessmentEndDateFilterChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftAssessmentEndDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftAssessmentStartDateFilter.value.length === 10
+    && parseDisplayDate(draftAssessmentStartDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(draftAssessmentStartDateFilter.value)! > parseDisplayDate(normalizedValue)!
+  ) {
+    draftAssessmentStartDateFilter.value = normalizedValue
+  }
+}
+
+function openAssessmentCalendar(field: 'start' | 'end') {
+  openAssessmentCalendarField.value = openAssessmentCalendarField.value === field ? null : field
+
+  if (!openAssessmentCalendarField.value) {
+    return
+  }
+
+  const sourceDate = field === 'start' ? draftAssessmentStartDateFilter.value : draftAssessmentEndDateFilter.value
+  assessmentCalendarMonth.value = calendarMonthFromDisplayDate(sourceDate)
+}
+
+function shiftAssessmentCalendarMonth(direction: -1 | 1) {
+  const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString), Number(monthString) - 1 + direction, 1)
+  assessmentCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function shiftAssessmentCalendarYear(direction: -1 | 1) {
+  const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString) + direction, Number(monthString) - 1, 1)
+  assessmentCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function selectAssessmentCalendarDate(field: 'start' | 'end', value: string) {
+  if (field === 'start') {
+    handleAssessmentStartDateFilterChange(value)
+  } else {
+    handleAssessmentEndDateFilterChange(value)
+  }
+
+  openAssessmentCalendarField.value = null
+}
+
+function isAssessmentCalendarDateSelected(value: string) {
+  if (openAssessmentCalendarField.value === 'start') {
+    return draftAssessmentStartDateFilter.value === value
+  }
+
+  if (openAssessmentCalendarField.value === 'end') {
+    return draftAssessmentEndDateFilter.value === value
+  }
+
+  return false
+}
+
+async function downloadAssessments() {
+  const xlsx = await import('xlsx')
+
+  const exportRows = filteredAssessments.value.map((record) => ({
+    ID: record.documentNumber,
+    Sana: formatDateDisplay(record.createdAt),
+    'Xizmat oluvchi': normalizeFullName(record.serviceRecipient),
+    'Xizmat oluvchi JSHSHIR': record.serviceRecipientPinfl,
+    'Xizmat turi': record.serviceType,
+    Natija: record.result,
+    Hudud: record.region,
+    Tuman: record.district,
+    Status: record.status,
+  }))
+
+  const worksheet = xlsx.utils.json_to_sheet(exportRows)
+  const workbook = xlsx.utils.book_new()
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Baholash')
+  xlsx.writeFile(workbook, 'iptk-baholash.xlsx')
 }
 
 function setActionMenuOpen(recordId: string, nextOpen: boolean) {
@@ -4499,71 +4778,383 @@ onUnmounted(() => {
               @update:model-value="handleAssessmentSearchInput(String($event ?? ''))"
             />
           </div>
-        </div>
 
-        <div class="relative min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:overflow-auto xl:[overscroll-behavior:contain]">
-          <div
-            v-if="isTableLoading"
-            class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
-          >
-            <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
-              <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-              <span>Yuklanmoqda...</span>
-            </div>
-          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <div
+                v-if="isAssessmentFilterOpen"
+                class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
+                @click="closeAssessmentFilters"
+              />
 
-          <table class="min-w-[1180px] border-separate border-spacing-0 text-sm xl:min-w-full">
-            <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
-              <tr>
-                <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID, Sana</th>
-                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
-                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
-                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Natija</th>
-                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
-                <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="paginatedAssessments.length === 0">
-                <td colspan="6" class="border-b border-border px-4 py-12 text-center">
-                  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
-                    <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
-                    <p class="text-sm text-muted-foreground">Qidiruv bo‘yicha mos baholash hujjati topilmadi.</p>
-                  </div>
-                </td>
-              </tr>
-              <tr
-                v-for="record in paginatedAssessments"
-                :key="record.id"
-                class="transition-colors duration-200 ease-out hover:bg-muted/30"
+              <Button
+                variant="outline"
+                :class="isAssessmentFilterOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
+                @click="toggleAssessmentFiltersFromMenu(!isAssessmentFilterOpen)"
               >
-                <td class="border-b border-border px-4 py-3 align-top">
-                  <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
-                  <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
-                </td>
-                <td class="border-b border-border px-4 py-3 align-top">
-                  <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
-                  <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
-                </td>
-                <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                  {{ record.serviceType }}
-                </td>
-                <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                  {{ record.result }}
-                </td>
-                <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                  <p class="font-medium text-foreground">{{ record.region }}</p>
-                  <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
-                </td>
-                <td class="border-b border-border px-4 py-3 align-top">
-                  <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
-                    {{ record.status }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                <span
+                  v-if="assessmentActiveFilterCount > 0"
+                  class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
+                >
+                  {{ assessmentActiveFilterCount }}
+                </span>
+                <Filter
+                  v-else
+                  class="h-4 w-4"
+                />
+                Filter
+              </Button>
+
+              <div
+                v-if="isAssessmentFilterOpen"
+                class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:origin-top-right"
+              >
+                <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      class="h-8 w-8 p-0"
+                      @click="closeAssessmentFilters"
+                    >
+                      <X class="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <label class="space-y-2 text-sm xl:relative xl:space-y-0">
+                    <span class="font-medium text-foreground">Status</span>
+                    <div class="space-y-2 xl:mt-2 xl:space-y-0">
+                      <button
+                        type="button"
+                        :class="[
+                          'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                          openAssessmentFilterField === 'status'
+                            ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                            : 'border-input hover:border-ring',
+                        ]"
+                        @click="toggleAssessmentFilterField('status')"
+                      >
+                        <span>{{ draftAssessmentStatusLabel }}</span>
+                        <ChevronDown :class="['h-4 w-4 text-muted-foreground transition-transform duration-200 ease-out', openAssessmentFilterField === 'status' ? 'rotate-180' : '']" />
+                      </button>
+                      <div
+                        v-if="openAssessmentFilterField === 'status'"
+                        class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                      >
+                        <button
+                          type="button"
+                          class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                          @click.stop.prevent="selectAssessmentStatusFilter('all')"
+                        >
+                          <span>Barchasi</span>
+                          <Check v-if="draftAssessmentStatusFilter === 'all'" class="h-4 w-4 text-primary" />
+                        </button>
+                        <button
+                          v-for="status in ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']"
+                          :key="status"
+                          type="button"
+                          class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                          @click.stop.prevent="selectAssessmentStatusFilter(status as CommissionStatus)"
+                        >
+                          <span>{{ status }}</span>
+                          <Check v-if="draftAssessmentStatusFilter === status" class="h-4 w-4 text-primary" />
+                        </button>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="space-y-2 text-sm xl:relative xl:space-y-0">
+                    <span class="font-medium text-foreground">Hudud</span>
+                    <div class="space-y-2 xl:mt-2 xl:space-y-0">
+                      <button
+                        type="button"
+                        :class="[
+                          'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                          openAssessmentFilterField === 'region'
+                            ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                            : 'border-input hover:border-ring',
+                        ]"
+                        @click="toggleAssessmentFilterField('region')"
+                      >
+                        <span class="truncate">{{ draftAssessmentRegionLabel }}</span>
+                        <ChevronDown :class="['h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out', openAssessmentFilterField === 'region' ? 'rotate-180' : '']" />
+                      </button>
+                      <div
+                        v-if="openAssessmentFilterField === 'region'"
+                        class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                      >
+                        <button
+                          type="button"
+                          class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                          @click.stop.prevent="selectAssessmentRegionFilter('all')"
+                        >
+                          <span>Barchasi</span>
+                          <Check v-if="draftAssessmentRegionFilter === 'all'" class="h-4 w-4 text-primary" />
+                        </button>
+                        <button
+                          v-for="region in regionOptions"
+                          :key="region"
+                          type="button"
+                          class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                          @click.stop.prevent="selectAssessmentRegionFilter(region)"
+                        >
+                          <span class="truncate">{{ region }}</span>
+                          <Check v-if="draftAssessmentRegionFilter === region" class="h-4 w-4 shrink-0 text-primary" />
+                        </button>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="space-y-2 text-sm xl:relative xl:space-y-0">
+                    <span class="font-medium text-foreground">Boshlanish sanasi</span>
+                    <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
+                      <div class="relative">
+                        <Input :model-value="draftAssessmentStartDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @update:model-value="handleAssessmentStartDateFilterChange" />
+                        <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground" @click="openAssessmentCalendar('start')">
+                          <CalendarDays class="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div v-if="openAssessmentCalendarField === 'start'" class="rounded-lg border border-border bg-background p-3 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-30">
+                        <div class="mb-3 flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarYear(-1)"><ChevronsLeft class="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarMonth(-1)"><ChevronLeft class="h-4 w-4" /></Button>
+                          </div>
+                          <p class="text-sm font-medium text-foreground">{{ assessmentCalendarMonthLabel }}</p>
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarMonth(1)"><ChevronRight class="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarYear(1)"><ChevronsRight class="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                        <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                          <span v-for="weekday in calendarWeekdays" :key="weekday" class="py-1">{{ weekday }}</span>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1">
+                          <button v-for="day in assessmentCalendarDays" :key="day.key" type="button" class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out" :class="day.isCurrentMonth ? isAssessmentCalendarDateSelected(day.value) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted' : 'pointer-events-none opacity-0'" :disabled="!day.isCurrentMonth" @click="selectAssessmentCalendarDate('start', day.value)">{{ day.label }}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label class="space-y-2 text-sm xl:relative xl:space-y-0">
+                    <span class="font-medium text-foreground">Tugash sanasi</span>
+                    <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
+                      <div class="relative">
+                        <Input :model-value="draftAssessmentEndDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @update:model-value="handleAssessmentEndDateFilterChange" />
+                        <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground" @click="openAssessmentCalendar('end')">
+                          <CalendarDays class="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div v-if="openAssessmentCalendarField === 'end'" class="rounded-lg border border-border bg-background p-3 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-30">
+                        <div class="mb-3 flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarYear(-1)"><ChevronsLeft class="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarMonth(-1)"><ChevronLeft class="h-4 w-4" /></Button>
+                          </div>
+                          <p class="text-sm font-medium text-foreground">{{ assessmentCalendarMonthLabel }}</p>
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarMonth(1)"><ChevronRight class="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftAssessmentCalendarYear(1)"><ChevronsRight class="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+                        <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                          <span v-for="weekday in calendarWeekdays" :key="weekday" class="py-1">{{ weekday }}</span>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1">
+                          <button v-for="day in assessmentCalendarDays" :key="day.key" type="button" class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out" :class="day.isCurrentMonth ? isAssessmentCalendarDateSelected(day.value) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted' : 'pointer-events-none opacity-0'" :disabled="!day.isCurrentMonth" @click="selectAssessmentCalendarDate('end', day.value)">{{ day.label }}</button>
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <div class="flex items-center justify-end gap-3 border-t border-border pt-3">
+                    <Button variant="outline" size="sm" :disabled="isTableLoading || (!assessmentHasActiveFilters && !assessmentHasPendingFilterChanges)" @click="clearAssessmentFilters">Tozalash</Button>
+                    <Button size="sm" :disabled="isTableLoading || !assessmentHasPendingFilterChanges" @click="applyAssessmentFilters">Qo'llash</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              @click="downloadAssessments"
+            >
+              <Download class="h-4 w-4" />
+              Yuklab olish
+            </Button>
+          </div>
         </div>
+
+        <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
+          <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
+            <div class="relative flex-1 xl:hidden">
+              <div
+                v-if="isTableLoading"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+              >
+                <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                  <span>Yuklanmoqda...</span>
+                </div>
+              </div>
+
+              <div
+                v-if="paginatedAssessments.length === 0"
+                class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
+              >
+                <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                  <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
+                  <p class="text-sm text-muted-foreground">Qidiruv yoki filter shartlariga mos yozuv topilmadi.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="mt-2"
+                    :disabled="isTableLoading || (!assessmentSearchQuery && !assessmentHasActiveFilters)"
+                    @click="resetAssessmentSearchAndFilters"
+                  >
+                    Tozalash
+                  </Button>
+                </div>
+              </div>
+
+              <div
+                v-else
+                class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2"
+              >
+                <Card
+                  v-for="record in paginatedAssessments"
+                  :key="record.id"
+                  class="border-border"
+                >
+                  <CardContent class="space-y-4 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hujjat</p>
+                        <p class="mt-1 font-semibold text-foreground">{{ record.documentNumber }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                          {{ record.status }}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="h-9 w-9 shrink-0 rounded-full p-0"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div class="grid gap-3">
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat oluvchi</p>
+                        <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat turi</p>
+                        <p class="mt-1 text-sm text-foreground">{{ record.serviceType }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Natija</p>
+                        <p class="mt-1 text-sm text-foreground">{{ record.result }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Manzil</p>
+                        <p class="mt-1 font-medium text-foreground">{{ record.region }}</p>
+                        <p class="mt-1 text-sm text-muted-foreground">{{ record.district }}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+              <div
+                v-if="isTableLoading"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+              >
+                <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                  <span>Yuklanmoqda...</span>
+                </div>
+              </div>
+
+              <table class="min-w-[1240px] border-separate border-spacing-0 text-sm xl:min-w-full">
+                <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                  <tr>
+                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Hujjat</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Natija</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
+                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="paginatedAssessments.length === 0">
+                    <td colspan="7" class="border-b border-border px-4 py-12 text-center">
+                      <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                        <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
+                        <p class="text-sm text-muted-foreground">Qidiruv yoki filter shartlariga mos yozuv topilmadi.</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :disabled="isTableLoading || (!assessmentSearchQuery && !assessmentHasActiveFilters)"
+                          @click="resetAssessmentSearchAndFilters"
+                        >
+                          Tozalash
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="record in paginatedAssessments"
+                    :key="record.id"
+                    class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                  >
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-8 w-8 rounded-md p-0"
+                      >
+                        <Ellipsis class="h-4 w-4" />
+                      </Button>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      {{ record.serviceType }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      {{ record.result }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      <p class="font-medium text-foreground">{{ record.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                        {{ record.status }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
         <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
@@ -4650,6 +5241,8 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+    </div>
+  </div>
     </template>
 
     <template v-else-if="isServiceTypesPage">
