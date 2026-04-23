@@ -108,6 +108,21 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/iptk/info/info-4',
+        name: 'iptk-info-4',
+        component: IPTKPage,
+        props: {
+          pageKey: 'info-4',
+        },
+        meta: {
+          title: 'Hujjatlar',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Hujjatlar'],
+        },
+      },
+      {
         path: 'apps/iptk/applications/list',
         name: 'iptk-applications-list',
         component: MuruvvatPage,
@@ -135,6 +150,21 @@ export const routes: RouteRecordRaw[] = [
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
           breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+        },
+      },
+      {
+        path: 'apps/iptk/applications/assessment',
+        name: 'iptk-applications-assessment',
+        component: IPTKPage,
+        props: {
+          pageKey: 'applications-assessment',
+        },
+        meta: {
+          title: 'Baholash',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Baholash'],
         },
       },
       {

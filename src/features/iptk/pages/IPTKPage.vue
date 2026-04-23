@@ -32,6 +32,13 @@ type PendingConfirmation = {
   action: () => void
 }
 
+type DocumentHistoryEntry = {
+  operation: string
+  performer: string
+  performedAt: string
+  tone: 'process' | 'success' | 'destructive'
+}
+
 const NOTIFICATION_DURATION = 2600
 
 interface CommissionMemberDraft {
@@ -89,6 +96,19 @@ interface CommissionRecord {
   rejectedAt?: string
 }
 
+interface AssessmentRecord {
+  id: string
+  documentNumber: string
+  createdAt: string
+  serviceRecipient: string
+  serviceRecipientPinfl: string
+  serviceType: string
+  result: string
+  region: string
+  district: string
+  status: CommissionStatus
+}
+
 interface LocalizedValue {
   uzLatn: string
   uzCyrl: string
@@ -103,6 +123,7 @@ interface ServiceTypeRecord {
   fullName: LocalizedValue
   diagnosisIds: string[]
   contraindicationIds: string[]
+  documentIds: string[]
   status: ServiceTypeStatus
 }
 
@@ -111,6 +132,7 @@ interface ServiceTypeForm {
   fullName: LocalizedValue
   diagnosisIds: string[]
   contraindicationIds: string[]
+  documentIds: string[]
   status: ServiceTypeStatus | ''
 }
 
@@ -136,10 +158,12 @@ const props = defineProps<{
 
 const page = computed(() => getIPTKPage(props.pageKey))
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
+const isAssessmentPage = computed(() => props.pageKey === 'applications-assessment')
 const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
 const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
 const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
-const isMedicalReferencePage = computed(() => isDiagnosesPage.value || isContraindicationsPage.value)
+const isDocumentsPage = computed(() => props.pageKey === 'info-4')
+const isMedicalReferencePage = computed(() => isDiagnosesPage.value || isContraindicationsPage.value || isDocumentsPage.value)
 
 const regionOptions = [
   "Qoraqalpog'iston Respublikasi",
@@ -307,6 +331,57 @@ const commissions = ref<CommissionRecord[]>([
   },
 ])
 
+const assessments = ref<AssessmentRecord[]>([
+  {
+    id: '1',
+    documentNumber: 'BHL-2026-001',
+    createdAt: '2026-04-12 10:20',
+    serviceRecipient: 'ALIYEV AZIZBEK ANVAR O‘G‘LI',
+    serviceRecipientPinfl: '10000000000001',
+    serviceType: 'Huzur',
+    result: 'Tezkor guruh',
+    region: 'Toshkent viloyati',
+    district: 'Zangiota tumani',
+    status: 'Jarayonda',
+  },
+  {
+    id: '2',
+    documentNumber: 'BHL-2026-002',
+    createdAt: '2026-04-13 11:10',
+    serviceRecipient: 'KARIMOVA MOHIRA BAXTIYOR QIZI',
+    serviceRecipientPinfl: '10000000000137',
+    serviceType: 'Madad',
+    result: 'Rejali guruh',
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    status: 'Tasdiqlangan',
+  },
+  {
+    id: '3',
+    documentNumber: 'BHL-2026-003',
+    createdAt: '2026-04-14 15:45',
+    serviceRecipient: 'RASULOV DOSTON ELYOR O‘G‘LI',
+    serviceRecipientPinfl: '10000000000274',
+    serviceType: 'Huzur',
+    result: 'Baholash to‘xtatilgan',
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    status: 'Bekor qilingan',
+  },
+  {
+    id: '4',
+    documentNumber: 'BHL-2026-004',
+    createdAt: '2026-04-15 09:05',
+    serviceRecipient: 'TURSUNOVA SHAHNOZA SHERZOD QIZI',
+    serviceRecipientPinfl: '10000000000411',
+    serviceType: 'Madad',
+    result: 'Rejali guruh',
+    region: "Farg'ona viloyati",
+    district: "Qo'qon shahri",
+    status: 'Jarayonda',
+  },
+]) 
+
 const serviceTypes = ref<ServiceTypeRecord[]>([
   {
     id: 'XIZ-2026-001',
@@ -325,6 +400,7 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     },
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    documentIds: ['HUJ-2026-001', 'HUJ-2026-002', 'HUJ-2026-003', 'HUJ-2026-004', 'HUJ-2026-005'],
     status: 'Faol',
   },
   {
@@ -344,6 +420,7 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     },
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    documentIds: ['HUJ-2026-001', 'HUJ-2026-002', 'HUJ-2026-006', 'HUJ-2026-007', 'HUJ-2026-008', 'HUJ-2026-009', 'HUJ-2026-010', 'HUJ-2026-011', 'HUJ-2026-012', 'HUJ-2026-013', 'HUJ-2026-014', 'HUJ-2026-015', 'HUJ-2026-016', 'HUJ-2026-003', 'HUJ-2026-004', 'HUJ-2026-005'],
     status: 'Faol',
   },
   {
@@ -363,6 +440,7 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     },
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
     status: 'Faol',
   },
   {
@@ -382,6 +460,7 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     },
     diagnosisIds: ['TASH-2026-004'],
     contraindicationIds: ['QK-2026-002', 'QK-2026-003'],
+    documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
     status: 'Faol',
   },
   {
@@ -401,6 +480,7 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     },
     diagnosisIds: ['TASH-2026-002', 'TASH-2026-003', 'TASH-2026-004', 'TASH-2026-001'],
     contraindicationIds: ['QK-2026-001', 'QK-2026-002', 'QK-2026-003', 'QK-2026-004'],
+    documentIds: ['HUJ-2026-001', 'HUJ-2026-002'],
     status: 'Faol',
   },
 ])
@@ -576,6 +656,162 @@ const contraindications = ref<DiagnosisRecord[]>([
   },
 ])
 
+const documents = ref<DiagnosisRecord[]>([
+  {
+    id: 'HUJ-2026-001',
+    date: '2026-04-10 09:30',
+    shortName: { uzLatn: '027-shakl', uzCyrl: '027-шакл', kaaLatn: '027-forma', ru: 'Форма 027' },
+    fullName: {
+      uzLatn: 'Tibbiy kartadan batafsil ko‘chirma, oilaviy shifokor va psixiatr xulosalari bilan',
+      uzCyrl: 'Тиббий картадан батафсил кўчирма, оилавий шифокор ва психиатр хулосалари билан',
+      kaaLatn: 'Medicinalıq kartadan tolıq kóshirme, shańaraq dárygeri hám psixiatr juwmaqları menen',
+      ru: 'Подробная выписка из медицинской карты с заключениями семейного врача и психиатра',
+    },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-002',
+    date: '2026-04-10 09:35',
+    shortName: { uzLatn: 'Kasallik tarixi', uzCyrl: 'Касаллик тарихи', kaaLatn: 'Awırıw tariyxı', ru: 'История болезни' },
+    fullName: {
+      uzLatn: 'Ruhiy-asab kasalliklari shifoxonasida oxirgi 5 yil davomida davolanganligi to‘g‘risida kasallik tarixidan ko‘chirma',
+      uzCyrl: 'Руҳий-асаб касалликлари шифохонасида охирги 5 йил давомида даволанганлиги тўғрисида касаллик тарихидан кўчирма',
+      kaaLatn: 'Sońǵı 5 jıl ishinde psixonevrologiyalıq awırıwlar shıypaxanasında emlengenligi haqqında awırıw tariyxınan kóshirme',
+      ru: 'Выписка из истории болезни о лечении в психоневрологической больнице за последние 5 лет',
+    },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-003',
+    date: '2026-04-10 09:40',
+    shortName: { uzLatn: 'Vasiylik qarori', uzCyrl: 'Васийлик қарори', kaaLatn: 'Qamqorlıq qararı', ru: 'Решение об опеке' },
+    fullName: {
+      uzLatn: 'Nogironligi bo‘lgan shaxsga vasiy tayinlash to‘g‘risidagi qaror',
+      uzCyrl: 'Ногиронлиги бўлган шахсга васий тайинлаш тўғрисидаги қарор',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxsqa qamqor tayınlaw haqqında qarar',
+      ru: 'Решение о назначении опекуна лицу с инвалидностью',
+    },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-004',
+    date: '2026-04-10 09:45',
+    shortName: { uzLatn: 'Sud qarori', uzCyrl: 'Суд қарори', kaaLatn: 'Sud qararı', ru: 'Решение суда' },
+    fullName: {
+      uzLatn: 'Shaxsni muomalaga layoqatsiz deb topish to‘g‘risidagi sud qarori',
+      uzCyrl: 'Шахсни муомалага лаёқатсиз деб топиш тўғрисидаги суд қарори',
+      kaaLatn: 'Shaxstı muamalaǵa uqıpsız dep tabıw haqqında sud qararı',
+      ru: 'Решение суда о признании лица недееспособным',
+    },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-005',
+    date: '2026-04-10 09:50',
+    shortName: { uzLatn: 'Sud-psixiatriya xulosasi', uzCyrl: 'Суд-психиатрия хулосаси', kaaLatn: 'Sud-psixiatriya juwmaǵı', ru: 'Судебно-психиатрическое заключение' },
+    fullName: {
+      uzLatn: 'Sud tomonidan tayinlangan sud-psixiatriya ekspertizasi xulosasi',
+      uzCyrl: 'Суд томонидан тайинланган суд-психиатрия экспертизаси хулосаси',
+      kaaLatn: 'Sud tárepinen tayınlanǵan sud-psixiatriya ekspertizası juwmaǵı',
+      ru: 'Заключение судебно-психиатрической экспертизы, назначенной судом',
+    },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-006',
+    date: '2026-04-10 09:55',
+    shortName: { uzLatn: 'Qon tahlili', uzCyrl: 'Қон таҳлили', kaaLatn: 'Qan analizi', ru: 'Анализ крови' },
+    fullName: { uzLatn: 'Qonning umumiy tahlili', uzCyrl: 'Қоннинг умумий таҳлили', kaaLatn: 'Qannıń ulıwma analizi', ru: 'Общий анализ крови' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-007',
+    date: '2026-04-10 10:00',
+    shortName: { uzLatn: 'Siydik tahlili', uzCyrl: 'Сийдик таҳлили', kaaLatn: 'Sidik analizi', ru: 'Анализ мочи' },
+    fullName: { uzLatn: 'Siydikning umumiy tahlili', uzCyrl: 'Сийдикнинг умумий таҳлили', kaaLatn: 'Sidiktiń ulıwma analizi', ru: 'Общий анализ мочи' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-008',
+    date: '2026-04-10 10:05',
+    shortName: { uzLatn: 'RW tahlili', uzCyrl: 'RW таҳлили', kaaLatn: 'RW analizi', ru: 'Анализ RW' },
+    fullName: { uzLatn: 'Qonning RW (Vasserman reaksiyasi) tahlili', uzCyrl: 'Қоннинг RW (Вассерман реакцияси) таҳлили', kaaLatn: 'Qannıń RW (Vasserman reakciyası) analizi', ru: 'Анализ крови RW (реакция Вассермана)' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-009',
+    date: '2026-04-10 10:10',
+    shortName: { uzLatn: 'Gepatit markerlari', uzCyrl: 'Гепатит маркерлари', kaaLatn: 'Gepatit markerleri', ru: 'Маркеры гепатита' },
+    fullName: { uzLatn: '“B” va “C” gepatitlarining markerlarini aniqlovchi qon tahlili', uzCyrl: '“В” ва “С” гепатитларининг маркерларини аниқловчи қон таҳлили', kaaLatn: '“B” hám “C” gepatit markerlerin anıqlawshı qan analizi', ru: 'Анализ крови на маркеры гепатитов B и C' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-010',
+    date: '2026-04-10 10:15',
+    shortName: { uzLatn: 'OIV tahlili', uzCyrl: 'ОИВ таҳлили', kaaLatn: 'AİV analizi', ru: 'Анализ ВИЧ' },
+    fullName: { uzLatn: 'Qonning OIV bilan zararlanishi to‘g‘risidagi tahlili', uzCyrl: 'Қоннинг ОИВ билан зарарланиши тўғрисидаги таҳлили', kaaLatn: 'Qannıń AİV menen zaqımlanıwı haqqında analiz', ru: 'Анализ крови на заражение ВИЧ' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-011',
+    date: '2026-04-10 10:20',
+    shortName: { uzLatn: 'Flyuorografiya', uzCyrl: 'Флюорография', kaaLatn: 'Flyuorografiya', ru: 'Флюорография' },
+    fullName: { uzLatn: 'Ko‘krak qafasi a’zolarining flyuorografiyasi', uzCyrl: 'Кўкрак қафаси аъзоларининг флюорографияси', kaaLatn: 'Kókirek qapası aǵzalarınıń flyuorografiyası', ru: 'Флюорография органов грудной клетки' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-012',
+    date: '2026-04-10 10:25',
+    shortName: { uzLatn: 'TMK xulosasi', uzCyrl: 'ТМК хулосаси', kaaLatn: 'TMK juwmaǵı', ru: 'Заключение ВКК' },
+    fullName: { uzLatn: 'Psixiatriya xizmati bo‘yicha Tibbiy-maslahat komissiyasi xulosasi', uzCyrl: 'Психиатрия хизмати бўйича Тиббий-маслаҳат комиссияси хулосаси', kaaLatn: 'Psixiatriya xızmeti boyınsha Medicinalıq-másláhát komissiyası juwmaǵı', ru: 'Заключение врачебно-консультативной комиссии по психиатрической службе' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-013',
+    date: '2026-04-10 10:30',
+    shortName: { uzLatn: 'Sil dispanseri', uzCyrl: 'Сил диспансери', kaaLatn: 'Sil dispanseri', ru: 'Противотуберкулезный диспансер' },
+    fullName: { uzLatn: 'Silga qarshi kurashish dispanseri xulosasi', uzCyrl: 'Силга қарши курашиш диспансери хулосаси', kaaLatn: 'Silge qarsı gúresiw dispanseri juwmaǵı', ru: 'Заключение противотуберкулезного диспансера' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-014',
+    date: '2026-04-10 10:35',
+    shortName: { uzLatn: 'Onkologik dispanser', uzCyrl: 'Онкологик диспансер', kaaLatn: 'Onkologiyalıq dispanser', ru: 'Онкологический диспансер' },
+    fullName: { uzLatn: 'Onkologik dispanser xulosasi', uzCyrl: 'Онкологик диспансер хулосаси', kaaLatn: 'Onkologiyalıq dispanser juwmaǵı', ru: 'Заключение онкологического диспансера' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-015',
+    date: '2026-04-10 10:40',
+    shortName: { uzLatn: 'Teri-tanosil dispanseri', uzCyrl: 'Тери-таносил диспансери', kaaLatn: 'Teri-tanosil dispanseri', ru: 'Кожно-венерологический диспансер' },
+    fullName: { uzLatn: 'Teri-tanosil kasalliklari dispanseri xulosasi', uzCyrl: 'Тери-таносил касалликлари диспансери хулосаси', kaaLatn: 'Teri-tanosil awırıwları dispanseri juwmaǵı', ru: 'Заключение кожно-венерологического диспансера' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+  {
+    id: 'HUJ-2026-016',
+    date: '2026-04-10 10:45',
+    shortName: { uzLatn: 'OITS markazi', uzCyrl: 'ОИТС маркази', kaaLatn: 'JİTS orayı', ru: 'Центр СПИД' },
+    fullName: { uzLatn: 'OITSga qarshi kurash markazining xulosasi', uzCyrl: 'ОИТСга қарши кураш марказининг хулосаси', kaaLatn: 'JİTSke qarsı gúres orayınıń juwmaǵı', ru: 'Заключение центра по борьбе со СПИД' },
+    icdCodes: [],
+    status: 'Faol',
+  },
+])
+
 const isCreateDialogOpen = ref(false)
 const isFilterOpen = ref(false)
 const openFilterField = ref<'status' | 'region' | null>(null)
@@ -592,6 +828,8 @@ const notificationRemaining = ref(NOTIFICATION_DURATION)
 const isTableLoading = ref(false)
 const searchInput = ref('')
 const searchQuery = ref('')
+const assessmentSearchInput = ref('')
+const assessmentSearchQuery = ref('')
 const draftStatusFilter = ref<'all' | CommissionStatus>('all')
 const appliedStatusFilter = ref<'all' | CommissionStatus>('all')
 const draftRegionFilter = ref<'all' | string>('all')
@@ -604,6 +842,9 @@ const rowsPerPageOptions = [20, 50, 100, 200, 500]
 const selectedRowsPerPage = ref(20)
 const currentPage = ref(1)
 const isRowsPerPageOpen = ref(false)
+const assessmentRowsPerPage = ref(20)
+const assessmentCurrentPage = ref(1)
+const isAssessmentRowsPerPageOpen = ref(false)
 
 const formRegion = ref('')
 const chairSearch = ref<CommissionSearchState>(createSearchState())
@@ -620,6 +861,7 @@ const isServiceTypeDialogOpen = ref(false)
 const isServiceTypeStatusOpen = ref(false)
 const isServiceTypeDiagnosesOpen = ref(false)
 const isServiceTypeContraindicationsOpen = ref(false)
+const isServiceTypeDocumentsOpen = ref(false)
 const isServiceTypeTranslationsOpen = ref(false)
 const editingServiceTypeId = ref<string | null>(null)
 const selectedServiceTypeRecord = ref<ServiceTypeRecord | null>(null)
@@ -681,6 +923,61 @@ const selectedViewLeadership = computed(() => {
       profile: hydrateExistingProfile(record.secretary, record.region, record.secretaryPinfl),
     },
   ]
+})
+
+const selectedViewHistory = computed<DocumentHistoryEntry[]>(() => {
+  const record = selectedViewRecord.value
+
+  if (!record) {
+    return []
+  }
+
+  const history: DocumentHistoryEntry[] = [
+    {
+      operation: 'Hujjat yaratildi',
+      performer: 'Hududiy kotib',
+      performedAt: record.createdAt,
+      tone: 'process',
+    },
+  ]
+
+  if (record.workflowStage !== 'Qoralama') {
+    history.push({
+      operation: 'Tasdiqlashga yuborildi',
+      performer: 'Hududiy kotib',
+      performedAt: record.submittedAt ?? record.createdAt,
+      tone: 'process',
+    })
+  }
+
+  if (record.approvedAt) {
+    history.push({
+      operation: 'Tasdiqlandi',
+      performer: `Komissiya raisi: ${normalizeFullName(record.chair)}`,
+      performedAt: record.approvedAt,
+      tone: 'success',
+    })
+  }
+
+  if (record.rejectedAt) {
+    history.push({
+      operation: 'Bekor qilindi',
+      performer: `Komissiya raisi: ${normalizeFullName(record.chair)}`,
+      performedAt: record.rejectedAt,
+      tone: 'destructive',
+    })
+  }
+
+  if (!record.approvedAt && !record.rejectedAt && record.updatedAt !== record.createdAt) {
+    history.push({
+      operation: 'Tahrirlandi',
+      performer: 'Hududiy kotib',
+      performedAt: record.updatedAt,
+      tone: 'process',
+    })
+  }
+
+  return history
 })
 
 function createSearchState(): CommissionSearchState {
@@ -1181,6 +1478,10 @@ const serviceTypeFormError = computed(() => {
     return "Kamida bitta qarshi ko'rsatma tanlanishi kerak."
   }
 
+  if (serviceTypeForm.value.documentIds.length === 0) {
+    return 'Kamida bitta talab etiladigan hujjat tanlanishi kerak.'
+  }
+
   return ''
 })
 
@@ -1202,6 +1503,7 @@ const filteredServiceTypes = computed(() => {
     ...Object.values(record.fullName),
     ...getServiceTypeDiagnoses(record).map(medicalReferenceLabel),
     ...getServiceTypeContraindications(record).map(medicalReferenceLabel),
+    ...getServiceTypeDocuments(record).map(medicalReferenceLabel),
   ].some((value) => value.toLowerCase().includes(query)))
 })
 
@@ -1218,12 +1520,21 @@ const serviceTypePaginationRange = computed(() => {
 })
 const serviceTypeCurrentPageSummary = computed(() => `${serviceTypeCurrentPage.value}/${serviceTypeTotalPages.value}`)
 
-const medicalReferenceTitle = computed(() => isContraindicationsPage.value ? "Qarshi ko'rsatma" : 'Mos tashxis')
+const medicalReferenceTitle = computed(() => {
+  if (isDocumentsPage.value) return 'Hujjat'
+  return isContraindicationsPage.value ? "Qarshi ko'rsatma" : 'Mos tashxis'
+})
 const medicalReferenceCreateTitle = computed(() => `${medicalReferenceTitle.value} yaratish`)
 const medicalReferenceEditTitle = computed(() => `${medicalReferenceTitle.value}ni tahrirlash`)
 const medicalReferenceDeleteTitle = computed(() => `${medicalReferenceTitle.value} o'chirilsinmi?`)
-const medicalReferenceExportName = computed(() => isContraindicationsPage.value ? 'iptk-qarshi-korsatmalar.xlsx' : 'iptk-mos-tashxislar.xlsx')
-const medicalReferenceSheetName = computed(() => isContraindicationsPage.value ? "Qarshi ko'rsatmalar" : 'Mos tashxislar')
+const medicalReferenceExportName = computed(() => {
+  if (isDocumentsPage.value) return 'iptk-hujjatlar.xlsx'
+  return isContraindicationsPage.value ? 'iptk-qarshi-korsatmalar.xlsx' : 'iptk-mos-tashxislar.xlsx'
+})
+const medicalReferenceSheetName = computed(() => {
+  if (isDocumentsPage.value) return 'Hujjatlar'
+  return isContraindicationsPage.value ? "Qarshi ko'rsatmalar" : 'Mos tashxislar'
+})
 
 function medicalReferenceLabel(record: DiagnosisRecord) {
   return `${record.shortName.uzLatn} - ${record.fullName.uzLatn}`
@@ -1243,7 +1554,12 @@ function getServiceTypeContraindications(record: Pick<ServiceTypeRecord, 'contra
   return resolveMedicalReference(record.contraindicationIds, contraindications.value)
 }
 
+function getServiceTypeDocuments(record: Pick<ServiceTypeRecord, 'documentIds'>) {
+  return resolveMedicalReference(record.documentIds, documents.value)
+}
+
 function getActiveMedicalReferenceRecords() {
+  if (isDocumentsPage.value) return documents
   return isContraindicationsPage.value ? contraindications : diagnoses
 }
 
@@ -1258,7 +1574,7 @@ const diagnosisFormError = computed(() => {
     return "Qisqa nomi, to'liq nomi va status to'ldirilishi kerak."
   }
 
-  if (diagnosisForm.value.icdCodes.length === 0) {
+  if (!isDocumentsPage.value && diagnosisForm.value.icdCodes.length === 0) {
     return "Kamida bitta ICD-10 kodi tanlanishi kerak."
   }
 
@@ -1321,6 +1637,27 @@ const filteredCommissions = computed(() => {
   })
 })
 
+const filteredAssessments = computed(() => {
+  const query = assessmentSearchQuery.value.trim().toLowerCase()
+
+  if (!query) {
+    return assessments.value
+  }
+
+  return assessments.value.filter((record) => [
+    record.documentNumber,
+    record.createdAt,
+    formatDateDisplay(record.createdAt),
+    record.serviceRecipient,
+    record.serviceRecipientPinfl,
+    record.serviceType,
+    record.result,
+    record.region,
+    record.district,
+    record.status,
+  ].some((value) => value.toLowerCase().includes(query)))
+})
+
 const totalRows = computed(() => filteredCommissions.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
 const paginatedCommissions = computed(() => {
@@ -1333,6 +1670,18 @@ const paginationRange = computed(() => {
   return { start, end }
 })
 const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
+const assessmentTotalRows = computed(() => filteredAssessments.value.length)
+const assessmentTotalPages = computed(() => Math.max(1, Math.ceil(assessmentTotalRows.value / assessmentRowsPerPage.value)))
+const paginatedAssessments = computed(() => {
+  const start = (assessmentCurrentPage.value - 1) * assessmentRowsPerPage.value
+  return filteredAssessments.value.slice(start, start + assessmentRowsPerPage.value)
+})
+const assessmentPaginationRange = computed(() => {
+  const start = assessmentTotalRows.value === 0 ? 0 : (assessmentCurrentPage.value - 1) * assessmentRowsPerPage.value + 1
+  const end = Math.min(assessmentCurrentPage.value * assessmentRowsPerPage.value, assessmentTotalRows.value)
+  return { start, end }
+})
+const assessmentCurrentPageSummary = computed(() => `${assessmentCurrentPage.value}/${assessmentTotalPages.value}`)
 const activeFilterCount = computed(() => {
   let count = 0
 
@@ -1591,6 +1940,7 @@ function saveCommission() {
     if (target.status !== 'Tasdiqlangan') {
       target.workflowStage = 'Tasdiqlashga yuborildi'
       target.status = 'Jarayonda'
+      target.submittedAt = timestamp
       target.rejectedAt = undefined
     }
 
@@ -1603,6 +1953,7 @@ function saveCommission() {
       workflowStage: 'Tasdiqlashga yuborildi',
       createdAt: timestamp,
       updatedAt: timestamp,
+      submittedAt: timestamp,
       ...payload,
     }
 
@@ -1835,6 +2186,7 @@ function createServiceTypeForm(): ServiceTypeForm {
     fullName: createLocalizedValue(),
     diagnosisIds: [],
     contraindicationIds: [],
+    documentIds: [],
     status: 'Faol',
   }
 }
@@ -1955,6 +2307,41 @@ function setRowsPerPage(nextValue: number) {
   })
 }
 
+function handleAssessmentSearchInput(value: string) {
+  assessmentSearchInput.value = value
+
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+
+  searchDebounceTimer = setTimeout(() => {
+    runTableLoading(() => {
+      assessmentSearchQuery.value = assessmentSearchInput.value
+      assessmentCurrentPage.value = 1
+    })
+    searchDebounceTimer = null
+  }, 1000)
+}
+
+function goToAssessmentPage(page: number) {
+  if (page < 1 || page > assessmentTotalPages.value || page === assessmentCurrentPage.value) return
+
+  runTableLoading(() => {
+    assessmentCurrentPage.value = page
+  })
+}
+
+function setAssessmentRowsPerPageOpen(nextOpen: boolean) {
+  isAssessmentRowsPerPageOpen.value = nextOpen
+}
+
+function setAssessmentRowsPerPage(nextValue: number) {
+  runTableLoading(() => {
+    assessmentRowsPerPage.value = nextValue
+    assessmentCurrentPage.value = 1
+  })
+}
+
 function setActionMenuOpen(recordId: string, nextOpen: boolean) {
   openActionMenuId.value = nextOpen ? recordId : (openActionMenuId.value === recordId ? null : openActionMenuId.value)
 }
@@ -2007,6 +2394,7 @@ function resetServiceTypeForm() {
   isServiceTypeStatusOpen.value = false
   isServiceTypeDiagnosesOpen.value = false
   isServiceTypeContraindicationsOpen.value = false
+  isServiceTypeDocumentsOpen.value = false
   isServiceTypeTranslationsOpen.value = false
   serviceTypeForm.value = createServiceTypeForm()
 }
@@ -2027,12 +2415,14 @@ function editServiceType(record: ServiceTypeRecord) {
   isServiceTypeStatusOpen.value = false
   isServiceTypeDiagnosesOpen.value = false
   isServiceTypeContraindicationsOpen.value = false
+  isServiceTypeDocumentsOpen.value = false
   isServiceTypeTranslationsOpen.value = false
   serviceTypeForm.value = {
     shortName: { ...record.shortName },
     fullName: { ...record.fullName },
     diagnosisIds: [...record.diagnosisIds],
     contraindicationIds: [...record.contraindicationIds],
+    documentIds: [...record.documentIds],
     status: record.status,
   }
   isServiceTypeDialogOpen.value = true
@@ -2068,6 +2458,7 @@ function saveServiceType() {
     },
     diagnosisIds: [...serviceTypeForm.value.diagnosisIds],
     contraindicationIds: [...serviceTypeForm.value.contraindicationIds],
+    documentIds: [...serviceTypeForm.value.documentIds],
     status: serviceTypeForm.value.status as ServiceTypeStatus,
   }
 
@@ -2079,6 +2470,7 @@ function saveServiceType() {
     target.fullName = payload.fullName
     target.diagnosisIds = payload.diagnosisIds
     target.contraindicationIds = payload.contraindicationIds
+    target.documentIds = payload.documentIds
     target.status = payload.status
     pushFeedback('success', `${target.id} yangilandi.`)
   } else {
@@ -2143,11 +2535,12 @@ function setServiceTypeActionMenuOpen(recordId: string, nextOpen: boolean) {
   openServiceTypeActionMenuId.value = nextOpen ? recordId : (openServiceTypeActionMenuId.value === recordId ? null : openServiceTypeActionMenuId.value)
 }
 
-type ServiceTypeDropdown = 'diagnoses' | 'contraindications' | 'status'
+type ServiceTypeDropdown = 'diagnoses' | 'contraindications' | 'documents' | 'status'
 
 function closeServiceTypeDropdowns(except?: ServiceTypeDropdown) {
   if (except !== 'diagnoses') isServiceTypeDiagnosesOpen.value = false
   if (except !== 'contraindications') isServiceTypeContraindicationsOpen.value = false
+  if (except !== 'documents') isServiceTypeDocumentsOpen.value = false
   if (except !== 'status') isServiceTypeStatusOpen.value = false
 }
 
@@ -2156,12 +2549,15 @@ function toggleServiceTypeDropdown(dropdown: ServiceTypeDropdown) {
     ? !isServiceTypeDiagnosesOpen.value
     : dropdown === 'contraindications'
       ? !isServiceTypeContraindicationsOpen.value
-      : !isServiceTypeStatusOpen.value
+      : dropdown === 'documents'
+        ? !isServiceTypeDocumentsOpen.value
+        : !isServiceTypeStatusOpen.value
 
   closeServiceTypeDropdowns(isOpening ? dropdown : undefined)
 
   if (dropdown === 'diagnoses') isServiceTypeDiagnosesOpen.value = isOpening
   if (dropdown === 'contraindications') isServiceTypeContraindicationsOpen.value = isOpening
+  if (dropdown === 'documents') isServiceTypeDocumentsOpen.value = isOpening
   if (dropdown === 'status') isServiceTypeStatusOpen.value = isOpening
 }
 
@@ -2189,6 +2585,13 @@ function toggleServiceTypeContraindication(contraindicationId: string) {
     : [...selected, contraindicationId]
 }
 
+function toggleServiceTypeDocument(documentId: string) {
+  const selected = serviceTypeForm.value.documentIds
+  serviceTypeForm.value.documentIds = selected.includes(documentId)
+    ? selected.filter((id) => id !== documentId)
+    : [...selected, documentId]
+}
+
 async function downloadServiceTypes() {
   const xlsx = await import('xlsx')
 
@@ -2199,6 +2602,7 @@ async function downloadServiceTypes() {
     "To'liq nomi": record.fullName.uzLatn,
     'Mos tashxislar': getServiceTypeDiagnoses(record).map(medicalReferenceLabel).join('; '),
     "Qarshi ko'rsatmalar": getServiceTypeContraindications(record).map(medicalReferenceLabel).join('; '),
+    'Talab etiladigan hujjatlar': getServiceTypeDocuments(record).map(medicalReferenceLabel).join('; '),
     Status: record.status,
   }))
 
@@ -2210,7 +2614,7 @@ async function downloadServiceTypes() {
 
 function nextDiagnosisId() {
   const records = getActiveMedicalReferenceRecords().value
-  const prefix = isContraindicationsPage.value ? 'QK' : 'TASH'
+  const prefix = isDocumentsPage.value ? 'HUJ' : isContraindicationsPage.value ? 'QK' : 'TASH'
   const nextIndex = records.length + 1
   return `${prefix}-2026-${String(nextIndex).padStart(3, '0')}`
 }
@@ -2392,14 +2796,21 @@ function setDiagnosisActionMenuOpen(recordId: string, nextOpen: boolean) {
 async function downloadDiagnoses() {
   const xlsx = await import('xlsx')
 
-  const exportRows = filteredDiagnoses.value.map((record) => ({
-    ID: record.id,
-    Sana: formatDateDisplay(record.date),
-    'Qisqa nomi': record.shortName.uzLatn,
-    "To'liq nomi": record.fullName.uzLatn,
-    'ICD-10 kodlari': record.icdCodes.join(', '),
-    Status: record.status,
-  }))
+  const exportRows = filteredDiagnoses.value.map((record) => {
+    const row: Record<string, string> = {
+      ID: record.id,
+      Sana: formatDateDisplay(record.date),
+      'Qisqa nomi': record.shortName.uzLatn,
+      "To'liq nomi": record.fullName.uzLatn,
+      Status: record.status,
+    }
+
+    if (!isDocumentsPage.value) {
+      row['ICD-10 kodlari'] = record.icdCodes.join(', ')
+    }
+
+    return row
+  })
 
   const worksheet = xlsx.utils.json_to_sheet(exportRows)
   const workbook = xlsx.utils.book_new()
@@ -2421,6 +2832,12 @@ watch(formRegion, (nextRegion, previousRegion) => {
 watch(totalPages, (nextTotal) => {
   if (currentPage.value > nextTotal) {
     currentPage.value = nextTotal
+  }
+})
+
+watch(assessmentTotalPages, (nextTotal) => {
+  if (assessmentCurrentPage.value > nextTotal) {
+    assessmentCurrentPage.value = nextTotal
   }
 })
 
@@ -3485,6 +3902,56 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <h3 class="text-base font-semibold text-foreground">
+                Hujjat tarixi
+              </h3>
+              <div class="mt-4 space-y-3">
+                <div
+                  v-for="(history, index) in selectedViewHistory"
+                  :key="`${history.operation}-${index}`"
+                  class="grid gap-3 rounded-xl border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_10rem]"
+                >
+                  <div class="flex min-w-0 gap-3">
+                    <span
+                      :class="[
+                        'mt-1 h-2.5 w-2.5 shrink-0 rounded-full',
+                        history.tone === 'success'
+                          ? 'bg-emerald-500'
+                          : history.tone === 'destructive'
+                            ? 'bg-rose-500'
+                            : 'bg-amber-500',
+                      ]"
+                    />
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Amaliyot
+                      </p>
+                      <p class="mt-1 text-sm font-semibold text-foreground">
+                        {{ history.operation }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bajaruvchi
+                    </p>
+                    <p class="mt-1 truncate text-sm text-foreground">
+                      {{ history.performer }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bajarilgan vaqt
+                    </p>
+                    <p class="mt-1 text-sm text-foreground">
+                      {{ history.performedAt }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="flex justify-end border-t border-border px-6 py-4">
@@ -4020,6 +4487,171 @@ onUnmounted(() => {
       </div>
     </template>
 
+    <template v-else-if="isAssessmentPage">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="assessmentSearchInput"
+              class="pl-9"
+              placeholder="Qidirish"
+              @update:model-value="handleAssessmentSearchInput(String($event ?? ''))"
+            />
+          </div>
+        </div>
+
+        <div class="relative min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:overflow-auto xl:[overscroll-behavior:contain]">
+          <div
+            v-if="isTableLoading"
+            class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+          >
+            <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+              <span>Yuklanmoqda...</span>
+            </div>
+          </div>
+
+          <table class="min-w-[1180px] border-separate border-spacing-0 text-sm xl:min-w-full">
+            <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+              <tr>
+                <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID, Sana</th>
+                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
+                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
+                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Natija</th>
+                <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
+                <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="paginatedAssessments.length === 0">
+                <td colspan="6" class="border-b border-border px-4 py-12 text-center">
+                  <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                    <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
+                    <p class="text-sm text-muted-foreground">Qidiruv bo‘yicha mos baholash hujjati topilmadi.</p>
+                  </div>
+                </td>
+              </tr>
+              <tr
+                v-for="record in paginatedAssessments"
+                :key="record.id"
+                class="transition-colors duration-200 ease-out hover:bg-muted/30"
+              >
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                  {{ record.serviceType }}
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                  {{ record.result }}
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                  <p class="font-medium text-foreground">{{ record.region }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                    {{ record.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-muted-foreground">Qatorlar soni</span>
+              <DropdownMenuRoot @update:open="setAssessmentRowsPerPageOpen($event)">
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :class="isAssessmentRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                  >
+                    <span>{{ assessmentRowsPerPage }}</span>
+                    <ChevronRight class="h-4 w-4 rotate-90" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuContent
+                    align="start"
+                    :side-offset="6"
+                    class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                  >
+                    <DropdownMenuItem
+                      v-for="option in rowsPerPageOptions"
+                      :key="option"
+                      class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                      @select.prevent="setAssessmentRowsPerPage(option)"
+                    >
+                      <span :class="option === assessmentRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                        {{ option }}
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenuPortal>
+              </DropdownMenuRoot>
+            </div>
+
+            <div class="flex items-center gap-2 text-sm">
+              <span class="text-muted-foreground">Sahifada:</span>
+              <span class="font-medium text-foreground">{{ assessmentPaginationRange.start }}-{{ assessmentPaginationRange.end }} / {{ assessmentTotalRows }}</span>
+            </div>
+          </div>
+
+          <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isTableLoading || assessmentCurrentPage === 1"
+              @click="goToAssessmentPage(1)"
+            >
+              <ChevronsLeft class="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isTableLoading || assessmentCurrentPage === 1"
+              @click="goToAssessmentPage(assessmentCurrentPage - 1)"
+            >
+              <ChevronLeft class="h-5 w-5" />
+            </Button>
+            <span class="min-w-14 text-center text-sm font-semibold text-foreground">
+              {{ assessmentCurrentPageSummary }}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isTableLoading || assessmentCurrentPage === assessmentTotalPages"
+              @click="goToAssessmentPage(assessmentCurrentPage + 1)"
+            >
+              <ChevronRight class="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isTableLoading || assessmentCurrentPage === assessmentTotalPages"
+              @click="goToAssessmentPage(assessmentTotalPages)"
+            >
+              <ChevronsRight class="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <template v-else-if="isServiceTypesPage">
       <div
         v-if="feedback"
@@ -4076,9 +4708,9 @@ onUnmounted(() => {
             />
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Button
-              class="h-10 gap-2"
+              class="h-10 w-full gap-2 sm:w-auto"
               @click="openCreateServiceTypeDialog"
             >
               <Plus class="h-4 w-4" />
@@ -4086,7 +4718,7 @@ onUnmounted(() => {
             </Button>
             <Button
               variant="outline"
-              class="h-10 gap-2"
+              class="h-10 w-full gap-2 sm:w-auto"
               @click="downloadServiceTypes"
             >
               <Download class="h-4 w-4" />
@@ -4179,13 +4811,13 @@ onUnmounted(() => {
                     </DropdownMenuRoot>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="font-medium text-foreground">{{ record.id }}</p>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
                     {{ formatDateDisplay(record.date) }}
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
@@ -4219,49 +4851,55 @@ onUnmounted(() => {
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ID</p>
-                    <p class="mt-1 font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="mt-1 font-medium text-foreground">{{ record.id }}</p>
                     <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.date) }}</p>
                   </div>
-                  <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
-                    {{ record.status }}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                      {{ record.status }}
+                    </span>
+                    <DropdownMenuRoot @update:open="setServiceTypeActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openServiceTypeActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewServiceType(record)">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editServiceType(record)">
+                            <Pencil class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestDeleteServiceType(record)">
+                            <Trash2 class="h-4 w-4 shrink-0" />
+                            <span>O'chirish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </div>
                 </div>
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
-                  <p class="mt-1 font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                  <p class="mt-1 font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                 </div>
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-2"
-                    @click="viewServiceType(record)"
-                  >
-                    <Eye class="h-4 w-4" />
-                    Ko'rish
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-2"
-                    @click="editServiceType(record)"
-                  >
-                    <Pencil class="h-4 w-4" />
-                    Tahrirlash
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-2 text-destructive"
-                    @click="requestDeleteServiceType(record)"
-                  >
-                    <Trash2 class="h-4 w-4" />
-                    O'chirish
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -4513,6 +5151,50 @@ onUnmounted(() => {
             </section>
 
             <section class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Talab etiladigan hujjatlar</span>
+              <div class="relative">
+                <button
+                  type="button"
+                  :class="[
+                    'flex min-h-10 w-full items-center justify-between gap-3 rounded-md border border-input bg-background px-3 py-2 text-left text-sm transition',
+                    isServiceTypeDocumentsOpen && 'border-ring ring-2 ring-ring/20',
+                  ]"
+                  @click="toggleServiceTypeDropdown('documents')"
+                >
+                  <span class="flex flex-wrap gap-1.5">
+                    <span v-if="serviceTypeForm.documentIds.length === 0" class="text-muted-foreground">Hujjatlarni tanlang</span>
+                    <span
+                      v-for="record in getServiceTypeDocuments(serviceTypeForm)"
+                      :key="record.id"
+                      class="rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
+                    >
+                      {{ record.shortName.uzLatn }}
+                    </span>
+                  </span>
+                  <ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+                <div
+                  v-if="isServiceTypeDocumentsOpen"
+                  class="absolute left-0 top-full z-50 mt-2 max-h-80 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+                >
+                  <button
+                    v-for="record in documents"
+                    :key="record.id"
+                    type="button"
+                    class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    @click="toggleServiceTypeDocument(record.id)"
+                  >
+                    <span>
+                      <span class="block font-semibold">{{ record.shortName.uzLatn }}</span>
+                      <span class="block text-xs text-muted-foreground">{{ record.fullName.uzLatn }}</span>
+                    </span>
+                    <Check v-if="serviceTypeForm.documentIds.includes(record.id)" class="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section class="space-y-2">
               <span class="text-sm font-medium text-foreground">Status</span>
               <div class="relative max-w-sm">
                 <button
@@ -4680,6 +5362,20 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <h3 class="font-semibold text-foreground">Talab etiladigan hujjatlar</h3>
+              <div class="mt-4 grid gap-2 md:grid-cols-2">
+                <div
+                  v-for="record in getServiceTypeDocuments(selectedServiceTypeRecord)"
+                  :key="record.id"
+                  class="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                >
+                  <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.fullName.uzLatn }}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -4751,9 +5447,9 @@ onUnmounted(() => {
             />
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Button
-              class="h-10 gap-2"
+              class="h-10 w-full gap-2 sm:w-auto"
               @click="openCreateDiagnosisDialog"
             >
               <Plus class="h-4 w-4" />
@@ -4761,7 +5457,7 @@ onUnmounted(() => {
             </Button>
             <Button
               variant="outline"
-              class="h-10 gap-2"
+              class="h-10 w-full gap-2 sm:w-auto"
               @click="downloadDiagnoses"
             >
               <Download class="h-4 w-4" />
@@ -4845,11 +5541,11 @@ onUnmounted(() => {
                     </DropdownMenuRoot>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="font-medium text-foreground">{{ record.id }}</p>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">{{ formatDateDisplay(record.date) }}</td>
                   <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                   </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
@@ -4883,14 +5579,49 @@ onUnmounted(() => {
                 <div class="flex items-start justify-between gap-3">
                   <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">ID</p>
-                    <p class="mt-1 font-semibold text-foreground">{{ record.id }}</p>
+                    <p class="mt-1 font-medium text-foreground">{{ record.id }}</p>
                     <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.date) }}</p>
                   </div>
-                  <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">{{ record.status }}</span>
+                  <div class="flex items-center gap-2">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">{{ record.status }}</span>
+                    <DropdownMenuRoot @update:open="setDiagnosisActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openDiagnosisActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewDiagnosis(record)">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editDiagnosis(record)">
+                            <Pencil class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestDeleteDiagnosis(record)">
+                            <Trash2 class="h-4 w-4 shrink-0" />
+                            <span>O'chirish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </div>
                 </div>
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
-                  <p class="mt-1 font-semibold text-foreground">{{ record.shortName.uzLatn }}</p>
+                  <p class="mt-1 font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                 </div>
                 <div>
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
@@ -4962,7 +5693,9 @@ onUnmounted(() => {
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ editingDiagnosisId ? medicalReferenceEditTitle : medicalReferenceCreateTitle }}</h2>
-              <p class="mt-1 text-sm text-muted-foreground">Asosiy nomlar va ICD-10 kodlari majburiy, tarjimalar ixtiyoriy.</p>
+              <p class="mt-1 text-sm text-muted-foreground">
+                {{ isDocumentsPage ? 'Asosiy nomlar majburiy, tarjimalar ixtiyoriy.' : 'Asosiy nomlar va ICD-10 kodlari majburiy, tarjimalar ixtiyoriy.' }}
+              </p>
             </div>
             <button type="button" class="rounded-md p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground" @click="closeDiagnosisDialog">
               <X class="h-5 w-5" />
@@ -5009,8 +5742,8 @@ onUnmounted(() => {
               </div>
             </section>
 
-            <section class="grid gap-4 md:grid-cols-2">
-              <div class="space-y-2">
+            <section :class="['grid gap-4', isDocumentsPage ? 'md:grid-cols-1' : 'md:grid-cols-2']">
+              <div v-if="!isDocumentsPage" class="space-y-2">
                 <span class="text-sm font-medium text-foreground">ICD-10 kodlari</span>
                 <div class="relative">
                   <button

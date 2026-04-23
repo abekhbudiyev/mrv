@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, Plus, Search, Trash2, X } from 'lucide-vue-next'
+import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, Plus, Search, X } from 'lucide-vue-next'
 import mermaid from 'mermaid'
 import {
   DropdownMenuContent,
@@ -31,6 +31,19 @@ const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
 
 type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ApplicationStep =
+  | 'Ariza yaratildi'
+  | 'Bekor qilindi'
+  | 'Baholash jarayoni'
+  | 'Qo‘shimcha hujjatlar yig‘ilmoqda'
+  | 'IPTKga yuborildi'
+  | 'IPTK qabul qildi'
+  | 'Qayta ishlashga qaytarildi'
+  | 'IPTK yig‘ilishiga kiritildi'
+  | 'IPTK tekshiruvi o‘tkazildi'
+  | 'Tasdiqlandi'
+  | 'Boshqa xizmat tavsiya qilindi'
+  | 'Rad etildi'
 
 type ApplicationRow = {
   id: string
@@ -41,6 +54,7 @@ type ApplicationRow = {
   region: string
   district: string
   status: ApplicationStatus
+  step: ApplicationStep
   statusClass: string
 }
 
@@ -64,6 +78,7 @@ type MedicalDocumentField = {
 type ServiceOption = {
   id: string
   label: string
+  shortLabel?: string
 }
 
 type ServiceEligibilityOption = ServiceOption & {
@@ -107,6 +122,13 @@ type IptkAssessmentInfo = {
   usage: string[]
 }
 
+type DocumentHistoryEntry = {
+  operation: string
+  performer: string
+  performedAt: string
+  tone: 'process' | 'success' | 'destructive'
+}
+
 type ViewApplicationDetail = {
   applicant: ApplicantLookupResult
   applicantInitials: string
@@ -142,6 +164,48 @@ const statusStyles = {
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 } as const
 
+const processApplicationSteps = [
+  'Ariza yaratildi',
+  'Baholash jarayoni',
+  'Qo‘shimcha hujjatlar yig‘ilmoqda',
+  'IPTKga yuborildi',
+  'IPTK qabul qildi',
+  'Qayta ishlashga qaytarildi',
+  'IPTK yig‘ilishiga kiritildi',
+  'IPTK tekshiruvi o‘tkazildi',
+] as const satisfies readonly ApplicationStep[]
+
+const approvedApplicationSteps = [
+  'Tasdiqlandi',
+  'Boshqa xizmat tavsiya qilindi',
+] as const satisfies readonly ApplicationStep[]
+
+const cancelledApplicationSteps = [
+  'Bekor qilindi',
+  'Rad etildi',
+] as const satisfies readonly ApplicationStep[]
+
+const applicationStepStatusMap: Record<ApplicationStep, ApplicationStatus> = {
+  'Ariza yaratildi': 'Jarayonda',
+  'Bekor qilindi': 'Bekor qilingan',
+  'Baholash jarayoni': 'Jarayonda',
+  'Qo‘shimcha hujjatlar yig‘ilmoqda': 'Jarayonda',
+  'IPTKga yuborildi': 'Jarayonda',
+  'IPTK qabul qildi': 'Jarayonda',
+  'Qayta ishlashga qaytarildi': 'Jarayonda',
+  'IPTK yig‘ilishiga kiritildi': 'Jarayonda',
+  'IPTK tekshiruvi o‘tkazildi': 'Jarayonda',
+  Tasdiqlandi: 'Tasdiqlangan',
+  'Boshqa xizmat tavsiya qilindi': 'Tasdiqlangan',
+  'Rad etildi': 'Bekor qilingan',
+}
+
+const applicationSteps = [
+  ...processApplicationSteps,
+  ...approvedApplicationSteps,
+  ...cancelledApplicationSteps,
+] as const satisfies readonly ApplicationStep[]
+
 const demoPeople = [
   "Aliyev Azizbek Anvar o'g'li",
   'Karimova Mohira Baxtiyor qizi',
@@ -169,6 +233,19 @@ const demoRegions = [
 ] as const
 
 const demoStatuses = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan'] as const
+
+function getDefaultStepForStatus(status: ApplicationStatus): ApplicationStep {
+  if (status === 'Tasdiqlangan') {
+    return 'Tasdiqlandi'
+  }
+
+  if (status === 'Bekor qilingan') {
+    return 'Bekor qilindi'
+  }
+
+  return 'Ariza yaratildi'
+}
+
 const demoMahallas = [
   'Navbahor MFY',
   'Mustaqillik MFY',
@@ -280,12 +357,22 @@ const madadMedicalDocumentFields: MedicalDocumentField[] = [
   },
 ]
 const serviceOptions: ServiceOption[] = [
-  { id: 'huzur', label: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish' },
-  { id: 'madad', label: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish' },
-  { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish' },
-  { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish' },
-  { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
+  { id: 'huzur', label: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish', shortLabel: 'Huzur' },
+  { id: 'madad', label: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish', shortLabel: 'Madad' },
+  { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish', shortLabel: 'Ijtimoiy ta’til' },
+  { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish', shortLabel: 'Uy sharoitida qarab turish' },
+  { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish', shortLabel: 'Yangi kun' },
 ]
+const demoApplicationCases = [
+  { step: 'Ariza yaratildi', serviceId: 'huzur' },
+  { step: 'Ariza yaratildi', serviceId: 'social-holiday' },
+  ...applicationSteps
+    .filter((step) => step !== 'Ariza yaratildi')
+    .map((step, index) => ({
+      step,
+      serviceId: serviceOptions[(index + 1) % serviceOptions.length]?.id ?? 'huzur',
+    })),
+] as const satisfies ReadonlyArray<{ step: ApplicationStep; serviceId: ServiceOption['id'] }>
 const diagnosisOptions = [
   { code: 'F71', label: 'Mo‘tadil darajadagi aqliy zaiflik' },
   { code: 'F72', label: 'Og‘ir darajadagi aqliy zaiflik' },
@@ -686,15 +773,15 @@ const monthNames = [
   'Dekabr',
 ] as const
 
-const applicationRows = ref(Array.from({ length: 100 }, (_, index) => {
+const applicationRows = ref(demoApplicationCases.map(({ step, serviceId }, index) => {
   const person = demoPeople[index % demoPeople.length] ?? demoPeople[0]
   const regionEntry = demoRegions[index % demoRegions.length] ?? demoRegions[0]
   const [region, district] = regionEntry
-  const status = demoStatuses[index % demoStatuses.length] ?? demoStatuses[0]
-  const service = serviceOptions[index % serviceOptions.length] ?? serviceOptions[0]
+  const status = applicationStepStatusMap[step]
+  const service = serviceOptions.find((item) => item.id === serviceId) ?? serviceOptions[0]
   const day = String((index % 28) + 1).padStart(2, '0')
   const month = String((index % 12) + 1).padStart(2, '0')
-  const year = 2024 + Math.floor(index / 50)
+  const year = 2024
   const pinflSeed = String(10000000000000 + index * 137).padStart(14, '0')
 
   return {
@@ -706,6 +793,7 @@ const applicationRows = ref(Array.from({ length: 100 }, (_, index) => {
     region,
     district,
     status,
+    step,
     statusClass: statusStyles[status],
   }
 }) as ApplicationRow[])
@@ -716,17 +804,19 @@ const currentPage = ref(1)
 const searchInput = ref('')
 const searchQuery = ref('')
 const isFiltersOpen = ref(false)
-const appliedStatusFilter = ref<'all' | ApplicationStatus>('all')
-const appliedRegionFilter = ref('all')
-const appliedDistrictFilter = ref('all')
+const appliedStatusFilter = ref<ApplicationStatus[]>([])
+const appliedStepFilter = ref<ApplicationStep[]>([])
+const appliedRegionFilter = ref<string[]>([])
+const appliedDistrictFilter = ref<string[]>([])
 const appliedStartDateFilter = ref('')
 const appliedEndDateFilter = ref('')
-const draftStatusFilter = ref<'all' | ApplicationStatus>('all')
-const draftRegionFilter = ref('all')
-const draftDistrictFilter = ref('all')
+const draftStatusFilter = ref<ApplicationStatus[]>([])
+const draftStepFilter = ref<ApplicationStep[]>([])
+const draftRegionFilter = ref<string[]>([])
+const draftDistrictFilter = ref<string[]>([])
 const draftStartDateFilter = ref('')
 const draftEndDateFilter = ref('')
-const openFilterField = ref<'status' | 'region' | 'district' | null>(null)
+const openFilterField = ref<'status' | 'step' | 'region' | 'district' | null>(null)
 const openCalendarField = ref<'start' | 'end' | null>(null)
 const calendarMonth = ref('')
 const isRowsPerPageOpen = ref(false)
@@ -813,50 +903,79 @@ const filteredRows = computed(() => {
       row.fullName,
       row.pinfl,
       row.serviceType,
+      getApplicationServiceTypeLabel(row),
       row.region,
       row.district,
       row.status,
+      row.step,
     ]
       .join(' ')
       .toLowerCase()
       .includes(query)
 
-    const matchesStatus = appliedStatusFilter.value === 'all' || row.status === appliedStatusFilter.value
-    const matchesRegion = appliedRegionFilter.value === 'all' || row.region === appliedRegionFilter.value
-    const matchesDistrict = appliedDistrictFilter.value === 'all' || row.district === appliedDistrictFilter.value
+    const matchesStatus = !appliedStatusFilter.value.length || appliedStatusFilter.value.includes(row.status)
+    const matchesStep = !isIptkApplicationsListPage.value || !appliedStepFilter.value.length || appliedStepFilter.value.includes(row.step)
+    const matchesRegion = !appliedRegionFilter.value.length || appliedRegionFilter.value.includes(row.region)
+    const matchesDistrict = !appliedDistrictFilter.value.length || appliedDistrictFilter.value.includes(row.district)
     const rowDate = parseApplicationDate(row.date)
     const matchesStartDate = !appliedStartDateFilter.value || (rowDate !== null && rowDate >= appliedStartDateFilter.value)
     const matchesEndDate = !appliedEndDateFilter.value || (rowDate !== null && rowDate <= appliedEndDateFilter.value)
 
-    return matchesQuery && matchesStatus && matchesRegion && matchesDistrict && matchesStartDate && matchesEndDate
+    return matchesQuery && matchesStatus && matchesStep && matchesRegion && matchesDistrict && matchesStartDate && matchesEndDate
   })
 })
+
+function getApplicationStageColumnLabel() {
+  return isIptkApplicationsListPage.value ? 'Bosqich' : 'Status'
+}
+
+function getApplicationStageLabel(row: ApplicationRow) {
+  return isIptkApplicationsListPage.value ? row.step : row.status
+}
+
+function getApplicationServiceTypeLabel(row: ApplicationRow) {
+  if (!isIptkApplicationsListPage.value) {
+    return row.serviceType
+  }
+
+  return serviceOptions.find((service) => service.label === row.serviceType)?.shortLabel ?? row.serviceType
+}
 
 const regionOptions = computed(() => {
   return Array.from(new Set(applicationRows.value.map((row) => row.region))).sort((left, right) => left.localeCompare(right))
 })
 
 const districtOptions = computed(() => {
-  const rows = draftRegionFilter.value === 'all'
+  const rows = !draftRegionFilter.value.length
     ? applicationRows.value
-    : applicationRows.value.filter((row) => row.region === draftRegionFilter.value)
+    : applicationRows.value.filter((row) => draftRegionFilter.value.includes(row.region))
 
   return Array.from(new Set(rows.map((row) => row.district))).sort((left, right) => left.localeCompare(right))
 })
 
+const stepFilterOptions = computed(() => {
+  if (!draftStatusFilter.value.length) {
+    return [...applicationSteps]
+  }
+
+  return applicationSteps.filter((step) => draftStatusFilter.value.includes(applicationStepStatusMap[step]))
+})
+
 const hasActiveFilters = computed(() => {
-  return appliedStatusFilter.value !== 'all'
-    || appliedRegionFilter.value !== 'all'
-    || appliedDistrictFilter.value !== 'all'
+  return appliedStatusFilter.value.length > 0
+    || appliedStepFilter.value.length > 0
+    || appliedRegionFilter.value.length > 0
+    || appliedDistrictFilter.value.length > 0
     || Boolean(appliedStartDateFilter.value)
     || Boolean(appliedEndDateFilter.value)
 })
 
 const activeFilterCount = computed(() => {
   return [
-    appliedStatusFilter.value !== 'all',
-    appliedRegionFilter.value !== 'all',
-    appliedDistrictFilter.value !== 'all',
+    appliedStatusFilter.value.length > 0,
+    appliedStepFilter.value.length > 0,
+    appliedRegionFilter.value.length > 0,
+    appliedDistrictFilter.value.length > 0,
     Boolean(appliedStartDateFilter.value),
     Boolean(appliedEndDateFilter.value),
   ].filter(Boolean).length
@@ -953,7 +1072,7 @@ const applicantLookupRows = computed(() => {
   }
 
   return [
-    ['FIO', applicantLookupResult.value.fullName],
+    ['FIO', normalizeFullName(applicantLookupResult.value.fullName)],
     ["Tug'ilgan sanasi", applicantLookupResult.value.birthDate],
     ...(applicantLookupResult.value.temporaryAddress
       ? [["Vaqtinchalik manzili", applicantLookupResult.value.temporaryAddress] as const]
@@ -968,7 +1087,7 @@ const serviceRecipientLookupRows = computed(() => {
   }
 
   return [
-    ['FIO', serviceRecipientLookupResult.value.fullName],
+    ['FIO', normalizeFullName(serviceRecipientLookupResult.value.fullName)],
     ["Tug'ilgan sanasi", serviceRecipientLookupResult.value.birthDate],
     ['Tashxis', `${serviceRecipientLookupResult.value.diagnosisLabel} (${serviceRecipientLookupResult.value.diagnosisCode})`],
     ['Nogironlik guruhi', serviceRecipientLookupResult.value.disabilityGroup ?? '—'],
@@ -984,7 +1103,7 @@ const serviceRecipientInitials = computed(() => {
     return ''
   }
 
-  return serviceRecipientLookupResult.value.fullName
+  return normalizeFullName(serviceRecipientLookupResult.value.fullName)
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
@@ -993,8 +1112,12 @@ const serviceRecipientInitials = computed(() => {
     .toUpperCase()
 })
 
+function normalizeFullName(value: string) {
+  return value.trim().replace(/\s+/g, ' ').toUpperCase()
+}
+
 function getInitials(fullName: string) {
-  return fullName
+  return normalizeFullName(fullName)
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
@@ -1158,7 +1281,7 @@ const selectedViewApplicantRows = computed(() => {
   const applicant = selectedViewDetail.value.applicant
 
   return [
-    ['FIO', applicant.fullName],
+    ['FIO', normalizeFullName(applicant.fullName)],
     ["Tug'ilgan sanasi", applicant.birthDate],
     ['JSHSHIR', applicant.pinfl],
     ...(applicant.temporaryAddress
@@ -1175,7 +1298,7 @@ const selectedViewServiceRecipientRows = computed(() => {
   const serviceRecipient = selectedViewDetail.value.serviceRecipient
 
   return [
-    ['FIO', serviceRecipient.fullName],
+    ['FIO', normalizeFullName(serviceRecipient.fullName)],
     ["Tug'ilgan sanasi", serviceRecipient.birthDate],
     ['Tashxis', `${serviceRecipient.diagnosisLabel} (${serviceRecipient.diagnosisCode})`],
     ['Nogironlik guruhi', serviceRecipient.disabilityGroup ?? '—'],
@@ -1185,6 +1308,37 @@ const selectedViewServiceRecipientRows = computed(() => {
       : []),
     ['Manzil', serviceRecipient.permanentAddress],
   ] as const
+})
+const selectedViewHistory = computed<DocumentHistoryEntry[]>(() => {
+  const row = selectedViewRow.value
+
+  if (!row) {
+    return []
+  }
+
+  let steps: ApplicationStep[] = []
+
+  if (processApplicationSteps.includes(row.step as typeof processApplicationSteps[number])) {
+    const currentIndex = processApplicationSteps.indexOf(row.step as typeof processApplicationSteps[number])
+    steps = [...processApplicationSteps.slice(0, currentIndex + 1)]
+  }
+  else if (approvedApplicationSteps.includes(row.step as typeof approvedApplicationSteps[number])) {
+    steps = ['Ariza yaratildi', 'Baholash jarayoni', 'IPTKga yuborildi', 'IPTK qabul qildi', 'IPTK yig‘ilishiga kiritildi', 'IPTK tekshiruvi o‘tkazildi', row.step]
+  }
+  else {
+    steps = ['Ariza yaratildi', row.step]
+  }
+
+  return steps.map((step, index) => ({
+    operation: step,
+    performer: getApplicationStepPerformer(step),
+    performedAt: addDaysToApplicationDate(row.date, index),
+    tone: applicationStepStatusMap[step] === 'Tasdiqlangan'
+      ? 'success'
+      : applicationStepStatusMap[step] === 'Bekor qilingan'
+        ? 'destructive'
+        : 'process',
+  }))
 })
 const hasAllMedicalDocuments = computed(() => {
   return activeMedicalDocumentFields.value.length > 0
@@ -1253,22 +1407,24 @@ const isCreateFormReadyToSave = computed(() => {
 })
 
 const hasPendingFilterChanges = computed(() => {
-  return draftStatusFilter.value !== appliedStatusFilter.value
-    || draftRegionFilter.value !== appliedRegionFilter.value
-    || draftDistrictFilter.value !== appliedDistrictFilter.value
+  return !areFilterListsEqual(draftStatusFilter.value, appliedStatusFilter.value)
+    || !areFilterListsEqual(draftStepFilter.value, appliedStepFilter.value)
+    || !areFilterListsEqual(draftRegionFilter.value, appliedRegionFilter.value)
+    || !areFilterListsEqual(draftDistrictFilter.value, appliedDistrictFilter.value)
     || draftStartDateFilter.value !== appliedStartDateFilter.value
     || draftEndDateFilter.value !== appliedEndDateFilter.value
 })
 
-const draftStatusLabel = computed(() => draftStatusFilter.value === 'all' ? 'Barchasi' : draftStatusFilter.value)
-const draftRegionLabel = computed(() => draftRegionFilter.value === 'all' ? 'Barchasi' : draftRegionFilter.value)
-const isDistrictFilterEnabled = computed(() => draftRegionFilter.value !== 'all')
+const draftStatusLabel = computed(() => getMultiSelectLabel(draftStatusFilter.value, 'Barchasi'))
+const draftStepLabel = computed(() => getMultiSelectLabel(draftStepFilter.value, 'Barchasi'))
+const draftRegionLabel = computed(() => getMultiSelectLabel(draftRegionFilter.value, 'Barchasi'))
+const isDistrictFilterEnabled = computed(() => draftRegionFilter.value.length > 0)
 const draftDistrictLabel = computed(() => {
   if (!isDistrictFilterEnabled.value) {
     return 'Avval viloyatni tanlang'
   }
 
-  return draftDistrictFilter.value === 'all' ? 'Barchasi' : draftDistrictFilter.value
+  return getMultiSelectLabel(draftDistrictFilter.value, 'Barchasi')
 })
 const calendarMonthLabel = computed(() => {
   const monthValue = calendarMonth.value || getTodayIso().slice(0, 7)
@@ -1334,6 +1490,42 @@ const calendarDays = computed(() => {
   return days
 })
 
+function areFilterListsEqual<T extends string>(left: T[], right: T[]) {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((item) => right.includes(item))
+}
+
+function getMultiSelectLabel(values: string[], emptyLabel: string) {
+  if (!values.length) {
+    return emptyLabel
+  }
+
+  if (values.length === 1) {
+    return values[0]
+  }
+
+  return `${values.length} ta tanlangan`
+}
+
+function toggleFilterValue<T extends string>(source: T[], value: T) {
+  return source.includes(value)
+    ? source.filter((item) => item !== value)
+    : [...source, value]
+}
+
+function syncDraftStepsWithSelectedStatuses() {
+  if (!draftStatusFilter.value.length) {
+    return
+  }
+
+  draftStepFilter.value = draftStepFilter.value.filter((step) => (
+    draftStatusFilter.value.includes(applicationStepStatusMap[step])
+  ))
+}
+
 function closeFilters() {
   isFiltersOpen.value = false
   openFilterField.value = null
@@ -1379,6 +1571,33 @@ function parseApplicationDate(value: string) {
   }
 
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
+function addDaysToApplicationDate(value: string, daysToAdd: number) {
+  const [day, month, year] = value.split('.').map(Number)
+
+  if (!day || !month || !year) {
+    return value
+  }
+
+  const date = new Date(year, month - 1, day + daysToAdd)
+  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`
+}
+
+function getApplicationStepPerformer(step: ApplicationStep) {
+  if (step === 'Ariza yaratildi') {
+    return 'Arizachi'
+  }
+
+  if (step === 'Bekor qilindi' || step === 'Baholash jarayoni' || step === 'Qo‘shimcha hujjatlar yig‘ilmoqda' || step === 'IPTKga yuborildi') {
+    return 'Inson markazi mas’ul xodimi'
+  }
+
+  if (step === 'IPTK qabul qildi' || step === 'Qayta ishlashga qaytarildi' || step === 'IPTK yig‘ilishiga kiritildi') {
+    return 'IPTK kotibi'
+  }
+
+  return 'IPTK komissiyasi'
 }
 
 function normalizeFilterDate(value: string) {
@@ -1496,9 +1715,10 @@ function isCalendarDateSelected(value: string) {
 
 function toggleFiltersFromMenu(nextOpen: boolean) {
   if (nextOpen) {
-    draftStatusFilter.value = appliedStatusFilter.value
-    draftRegionFilter.value = appliedRegionFilter.value
-    draftDistrictFilter.value = appliedDistrictFilter.value
+    draftStatusFilter.value = [...appliedStatusFilter.value]
+    draftStepFilter.value = [...appliedStepFilter.value]
+    draftRegionFilter.value = [...appliedRegionFilter.value]
+    draftDistrictFilter.value = [...appliedDistrictFilter.value]
     draftStartDateFilter.value = appliedStartDateFilter.value
     draftEndDateFilter.value = appliedEndDateFilter.value
     openFilterField.value = null
@@ -1507,36 +1727,36 @@ function toggleFiltersFromMenu(nextOpen: boolean) {
   isFiltersOpen.value = nextOpen
 }
 
-function toggleFilterField(field: 'status' | 'region' | 'district') {
+function toggleFilterField(field: 'status' | 'step' | 'region' | 'district') {
   openFilterField.value = openFilterField.value === field ? null : field
 }
 
 function selectStatusFilter(value: 'all' | ApplicationStatus) {
-  draftStatusFilter.value = value
-  openFilterField.value = null
+  draftStatusFilter.value = value === 'all'
+    ? []
+    : toggleFilterValue(draftStatusFilter.value, value)
+  syncDraftStepsWithSelectedStatuses()
+}
+
+function selectStepFilter(value: 'all' | ApplicationStep) {
+  draftStepFilter.value = value === 'all'
+    ? []
+    : toggleFilterValue(draftStepFilter.value, value)
 }
 
 function selectRegionFilter(value: string) {
-  draftRegionFilter.value = value
+  draftRegionFilter.value = value === 'all'
+    ? []
+    : toggleFilterValue(draftRegionFilter.value, value)
 
-  if (value === 'all') {
-    draftDistrictFilter.value = 'all'
-    openFilterField.value = null
-    return
-  }
-
-  const districtExists = applicationRows.value.some((row) => row.region === value && row.district === draftDistrictFilter.value)
-
-  if (!districtExists) {
-    draftDistrictFilter.value = 'all'
-  }
-
-  openFilterField.value = null
+  const availableDistricts = new Set(districtOptions.value)
+  draftDistrictFilter.value = draftDistrictFilter.value.filter((district) => availableDistricts.has(district))
 }
 
 function selectDistrictFilter(value: string) {
-  draftDistrictFilter.value = value
-  openFilterField.value = null
+  draftDistrictFilter.value = value === 'all'
+    ? []
+    : toggleFilterValue(draftDistrictFilter.value, value)
 }
 
 function sanitizePinflValue(value: string) {
@@ -1683,9 +1903,10 @@ function handleEndDateFilterChange(value: string) {
 
 function applyFilters() {
   runTableLoading(() => {
-    appliedStatusFilter.value = draftStatusFilter.value
-    appliedRegionFilter.value = draftRegionFilter.value
-    appliedDistrictFilter.value = draftDistrictFilter.value
+    appliedStatusFilter.value = [...draftStatusFilter.value]
+    appliedStepFilter.value = [...draftStepFilter.value]
+    appliedRegionFilter.value = [...draftRegionFilter.value]
+    appliedDistrictFilter.value = [...draftDistrictFilter.value]
     appliedStartDateFilter.value = draftStartDateFilter.value
     appliedEndDateFilter.value = draftEndDateFilter.value
     currentPage.value = 1
@@ -1951,17 +2172,19 @@ function clearSearchAndFilters() {
   }
 
   searchInput.value = ''
-  draftStatusFilter.value = 'all'
-  draftRegionFilter.value = 'all'
-  draftDistrictFilter.value = 'all'
+  draftStatusFilter.value = []
+  draftStepFilter.value = []
+  draftRegionFilter.value = []
+  draftDistrictFilter.value = []
   draftStartDateFilter.value = ''
   draftEndDateFilter.value = ''
 
   runTableLoading(() => {
     searchQuery.value = ''
-    appliedStatusFilter.value = 'all'
-    appliedRegionFilter.value = 'all'
-    appliedDistrictFilter.value = 'all'
+    appliedStatusFilter.value = []
+    appliedStepFilter.value = []
+    appliedRegionFilter.value = []
+    appliedDistrictFilter.value = []
     appliedStartDateFilter.value = ''
     appliedEndDateFilter.value = ''
     currentPage.value = 1
@@ -2349,8 +2572,8 @@ function buildViewDocumentContent(viewDocument: { label: string, fileName: strin
     `Ariza raqami: ${selectedViewRow.value.id}`,
     `Ariza sanasi: ${selectedViewRow.value.date}`,
     `Xizmat turi: ${selectedViewDetail.value.service.label}`,
-    `Arizachi: ${selectedViewDetail.value.applicant.fullName}`,
-    `Xizmat oluvchi: ${selectedViewDetail.value.serviceRecipient.fullName}`,
+    `Arizachi: ${normalizeFullName(selectedViewDetail.value.applicant.fullName)}`,
+    `Xizmat oluvchi: ${normalizeFullName(selectedViewDetail.value.serviceRecipient.fullName)}`,
     '',
     'Demo preview hujjati.',
     'Backend API ulangach bu yerda real yuklangan faylning preview yoki original fayli ko‘rsatiladi.',
@@ -2441,7 +2664,7 @@ function confirmPendingAction() {
   action()
 }
 
-function updateRowStatus(rowId: string, nextStatus: ApplicationStatus) {
+function updateRowStatus(rowId: string, nextStatus: ApplicationStatus, nextStep = getDefaultStepForStatus(nextStatus)) {
   const targetRow = applicationRows.value.find((row) => row.id === rowId)
 
   if (!targetRow) {
@@ -2449,7 +2672,29 @@ function updateRowStatus(rowId: string, nextStatus: ApplicationStatus) {
   }
 
   targetRow.status = nextStatus
+  targetRow.step = nextStep
   targetRow.statusClass = statusStyles[nextStatus]
+}
+
+function canEditApplication(row: ApplicationRow) {
+  return [
+    'Ariza yaratildi',
+    'Qo‘shimcha hujjatlar yig‘ilmoqda',
+    'Qayta ishlashga qaytarildi',
+  ].includes(row.step)
+}
+
+function canApproveApplication(row: ApplicationRow) {
+  return row.step === 'IPTK tekshiruvi o‘tkazildi'
+}
+
+function canRejectApplication(row: ApplicationRow) {
+  return ![
+    'Tasdiqlandi',
+    'Boshqa xizmat tavsiya qilindi',
+    'Bekor qilindi',
+    'Rad etildi',
+  ].includes(row.step)
 }
 
 function confirmApprove(row: ApplicationRow) {
@@ -2460,7 +2705,7 @@ function confirmApprove(row: ApplicationRow) {
     confirmLabel: 'Tasdiqlash',
     action: () => {
       runTableLoading(() => {
-        updateRowStatus(row.id, 'Tasdiqlangan')
+        updateRowStatus(row.id, 'Tasdiqlangan', 'Tasdiqlandi')
         showNotification({
           tone: 'success',
           title: 'Ariza tasdiqlandi',
@@ -2479,7 +2724,7 @@ function confirmReject(row: ApplicationRow) {
     confirmLabel: 'Bekor qilish',
     action: () => {
       runTableLoading(() => {
-        updateRowStatus(row.id, 'Bekor qilingan')
+        updateRowStatus(row.id, 'Bekor qilingan', 'Bekor qilindi')
         showNotification({
           tone: 'destructive',
           title: 'Ariza bekor qilindi',
@@ -2514,12 +2759,12 @@ async function downloadApplicationsAsExcel() {
       'T/r': index + 1,
       'Ariza ID': row.id,
       Sana: row.date,
-      'Xizmat turi': row.serviceType,
-      'Xizmat oluvchi': row.fullName,
+      'Xizmat turi': getApplicationServiceTypeLabel(row),
+      'Xizmat oluvchi': normalizeFullName(row.fullName),
       PINFL: row.pinfl,
       Viloyat: row.region,
       'Tuman yoki shahar': row.district,
-      Status: row.status,
+      [getApplicationStageColumnLabel()]: getApplicationStageLabel(row),
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(exportRows)
@@ -2770,7 +3015,7 @@ watch(serviceRecipientLookupResult, () => {
                   </div>
                   <div class="rounded-xl border border-border bg-background px-4 py-3">
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Status
+                      {{ getApplicationStageColumnLabel() }}
                     </p>
                     <div class="mt-2">
                       <span
@@ -2779,7 +3024,7 @@ watch(serviceRecipientLookupResult, () => {
                           selectedViewRow.statusClass,
                         ]"
                       >
-                        {{ selectedViewRow.status }}
+                        {{ getApplicationStageLabel(selectedViewRow) }}
                       </span>
                     </div>
                   </div>
@@ -2913,6 +3158,56 @@ watch(serviceRecipientLookupResult, () => {
               <p class="mt-4 text-sm leading-6 text-muted-foreground">
                 Arizachi tomonidan so‘rovnomaning tasdiqlanishi u hamda nogironligi bo‘lgan shaxsga tegishli shaxsga doir ma’lumotlarni olish va ishlov berishga rozilikni bildiradi.
               </p>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <p class="text-base font-semibold text-foreground">
+                Hujjat tarixi
+              </p>
+              <div class="mt-4 space-y-3">
+                <div
+                  v-for="(history, index) in selectedViewHistory"
+                  :key="`${history.operation}-${index}`"
+                  class="grid gap-3 rounded-xl border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_9rem]"
+                >
+                  <div class="flex min-w-0 gap-3">
+                    <span
+                      :class="[
+                        'mt-1 h-2.5 w-2.5 shrink-0 rounded-full',
+                        history.tone === 'success'
+                          ? 'bg-emerald-500'
+                          : history.tone === 'destructive'
+                            ? 'bg-rose-500'
+                            : 'bg-amber-500',
+                      ]"
+                    />
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Amaliyot
+                      </p>
+                      <p class="mt-1 text-sm font-semibold text-foreground">
+                        {{ history.operation }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bajaruvchi
+                    </p>
+                    <p class="mt-1 truncate text-sm text-foreground">
+                      {{ history.performer }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Bajarilgan vaqt
+                    </p>
+                    <p class="mt-1 text-sm text-foreground">
+                      {{ history.performedAt }}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="flex justify-end border-t border-border pt-1">
@@ -3470,7 +3765,7 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span>Barchasi</span>
                               <Check
-                                v-if="draftStatusFilter === 'all'"
+                                v-if="draftStatusFilter.length === 0"
                                 class="h-4 w-4 text-primary"
                               />
                             </button>
@@ -3483,8 +3778,65 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span>{{ status }}</span>
                               <Check
-                                v-if="draftStatusFilter === status"
+                                v-if="draftStatusFilter.includes(status)"
                                 class="h-4 w-4 text-primary"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label
+                        v-if="isIptkApplicationsListPage"
+                        class="space-y-2 text-sm lg:relative lg:space-y-0"
+                      >
+                        <span class="font-medium text-foreground">Bosqich</span>
+                        <div class="space-y-2 lg:mt-2 lg:space-y-0">
+                          <button
+                            type="button"
+                            :class="[
+                              'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                              openFilterField === 'step'
+                                ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                                : 'border-input hover:border-ring',
+                            ]"
+                            @click="toggleFilterField('step')"
+                          >
+                            <span class="truncate">{{ draftStepLabel }}</span>
+                            <ChevronDown
+                              :class="[
+                                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                                openFilterField === 'step' ? 'rotate-180' : '',
+                              ]"
+                            />
+                          </button>
+
+                          <div
+                            v-if="openFilterField === 'step'"
+                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                          >
+                            <button
+                              type="button"
+                              class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                              @click.stop.prevent="selectStepFilter('all')"
+                            >
+                              <span>Barchasi</span>
+                              <Check
+                                v-if="draftStepFilter.length === 0"
+                                class="h-4 w-4 text-primary"
+                              />
+                            </button>
+                            <button
+                              v-for="step in stepFilterOptions"
+                              :key="step"
+                              type="button"
+                              class="flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+                              @click.stop.prevent="selectStepFilter(step)"
+                            >
+                              <span>{{ step }}</span>
+                              <Check
+                                v-if="draftStepFilter.includes(step)"
+                                class="h-4 w-4 shrink-0 text-primary"
                               />
                             </button>
                           </div>
@@ -3524,7 +3876,7 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span>Barchasi</span>
                               <Check
-                                v-if="draftRegionFilter === 'all'"
+                                v-if="draftRegionFilter.length === 0"
                                 class="h-4 w-4 text-primary"
                               />
                             </button>
@@ -3537,7 +3889,7 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span class="truncate">{{ region }}</span>
                               <Check
-                                v-if="draftRegionFilter === region"
+                                v-if="draftRegionFilter.includes(region)"
                                 class="h-4 w-4 shrink-0 text-primary"
                               />
                             </button>
@@ -3579,7 +3931,7 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span>Barchasi</span>
                               <Check
-                                v-if="draftDistrictFilter === 'all'"
+                                v-if="draftDistrictFilter.length === 0"
                                 class="h-4 w-4 text-primary"
                               />
                             </button>
@@ -3592,7 +3944,7 @@ watch(serviceRecipientLookupResult, () => {
                             >
                               <span class="truncate">{{ district }}</span>
                               <Check
-                                v-if="draftDistrictFilter === district"
+                                v-if="draftDistrictFilter.includes(district)"
                                 class="h-4 w-4 shrink-0 text-primary"
                               />
                             </button>
@@ -3906,7 +4258,7 @@ watch(serviceRecipientLookupResult, () => {
                               row.statusClass,
                             ]"
                           >
-                            {{ row.status }}
+                            {{ getApplicationStageLabel(row) }}
                           </span>
 
                           <DropdownMenuRoot @update:open="setActionMenuOpen(row.id, $event)">
@@ -3935,31 +4287,27 @@ watch(serviceRecipientLookupResult, () => {
                                   <Eye class="h-4 w-4 shrink-0" />
                                   <span>Ko'rish</span>
                                 </DropdownMenuItem>
-                                <template v-if="row.status === 'Jarayonda'">
-                                  <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
-                                    <FilePenLine class="h-4 w-4 shrink-0" />
-                                    <span>Tahrirlash</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                                    @click="confirmApprove(row)"
-                                  >
-                                    <Check class="h-4 w-4 shrink-0" />
-                                    <span>Tasdiqlash</span>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
-                                    @click="confirmReject(row)"
-                                  >
-                                    <X class="h-4 w-4 shrink-0" />
-                                    <span>Bekor qilish</span>
-                                  </DropdownMenuItem>
-                                </template>
                                 <DropdownMenuItem
-                                  v-if="row.status === 'Tasdiqlangan'"
-                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                                  v-if="canEditApplication(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 >
-                                  <Trash2 class="h-4 w-4 shrink-0" />
+                                  <FilePenLine class="h-4 w-4 shrink-0" />
+                                  <span>Tahrirlash</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  v-if="canApproveApplication(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                  @click="confirmApprove(row)"
+                                >
+                                  <Check class="h-4 w-4 shrink-0" />
+                                  <span>Tasdiqlash</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  v-if="canRejectApplication(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                                  @click="confirmReject(row)"
+                                >
+                                  <X class="h-4 w-4 shrink-0" />
                                   <span>Bekor qilish</span>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -3974,7 +4322,7 @@ watch(serviceRecipientLookupResult, () => {
                             Xizmat oluvchi
                           </p>
                           <p class="mt-1 font-medium uppercase text-foreground">
-                            {{ row.fullName }}
+                            {{ normalizeFullName(row.fullName) }}
                           </p>
                           <p class="mt-1 text-muted-foreground">
                             {{ row.pinfl }}
@@ -3986,7 +4334,7 @@ watch(serviceRecipientLookupResult, () => {
                             Xizmat turi
                           </p>
                           <p class="mt-1 font-medium text-foreground">
-                            {{ row.serviceType }}
+                            {{ getApplicationServiceTypeLabel(row) }}
                           </p>
                         </div>
 
@@ -4025,7 +4373,7 @@ watch(serviceRecipientLookupResult, () => {
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
-                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ getApplicationStageColumnLabel() }}</th>
                     </tr>
                   </thead>
                 <tbody>
@@ -4084,31 +4432,27 @@ watch(serviceRecipientLookupResult, () => {
                                 <Eye class="h-4 w-4 shrink-0" />
                                 <span>Ko'rish</span>
                               </DropdownMenuItem>
-                              <template v-if="row.status === 'Jarayonda'">
-                                <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
-                                  <FilePenLine class="h-4 w-4 shrink-0" />
-                                  <span>Tahrirlash</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                                  @click="confirmApprove(row)"
-                                >
-                                  <Check class="h-4 w-4 shrink-0" />
-                                  <span>Tasdiqlash</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
-                                  @click="confirmReject(row)"
-                                >
-                                  <X class="h-4 w-4 shrink-0" />
-                                  <span>Bekor qilish</span>
-                                </DropdownMenuItem>
-                              </template>
                               <DropdownMenuItem
-                                v-if="row.status === 'Tasdiqlangan'"
-                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                                v-if="canEditApplication(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               >
-                                <Trash2 class="h-4 w-4 shrink-0" />
+                                <FilePenLine class="h-4 w-4 shrink-0" />
+                                <span>Tahrirlash</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="canApproveApplication(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="confirmApprove(row)"
+                              >
+                                <Check class="h-4 w-4 shrink-0" />
+                                <span>Tasdiqlash</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="canRejectApplication(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                                @click="confirmReject(row)"
+                              >
+                                <X class="h-4 w-4 shrink-0" />
                                 <span>Bekor qilish</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -4125,7 +4469,7 @@ watch(serviceRecipientLookupResult, () => {
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
                         <div class="font-medium uppercase text-foreground">
-                          {{ row.fullName }}
+                          {{ normalizeFullName(row.fullName) }}
                         </div>
                         <div class="mt-1 text-muted-foreground">
                           {{ row.pinfl }}
@@ -4133,7 +4477,7 @@ watch(serviceRecipientLookupResult, () => {
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
                         <div class="max-w-[320px] font-medium text-foreground">
-                          {{ row.serviceType }}
+                          {{ getApplicationServiceTypeLabel(row) }}
                         </div>
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
@@ -4151,7 +4495,7 @@ watch(serviceRecipientLookupResult, () => {
                             row.statusClass,
                           ]"
                         >
-                          {{ row.status }}
+                          {{ getApplicationStageLabel(row) }}
                         </span>
                       </td>
                     </tr>

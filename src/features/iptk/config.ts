@@ -33,6 +33,13 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     breadcrumb: ['Ilovalar', 'IPTK', 'Info', "Qarshi ko'rsatmalar"],
   },
   {
+    key: 'info-4',
+    title: 'Hujjatlar',
+    description: '',
+    route: '/apps/iptk/info/info-4',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Hujjatlar'],
+  },
+  {
     key: 'applications-list',
     title: 'Arizalar',
     description: "IPTK moduli bo'yicha arizalar ro'yxati va keyingi ish jarayonlari shu sahifada shakllantiriladi.",
@@ -49,6 +56,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
     sectionTitle: 'Komissiyalar tarkibi',
     sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
+  },
+  {
+    key: 'applications-assessment',
+    title: 'Baholash',
+    description: '',
+    route: '/apps/iptk/applications/assessment',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Baholash'],
+    sectionTitle: 'Baholash',
+    sectionDescription: '',
   },
   {
     key: 'applications-report',
@@ -89,6 +105,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         route: '/apps/iptk/info/info-3',
         icon: NotebookText,
       },
+      {
+        id: 'info-4',
+        title: 'Hujjatlar',
+        route: '/apps/iptk/info/info-4',
+        icon: NotebookText,
+      },
     ],
   },
   {
@@ -106,6 +128,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         id: 'commissions-composition',
         title: 'Komissiyalar tarkibi',
         route: '/apps/iptk/applications/commissions',
+        icon: NotebookText,
+      },
+      {
+        id: 'applications-assessment',
+        title: 'Baholash',
+        route: '/apps/iptk/applications/assessment',
         icon: NotebookText,
       },
     ],
