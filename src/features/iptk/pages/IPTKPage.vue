@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-vue-next'
+import { CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, Filter, LoaderCircle, Pencil, Plus, Search, Trash2, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from 'reka-ui'
 import { getIPTKPage } from '@/features/iptk/config'
-import { barthelAssessmentQuestions, lawtonAssessmentQuestions } from '@/features/muruvvat/assessment'
+import { allAssessmentQuestions, barthelAssessmentQuestions, lawtonAssessmentQuestions, type AssessmentQuestion } from '@/features/muruvvat/assessment'
 import { cn } from '@/shared/lib/utils'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
@@ -20,10 +20,12 @@ import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
 
-type CommissionStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
-type CommissionWorkflowStage = 'Qoralama' | 'Tasdiqlashga yuborildi' | 'Tasdiqlangan' | 'Bekor qilingan'
+type CommissionStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type AssessmentStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
+type AssessmentAnswers = Record<string, string>
 
 type PendingConfirmation = {
   tone: 'success' | 'destructive'
@@ -105,9 +107,10 @@ interface AssessmentRecord {
   serviceRecipientPinfl: string
   serviceType: string
   result: string
+  answers?: AssessmentAnswers
   region: string
   district: string
-  status: CommissionStatus
+  status: AssessmentStatus
 }
 
 interface LocalizedValue {
@@ -244,15 +247,19 @@ const regionOptions = [
   'Xorazm viloyati',
 ] as const
 
-const statusClassMap: Record<CommissionStatus, string> = {
+const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
+  Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 }
 
+const assessmentStatusOptions: AssessmentStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const commissionStatusOptions: CommissionStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+
 const workflowStageLabels: Record<CommissionWorkflowStage, string> = {
-  Qoralama: 'Qoralama',
-  'Tasdiqlashga yuborildi': 'Tasdiqlashga yuborildi',
+  Jarayonda: 'Jarayonda',
+  Yuborilgan: 'Yuborilgan',
   Tasdiqlangan: 'Tasdiqlangan',
   'Bekor qilingan': 'Bekor qilingan',
 }
@@ -301,7 +308,7 @@ const commissions = ref<CommissionRecord[]>([
       },
     ],
     status: 'Jarayonda',
-    workflowStage: 'Tasdiqlashga yuborildi',
+    workflowStage: 'Jarayonda',
     createdAt: '2026-04-10 09:30',
     updatedAt: '2026-04-10 09:30',
   },
@@ -347,12 +354,11 @@ const commissions = ref<CommissionRecord[]>([
         error: '',
       },
     ],
-    status: 'Tasdiqlangan',
-    workflowStage: 'Tasdiqlangan',
+    status: 'Yuborilgan',
+    workflowStage: 'Yuborilgan',
     createdAt: '2026-04-11 14:20',
     updatedAt: '2026-04-12 10:05',
     submittedAt: '2026-04-12 09:10',
-    approvedAt: '2026-04-12 10:05',
   },
   {
     id: '3',
@@ -384,12 +390,49 @@ const commissions = ref<CommissionRecord[]>([
         error: '',
       },
     ],
-    status: 'Bekor qilingan',
-    workflowStage: 'Bekor qilingan',
+    status: 'Tasdiqlangan',
+    workflowStage: 'Tasdiqlangan',
     createdAt: '2026-04-13 11:40',
     updatedAt: '2026-04-13 17:25',
     submittedAt: '2026-04-13 14:00',
-    rejectedAt: '2026-04-13 17:25',
+    approvedAt: '2026-04-13 17:25',
+  },
+  {
+    id: '4',
+    documentNumber: 'IPTK-TARKIB-2026-004',
+    region: 'Andijon viloyati',
+    chair: 'Tursunov Javlon Komilovich',
+    chairPinfl: '10000000004001',
+    chairPosition: 'Komissiya raisi',
+    chairPhone: '+998901234567',
+    deputyChair: 'Xolmatova Madina Ulug‘bek qizi',
+    deputyChairPinfl: '10000000004002',
+    deputyChairPosition: "Rais o'rinbosari",
+    deputyChairPhone: '+998901234568',
+    secretary: 'Norboyeva Gulbahor Aziz qizi',
+    secretaryPinfl: '10000000004003',
+    secretaryPosition: 'Komissiya kotibi',
+    secretaryPhone: '+998901234569',
+    members: [
+      {
+        id: crypto.randomUUID(),
+        pinfl: '10000000000006',
+        fullName: 'Akramov Sanjar Bahromovich',
+        birthDate: '12.12.1982',
+        position: 'Psixiatr',
+        phone: '+998901112244',
+        organization: 'Viloyat ruhiy salomatlik markazi',
+        region: 'Andijon viloyati',
+        district: 'Andijon shahri',
+        error: '',
+      },
+    ],
+    status: 'Bekor qilingan',
+    workflowStage: 'Bekor qilingan',
+    createdAt: '2026-04-14 13:15',
+    updatedAt: '2026-04-15 10:00',
+    submittedAt: '2026-04-14 16:20',
+    rejectedAt: '2026-04-15 10:00',
   },
 ])
 
@@ -401,6 +444,7 @@ const assessments = ref<AssessmentRecord[]>([
     serviceRecipient: 'ALIYEV AZIZBEK ANVAR O‘G‘LI',
     serviceRecipientPinfl: '10000000000001',
     serviceType: 'Huzur',
+    answers: buildAssessmentAnswersByScoreMode('low'),
     result: 'Tezkor guruh',
     region: 'Toshkent viloyati',
     district: 'Zangiota tumani',
@@ -413,10 +457,11 @@ const assessments = ref<AssessmentRecord[]>([
     serviceRecipient: 'KARIMOVA MOHIRA BAXTIYOR QIZI',
     serviceRecipientPinfl: '10000000000137',
     serviceType: 'Madad',
+    answers: buildAssessmentAnswersByScoreMode('high'),
     result: 'Rejali guruh',
     region: 'Samarqand viloyati',
     district: 'Samarqand shahri',
-    status: 'Tasdiqlangan',
+    status: 'Yuborilgan',
   },
   {
     id: '3',
@@ -425,10 +470,11 @@ const assessments = ref<AssessmentRecord[]>([
     serviceRecipient: 'RASULOV DOSTON ELYOR O‘G‘LI',
     serviceRecipientPinfl: '10000000000274',
     serviceType: 'Huzur',
+    answers: buildAssessmentAnswersByScoreMode('low'),
     result: 'Baholash to‘xtatilgan',
     region: 'Andijon viloyati',
     district: 'Andijon shahri',
-    status: 'Bekor qilingan',
+    status: 'Tasdiqlangan',
   },
   {
     id: '4',
@@ -440,7 +486,7 @@ const assessments = ref<AssessmentRecord[]>([
     result: 'Rejali guruh',
     region: "Farg'ona viloyati",
     district: "Qo'qon shahri",
-    status: 'Jarayonda',
+    status: 'Bekor qilingan',
   },
 ]) 
 
@@ -1028,11 +1074,16 @@ const isFormRegionOpen = ref(false)
 const editingId = ref<string | null>(null)
 const openActionMenuId = ref<string | null>(null)
 const selectedViewRecord = ref<CommissionRecord | null>(null)
+const selectedAssessmentViewRecord = ref<AssessmentRecord | null>(null)
+const selectedAssessmentViewMode = ref<'view' | 'edit'>('view')
+const assessmentAnswers = ref<AssessmentAnswers>({})
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
-const feedback = ref<{ type: FeedbackType; message: string } | null>(null)
+const feedback = ref<{ type: FeedbackType; title: string; message: string } | null>(null)
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const isTableLoading = ref(false)
+const actionLoadingKey = ref<string | null>(null)
+const isConfirmationLoading = ref(false)
 const searchInput = ref('')
 const searchQuery = ref('')
 const assessmentSearchInput = ref('')
@@ -1041,8 +1092,8 @@ const isAssessmentFilterOpen = ref(false)
 const openAssessmentFilterField = ref<'status' | 'region' | null>(null)
 const openAssessmentCalendarField = ref<'start' | 'end' | null>(null)
 const assessmentCalendarMonth = ref('')
-const draftAssessmentStatusFilter = ref<'all' | CommissionStatus>('all')
-const appliedAssessmentStatusFilter = ref<'all' | CommissionStatus>('all')
+const draftAssessmentStatusFilter = ref<'all' | AssessmentStatus>('all')
+const appliedAssessmentStatusFilter = ref<'all' | AssessmentStatus>('all')
 const draftAssessmentRegionFilter = ref<'all' | string>('all')
 const appliedAssessmentRegionFilter = ref<'all' | string>('all')
 const draftAssessmentStartDateFilter = ref('')
@@ -1103,6 +1154,7 @@ const isAnyDialogOpen = computed(() => (
   || isServiceTypeDialogOpen.value
   || isDiagnosisDialogOpen.value
   || Boolean(selectedViewRecord.value)
+  || Boolean(selectedAssessmentViewRecord.value)
   || Boolean(selectedServiceTypeRecord.value)
   || Boolean(selectedDiagnosisRecord.value)
   || Boolean(pendingConfirmation.value)
@@ -1116,6 +1168,7 @@ let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let serviceTypeSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let diagnosisSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
+let actionLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let isHydratingEditForm = false
 
 const selectedViewLeadership = computed(() => {
@@ -1160,9 +1213,9 @@ const selectedViewHistory = computed<DocumentHistoryEntry[]>(() => {
     },
   ]
 
-  if (record.workflowStage !== 'Qoralama') {
+  if (record.submittedAt) {
     history.push({
-      operation: 'Tasdiqlashga yuborildi',
+      operation: 'Yuborildi',
       performer: 'Hududiy kotib',
       performedAt: record.submittedAt ?? record.createdAt,
       tone: 'process',
@@ -2015,7 +2068,7 @@ const filteredAssessments = computed(() => {
       record.serviceRecipient,
       record.serviceRecipientPinfl,
       record.serviceType,
-      record.result,
+      getAssessmentResultDisplay(record),
       record.region,
       record.district,
       record.status,
@@ -2135,6 +2188,53 @@ const assessmentCalendarDays = computed(() => {
     }
   })
 })
+const barthelQuestions = barthelAssessmentQuestions
+const lawtonQuestions = lawtonAssessmentQuestions
+const selectedAssessmentReadonly = computed(() => selectedAssessmentViewMode.value === 'view')
+const assessmentBarthelTotal = computed(() => {
+  return barthelQuestions.reduce((total, question) => {
+    const option = getAssessmentSelectedOption(question)
+    return total + (option?.score ?? 0)
+  }, 0)
+})
+const assessmentLawtonTotal = computed(() => {
+  return lawtonQuestions.reduce((total, question) => {
+    const option = getAssessmentSelectedOption(question)
+    return total + (option?.score ?? 0)
+  }, 0)
+})
+const assessmentGrandTotal = computed(() => assessmentBarthelTotal.value + assessmentLawtonTotal.value)
+const isAssessmentComplete = computed(() => {
+  return allAssessmentQuestions.every((question) => Boolean(assessmentAnswers.value[question.id]))
+})
+const assessmentGroupLabel = computed(() => {
+  if (!isAssessmentComplete.value) return 'Aniqlanmagan'
+  return assessmentGrandTotal.value <= 62 ? 'Tezkor' : 'Rejali'
+})
+const assessmentGroupBadgeClass = computed(() => {
+  if (assessmentGroupLabel.value === 'Tezkor') {
+    return statusClassMap['Bekor qilingan']
+  }
+
+  if (assessmentGroupLabel.value === 'Rejali') {
+    return statusClassMap.Tasdiqlangan
+  }
+
+  return 'border-border bg-background text-muted-foreground'
+})
+const selectedAssessmentServiceRecipientRows = computed(() => {
+  const record = selectedAssessmentViewRecord.value
+  if (!record) return []
+
+  return [
+    ['FIO', normalizeFullName(record.serviceRecipient)],
+    ["Tug'ilgan sanasi", getAssessmentRecipientBirthDate(record)],
+    ['Tashxis', getAssessmentRecipientDiagnosis(record)],
+    ['Nogironlik guruhi', getAssessmentRecipientDisabilityGroup(record)],
+    ['JSHSHIR', record.serviceRecipientPinfl],
+    ['Manzil', `${record.region}, ${record.district}`],
+  ] as const
+})
 const activeFilterCount = computed(() => {
   let count = 0
 
@@ -2225,8 +2325,21 @@ const feedbackTitleMap: Record<FeedbackType, string> = {
   info: "Ma'lumot",
 }
 
-function pushFeedback(type: FeedbackType, message: string) {
-  feedback.value = { type, message }
+function buildOperationNotification(
+  actionTitle: string,
+  actionName: string,
+  documentType: string,
+  documentId: string,
+  isSuccess = true,
+) {
+  return {
+    title: `${actionTitle} ${isSuccess ? 'bajarildi' : 'bajarilmadi'}`,
+    message: `${documentId} raqamli ${documentType.toLowerCase()} bo‘yicha ${actionName} amali${isSuccess ? ' muvaffaqiyatli bajarildi' : 'ni bajarib bo‘lmadi'}.`,
+  }
+}
+
+function pushFeedback(type: FeedbackType, message: string, title = feedbackTitleMap[type]) {
+  feedback.value = { type, title, message }
   notificationProgress.value = 100
   notificationRemaining.value = NOTIFICATION_DURATION
 
@@ -2391,19 +2504,20 @@ function saveCommission() {
     target.updatedAt = timestamp
 
     if (target.status !== 'Tasdiqlangan') {
-      target.workflowStage = 'Tasdiqlashga yuborildi'
+      target.workflowStage = 'Jarayonda'
       target.status = 'Jarayonda'
       target.submittedAt = timestamp
       target.rejectedAt = undefined
     }
 
-    pushFeedback('success', `${target.documentNumber} yangilandi.`)
+    const notification = buildOperationNotification('Tahrirlash', 'tahrirlash', 'Komissiya tarkibi', target.documentNumber)
+    pushFeedback('success', notification.message, notification.title)
   } else {
     const createdRecord: CommissionRecord = {
       id: String(commissions.value.length + 1),
       documentNumber: nextDocumentNumber(),
       status: 'Jarayonda',
-      workflowStage: 'Tasdiqlashga yuborildi',
+      workflowStage: 'Jarayonda',
       createdAt: timestamp,
       updatedAt: timestamp,
       submittedAt: timestamp,
@@ -2411,13 +2525,18 @@ function saveCommission() {
     }
 
     commissions.value.unshift(createdRecord)
-    pushFeedback('success', `${createdRecord.documentNumber} yaratildi.`)
+    const notification = buildOperationNotification('Yaratish', 'yaratish', 'Komissiya tarkibi', createdRecord.documentNumber)
+    pushFeedback('success', notification.message, notification.title)
   }
 
   closeCreateDialog()
 }
 
 function editCommission(record: CommissionRecord) {
+  runActionIconLoading(`commission-edit-${record.id}`, () => hydrateCommissionEditForm(record))
+}
+
+function hydrateCommissionEditForm(record: CommissionRecord) {
   isHydratingEditForm = true
   editingId.value = record.id
   openActionMenuId.value = null
@@ -2461,8 +2580,10 @@ function editCommission(record: CommissionRecord) {
 }
 
 function viewCommission(record: CommissionRecord) {
-  selectedViewRecord.value = record
-  openActionMenuId.value = null
+  runActionIconLoading(`commission-view-${record.id}`, () => {
+    selectedViewRecord.value = record
+    openActionMenuId.value = null
+  })
 }
 
 function closeViewDialog() {
@@ -2487,19 +2608,57 @@ function buildConfirmationCopy(
 }
 
 function closeConfirmation() {
+  if (isConfirmationLoading.value) return
   pendingConfirmation.value = null
 }
 
 function confirmPendingAction() {
   const confirmation = pendingConfirmation.value
-  if (!confirmation) return
+  if (!confirmation || isConfirmationLoading.value) return
 
-  confirmation.action()
-  pendingConfirmation.value = null
+  isConfirmationLoading.value = true
+  const stopLoading = startActionLoading('confirmation-action', 700)
+  stopLoading(() => {
+    try {
+      confirmation.action()
+      pendingConfirmation.value = null
+    } finally {
+      isConfirmationLoading.value = false
+    }
+  })
+}
+
+function startActionLoading(key: string, minimumDuration = 420) {
+  if (actionLoadingTimer) {
+    clearTimeout(actionLoadingTimer)
+  }
+
+  const startedAt = Date.now()
+  actionLoadingKey.value = key
+
+  return (afterLoading?: () => void) => {
+    const remaining = Math.max(minimumDuration - (Date.now() - startedAt), 0)
+    actionLoadingTimer = setTimeout(() => {
+      afterLoading?.()
+      if (actionLoadingKey.value === key) {
+        actionLoadingKey.value = null
+      }
+      actionLoadingTimer = null
+    }, remaining)
+  }
+}
+
+function runActionIconLoading(key: string, action: () => void) {
+  const stopLoading = startActionLoading(key, 520)
+  stopLoading(action)
+}
+
+function isActionButtonLoading(...keys: string[]) {
+  return Boolean(actionLoadingKey.value && keys.includes(actionLoadingKey.value))
 }
 
 function requestApproveCommission(record: CommissionRecord) {
-  const copy = buildConfirmationCopy('Hujjat', 'tasdiqlan', 'tasdiqlash', record.documentNumber)
+  const copy = buildConfirmationCopy('Komissiya tarkibi', 'tasdiqlan', 'tasdiqlash', record.documentNumber)
   openConfirmation({
     tone: 'success',
     title: copy.title,
@@ -2510,7 +2669,7 @@ function requestApproveCommission(record: CommissionRecord) {
 }
 
 function requestRejectCommission(record: CommissionRecord) {
-  const copy = buildConfirmationCopy('Hujjat', 'bekor qilin', 'bekor qilish', record.documentNumber)
+  const copy = buildConfirmationCopy('Komissiya tarkibi', 'bekor qilin', 'bekor qilish', record.documentNumber)
   openConfirmation({
     tone: 'destructive',
     title: copy.title,
@@ -2518,6 +2677,31 @@ function requestRejectCommission(record: CommissionRecord) {
     confirmLabel: 'Bekor qilish',
     action: () => rejectCommission(record.id),
   })
+}
+
+function requestSendCommission(record: CommissionRecord) {
+  const copy = buildConfirmationCopy('Komissiya tarkibi', 'yuboril', 'yuborish', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Yuborish',
+    action: () => sendCommission(record.id),
+  })
+}
+
+function sendCommission(recordId: string) {
+  const target = commissions.value.find((record) => record.id === recordId)
+  if (!target) return
+
+  target.workflowStage = 'Yuborilgan'
+  target.status = 'Yuborilgan'
+  target.submittedAt = nowLabel()
+  target.updatedAt = target.submittedAt
+  target.rejectedAt = undefined
+  openActionMenuId.value = null
+  const notification = buildOperationNotification('Yuborish', 'yuborish', 'Komissiya tarkibi', target.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
 }
 
 function approveCommission(recordId: string) {
@@ -2529,7 +2713,8 @@ function approveCommission(recordId: string) {
   target.approvedAt = nowLabel()
   target.updatedAt = target.approvedAt
   openActionMenuId.value = null
-  pushFeedback('success', `${target.documentNumber} tasdiqlandi.`)
+  const notification = buildOperationNotification('Tasdiqlash', 'tasdiqlash', 'Komissiya tarkibi', target.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
 }
 
 function rejectCommission(recordId: string) {
@@ -2541,10 +2726,12 @@ function rejectCommission(recordId: string) {
   target.rejectedAt = nowLabel()
   target.updatedAt = target.rejectedAt
   openActionMenuId.value = null
-  pushFeedback('success', `${target.documentNumber} bekor qilindi.`)
+  const notification = buildOperationNotification('Bekor qilish', 'bekor qilish', 'Komissiya tarkibi', target.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
 }
 
 function applyFilters() {
+  const stopLoading = startActionLoading('commission-filter-apply')
   isFilterOpen.value = false
   openFilterField.value = null
   openCalendarField.value = null
@@ -2555,11 +2742,14 @@ function applyFilters() {
     appliedStartDateFilter.value = draftStartDateFilter.value
     appliedEndDateFilter.value = draftEndDateFilter.value
     currentPage.value = 1
+    stopLoading()
   })
 }
 
 function clearFilters() {
+  const stopLoading = startActionLoading('commission-filter-clear')
   resetSearchAndFilters()
+  stopLoading()
 }
 
 function resetSearchAndFilters() {
@@ -2839,6 +3029,7 @@ function setAssessmentRowsPerPage(nextValue: number) {
 }
 
 function applyAssessmentFilters() {
+  const stopLoading = startActionLoading('assessment-filter-apply')
   isAssessmentFilterOpen.value = false
   openAssessmentFilterField.value = null
   openAssessmentCalendarField.value = null
@@ -2849,6 +3040,7 @@ function applyAssessmentFilters() {
     appliedAssessmentStartDateFilter.value = draftAssessmentStartDateFilter.value
     appliedAssessmentEndDateFilter.value = draftAssessmentEndDateFilter.value
     assessmentCurrentPage.value = 1
+    stopLoading()
   })
 }
 
@@ -2873,7 +3065,9 @@ function resetAssessmentSearchAndFilters() {
 }
 
 function clearAssessmentFilters() {
+  const stopLoading = startActionLoading('assessment-filter-clear')
   resetAssessmentSearchAndFilters()
+  stopLoading()
 }
 
 function closeAssessmentFilters() {
@@ -2902,9 +3096,173 @@ function toggleAssessmentFilterField(field: 'status' | 'region') {
   openAssessmentFilterField.value = openAssessmentFilterField.value === field ? null : field
 }
 
-function selectAssessmentStatusFilter(value: 'all' | CommissionStatus) {
+function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
   draftAssessmentStatusFilter.value = value
   openAssessmentFilterField.value = null
+}
+
+function formatAssessmentScore(score: number) {
+  return Number.isInteger(score) ? String(score) : String(score).replace('.', ',')
+}
+
+function getAssessmentSelectedOption(question: AssessmentQuestion) {
+  const selectedOptionId = assessmentAnswers.value[question.id]
+  return question.options.find((option) => option.id === selectedOptionId)
+}
+
+function setAssessmentAnswer(questionId: string, optionId: string) {
+  if (selectedAssessmentReadonly.value) return
+
+  assessmentAnswers.value = {
+    ...assessmentAnswers.value,
+    [questionId]: optionId,
+  }
+}
+
+function resetAssessmentDialogState() {
+  assessmentAnswers.value = {}
+}
+
+function buildAssessmentAnswersByScoreMode(mode: 'low' | 'high'): AssessmentAnswers {
+  return Object.fromEntries(
+    allAssessmentQuestions.map((question) => {
+      const sortedOptions = [...question.options].sort((first, second) => {
+        return mode === 'low' ? first.score - second.score : second.score - first.score
+      })
+
+      return [question.id, sortedOptions[0]?.id ?? '']
+    }),
+  )
+}
+
+function isAssessmentAnswersComplete(answers?: AssessmentAnswers) {
+  if (!answers) return false
+  return allAssessmentQuestions.every((question) => Boolean(answers[question.id]))
+}
+
+function getAssessmentTotalByAnswers(answers?: AssessmentAnswers) {
+  if (!answers) return 0
+
+  return allAssessmentQuestions.reduce((total, question) => {
+    const option = question.options.find((item) => item.id === answers[question.id])
+    return total + (option?.score ?? 0)
+  }, 0)
+}
+
+function getAssessmentGroupByAnswers(answers?: AssessmentAnswers) {
+  if (!isAssessmentAnswersComplete(answers)) return ''
+  return getAssessmentTotalByAnswers(answers) <= 62 ? 'Tezkor' : 'Rejali'
+}
+
+function getAssessmentRecipientBirthDate(record: AssessmentRecord) {
+  const seed = Number(record.id) || 1
+  return `${String((seed % 28) + 1).padStart(2, '0')}.${String((seed % 12) + 1).padStart(2, '0')}.${2010 + (seed % 8)}`
+}
+
+function getAssessmentRecipientDiagnosis(record: AssessmentRecord) {
+  if (record.serviceType.toLowerCase().includes('madad')) return "Og'ir darajadagi aqliy zaiflik (F72)"
+  if (record.serviceType.toLowerCase().includes('huzur')) return "Mo'tadil darajadagi aqliy zaiflik (F71)"
+  return 'Chuqur darajadagi aqliy zaiflik (F73)'
+}
+
+function getAssessmentRecipientDisabilityGroup(record: AssessmentRecord) {
+  return Number(record.id) % 2 === 0 ? 'II guruh' : 'III guruh'
+}
+
+function getAssessmentResultDisplay(record?: AssessmentRecord | null) {
+  if (!record) return '-'
+  return getAssessmentGroupByAnswers(record.answers) || '-'
+}
+
+function getAssessmentResultBadgeClass(record?: AssessmentRecord | null) {
+  const result = getAssessmentResultDisplay(record)
+
+  if (record?.status === 'Tasdiqlangan' && result === 'Tezkor') {
+    return statusClassMap['Bekor qilingan']
+  }
+
+  if (record?.status === 'Tasdiqlangan' && result === 'Rejali') {
+    return statusClassMap.Tasdiqlangan
+  }
+
+  return 'border-border bg-muted/40 text-muted-foreground'
+}
+
+function viewAssessment(record: AssessmentRecord) {
+  runActionIconLoading(`assessment-view-${record.id}`, () => {
+    assessmentAnswers.value = { ...(record.answers ?? {}) }
+    selectedAssessmentViewMode.value = 'view'
+    selectedAssessmentViewRecord.value = record
+    openActionMenuId.value = null
+  })
+}
+
+function editAssessment(record: AssessmentRecord) {
+  runActionIconLoading(`assessment-edit-${record.id}`, () => {
+    assessmentAnswers.value = { ...(record.answers ?? {}) }
+    selectedAssessmentViewMode.value = 'edit'
+    selectedAssessmentViewRecord.value = record
+    openActionMenuId.value = null
+  })
+}
+
+function closeAssessmentViewDialog() {
+  selectedAssessmentViewRecord.value = null
+  resetAssessmentDialogState()
+}
+
+function saveAssessmentFromDialog() {
+  const record = selectedAssessmentViewRecord.value
+  if (!record || !isAssessmentComplete.value) return
+
+  record.answers = { ...assessmentAnswers.value }
+  record.result = assessmentGroupLabel.value
+  closeAssessmentViewDialog()
+  const notification = buildOperationNotification('Tahrirlash', 'tahrirlash', 'Baholash hujjati', record.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
+}
+
+function updateAssessmentStatus(recordId: string, status: AssessmentStatus, actionTitle: string, actionName: string) {
+  const target = assessments.value.find((record) => record.id === recordId)
+  if (!target) return
+
+  target.status = status
+  openActionMenuId.value = null
+  const notification = buildOperationNotification(actionTitle, actionName, 'Baholash hujjati', target.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
+}
+
+function requestSendAssessment(record: AssessmentRecord) {
+  const copy = buildConfirmationCopy('Baholash hujjati', 'yuboril', 'yuborish', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Yuborish',
+    action: () => updateAssessmentStatus(record.id, 'Yuborilgan', 'Yuborish', 'yuborish'),
+  })
+}
+
+function requestCancelAssessment(record: AssessmentRecord) {
+  const copy = buildConfirmationCopy('Baholash hujjati', 'bekor qilin', 'bekor qilish', record.documentNumber)
+  openConfirmation({
+    tone: 'destructive',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Bekor qilish',
+    action: () => updateAssessmentStatus(record.id, 'Bekor qilingan', 'Bekor qilish', 'bekor qilish'),
+  })
+}
+
+function requestApproveAssessment(record: AssessmentRecord) {
+  const copy = buildConfirmationCopy('Baholash hujjati', 'tasdiqlan', 'tasdiqlash', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Tasdiqlash',
+    action: () => updateAssessmentStatus(record.id, 'Tasdiqlangan', 'Tasdiqlash', 'tasdiqlash'),
+  })
 }
 
 function selectAssessmentRegionFilter(value: 'all' | string) {
@@ -3000,24 +3358,37 @@ function isAssessmentCalendarDateSelected(value: string) {
 }
 
 async function downloadAssessments() {
-  const xlsx = await import('xlsx')
+  const stopLoading = startActionLoading('assessment-download', 700)
+  let downloadScheduled = false
 
-  const exportRows = filteredAssessments.value.map((record) => ({
-    ID: record.documentNumber,
-    Sana: formatDateDisplay(record.createdAt),
-    'Xizmat oluvchi': normalizeFullName(record.serviceRecipient),
-    'Xizmat oluvchi JSHSHIR': record.serviceRecipientPinfl,
-    'Xizmat turi': record.serviceType,
-    Natija: record.result,
-    Hudud: record.region,
-    Tuman: record.district,
-    Status: record.status,
-  }))
+  try {
+    const xlsx = await import('xlsx')
 
-  const worksheet = xlsx.utils.json_to_sheet(exportRows)
-  const workbook = xlsx.utils.book_new()
-  xlsx.utils.book_append_sheet(workbook, worksheet, 'Baholash')
-  xlsx.writeFile(workbook, 'iptk-baholash.xlsx')
+    const exportRows = filteredAssessments.value.map((record) => ({
+      ID: record.documentNumber,
+      Sana: formatDateDisplay(record.createdAt),
+      'Xizmat oluvchi': normalizeFullName(record.serviceRecipient),
+      'Xizmat oluvchi JSHSHIR': record.serviceRecipientPinfl,
+      'Xizmat turi': record.serviceType,
+      Natija: getAssessmentResultDisplay(record),
+      Hudud: record.region,
+      Tuman: record.district,
+      Status: record.status,
+    }))
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Baholash')
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, 'iptk-baholash.xlsx')
+      pushFeedback('success', 'Baholash hujjatlari ro‘yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'assessment-download') {
+      stopLoading()
+    }
+  }
 }
 
 function setActionMenuOpen(recordId: string, nextOpen: boolean) {
@@ -3039,27 +3410,40 @@ function runTableLoading(update: () => void) {
 }
 
 async function downloadCommissions() {
-  const xlsx = await import('xlsx')
+  const stopLoading = startActionLoading('commission-download', 700)
+  let downloadScheduled = false
 
-  const exportRows = filteredCommissions.value.map((record) => ({
-    ID: record.documentNumber,
-    Sana: formatDateDisplay(record.createdAt),
-    Hudud: record.region,
-    Status: record.status,
-    Bosqich: workflowStageLabels[record.workflowStage],
-    Rais: normalizeFullName(record.chair),
-    'Rais JSHSHIR': record.chairPinfl,
-    "Rais o'rinbosari": normalizeFullName(record.deputyChair),
-    "Rais o'rinbosari JSHSHIR": record.deputyChairPinfl,
-    Kotib: normalizeFullName(record.secretary),
-    'Kotib JSHSHIR': record.secretaryPinfl,
-    "A'zolar soni": record.members.length,
-  }))
+  try {
+    const xlsx = await import('xlsx')
 
-  const worksheet = xlsx.utils.json_to_sheet(exportRows)
-  const workbook = xlsx.utils.book_new()
-  xlsx.utils.book_append_sheet(workbook, worksheet, 'Komissiyalar')
-  xlsx.writeFile(workbook, 'iptk-komissiyalar-tarkibi.xlsx')
+    const exportRows = filteredCommissions.value.map((record) => ({
+      ID: record.documentNumber,
+      Sana: formatDateDisplay(record.createdAt),
+      Hudud: record.region,
+      Status: record.status,
+      Bosqich: workflowStageLabels[record.workflowStage],
+      Rais: normalizeFullName(record.chair),
+      'Rais JSHSHIR': record.chairPinfl,
+      "Rais o'rinbosari": normalizeFullName(record.deputyChair),
+      "Rais o'rinbosari JSHSHIR": record.deputyChairPinfl,
+      Kotib: normalizeFullName(record.secretary),
+      'Kotib JSHSHIR': record.secretaryPinfl,
+      "A'zolar soni": record.members.length,
+    }))
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Komissiyalar')
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, 'iptk-komissiyalar-tarkibi.xlsx')
+      pushFeedback('success', 'Komissiyalar tarkibi ro‘yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'commission-download') {
+      stopLoading()
+    }
+  }
 }
 
 function nextServiceTypeId() {
@@ -3088,6 +3472,10 @@ function closeServiceTypeDialog() {
 }
 
 function editServiceType(record: ServiceTypeRecord) {
+  runActionIconLoading(`service-type-edit-${record.id}`, () => hydrateServiceTypeEditForm(record))
+}
+
+function hydrateServiceTypeEditForm(record: ServiceTypeRecord) {
   editingServiceTypeId.value = record.id
   openServiceTypeActionMenuId.value = null
   isServiceTypeStatusOpen.value = false
@@ -3109,8 +3497,10 @@ function editServiceType(record: ServiceTypeRecord) {
 }
 
 function viewServiceType(record: ServiceTypeRecord) {
-  selectedServiceTypeRecord.value = record
-  openServiceTypeActionMenuId.value = null
+  runActionIconLoading(`service-type-view-${record.id}`, () => {
+    selectedServiceTypeRecord.value = record
+    openServiceTypeActionMenuId.value = null
+  })
 }
 
 function closeServiceTypeViewDialog() {
@@ -3156,7 +3546,8 @@ function saveServiceType() {
     target.contraindicationIds = payload.contraindicationIds
     target.documentIds = payload.documentIds
     target.status = payload.status
-    pushFeedback('success', `${target.id} yangilandi.`)
+    const notification = buildOperationNotification('Tahrirlash', 'tahrirlash', 'Xizmat turi', target.id)
+    pushFeedback('success', notification.message, notification.title)
   } else {
     const createdRecord: ServiceTypeRecord = {
       id: nextServiceTypeId(),
@@ -3165,7 +3556,8 @@ function saveServiceType() {
     }
 
     serviceTypes.value.unshift(createdRecord)
-    pushFeedback('success', `${createdRecord.id} yaratildi.`)
+    const notification = buildOperationNotification('Yaratish', 'yaratish', 'Xizmat turi', createdRecord.id)
+    pushFeedback('success', notification.message, notification.title)
   }
 
   closeServiceTypeDialog()
@@ -3185,7 +3577,8 @@ function requestDeleteServiceType(record: ServiceTypeRecord) {
 
 function deleteServiceType(recordId: string) {
   serviceTypes.value = serviceTypes.value.filter((record) => record.id !== recordId)
-  pushFeedback('success', `${recordId} o'chirildi.`)
+  const notification = buildOperationNotification("O'chirish", "o'chirish", 'Xizmat turi', recordId)
+  pushFeedback('success', notification.message, notification.title)
 }
 
 function handleServiceTypeSearchInput(value: string) {
@@ -3333,6 +3726,10 @@ function closeDiagnosisDialog() {
 }
 
 function editDiagnosis(record: DiagnosisRecord) {
+  runActionIconLoading(`diagnosis-edit-${record.id}`, () => hydrateDiagnosisEditForm(record))
+}
+
+function hydrateDiagnosisEditForm(record: DiagnosisRecord) {
   editingDiagnosisId.value = record.id
   openDiagnosisActionMenuId.value = null
   isDiagnosisStatusOpen.value = false
@@ -3353,8 +3750,10 @@ function editDiagnosis(record: DiagnosisRecord) {
 }
 
 function viewDiagnosis(record: DiagnosisRecord) {
-  selectedDiagnosisRecord.value = record
-  openDiagnosisActionMenuId.value = null
+  runActionIconLoading(`diagnosis-view-${record.id}`, () => {
+    selectedDiagnosisRecord.value = record
+    openDiagnosisActionMenuId.value = null
+  })
 }
 
 function closeDiagnosisViewDialog() {
@@ -3402,7 +3801,8 @@ function saveDiagnosis() {
       target.minScore = payload.minScore
       target.maxScore = payload.maxScore
     }
-    pushFeedback('success', `${target.id} yangilandi.`)
+    const notification = buildOperationNotification('Tahrirlash', 'tahrirlash', medicalReferenceTitle.value, target.id)
+    pushFeedback('success', notification.message, notification.title)
   } else {
     const createdRecord = isQuestionnaireTemplatesPage.value
       ? {
@@ -3435,7 +3835,8 @@ function saveDiagnosis() {
         } satisfies DiagnosisRecord
 
     getActiveMedicalReferenceRecords().value.unshift(createdRecord)
-    pushFeedback('success', `${createdRecord.id} yaratildi.`)
+    const notification = buildOperationNotification('Yaratish', 'yaratish', medicalReferenceTitle.value, createdRecord.id)
+    pushFeedback('success', notification.message, notification.title)
   }
 
   closeDiagnosisDialog()
@@ -3547,7 +3948,8 @@ function requestDeleteDiagnosis(record: DiagnosisRecord) {
 function deleteDiagnosis(recordId: string) {
   const records = getActiveMedicalReferenceRecords()
   records.value = records.value.filter((record) => record.id !== recordId)
-  pushFeedback('success', `${recordId} o'chirildi.`)
+  const notification = buildOperationNotification("O'chirish", "o'chirish", medicalReferenceTitle.value, recordId)
+  pushFeedback('success', notification.message, notification.title)
 }
 
 function toggleDiagnosisIcdCode(code: string) {
@@ -3712,6 +4114,10 @@ onUnmounted(() => {
     clearTimeout(loadingTimer)
   }
 
+  if (actionLoadingTimer) {
+    clearTimeout(actionLoadingTimer)
+  }
+
 })
 </script>
 
@@ -3754,7 +4160,7 @@ onUnmounted(() => {
           ]"
         />
         <div class="min-w-0 flex-1">
-          <p class="font-semibold">{{ feedbackTitleMap[feedback.type] }}</p>
+          <p class="font-semibold">{{ feedback.title }}</p>
           <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
         </div>
         <button
@@ -3799,8 +4205,12 @@ onUnmounted(() => {
                   :class="isFilterOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
                   @click="toggleFiltersFromMenu(!isFilterOpen)"
                 >
+                  <LoaderCircle
+                    v-if="actionLoadingKey && actionLoadingKey.startsWith('commission-filter')"
+                    class="h-4 w-4 animate-spin"
+                  />
                   <span
-                    v-if="activeFilterCount > 0"
+                    v-else-if="activeFilterCount > 0"
                     class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
                   >
                     {{ activeFilterCount }}
@@ -3866,11 +4276,11 @@ onUnmounted(() => {
                             />
                           </button>
                           <button
-                            v-for="status in ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']"
+                            v-for="status in commissionStatusOptions"
                             :key="status"
                             type="button"
                             class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                            @click.stop.prevent="selectStatusFilter(status as CommissionStatus)"
+                            @click.stop.prevent="selectStatusFilter(status)"
                           >
                             <span>{{ status }}</span>
                             <Check
@@ -4146,15 +4556,25 @@ onUnmounted(() => {
                         variant="outline"
                         size="sm"
                         :disabled="isTableLoading || (!hasActiveFilters && !hasPendingFilterChanges)"
+                        class="gap-2"
                         @click="clearFilters"
                       >
+                        <LoaderCircle
+                          v-if="actionLoadingKey === 'commission-filter-clear'"
+                          class="h-4 w-4 animate-spin"
+                        />
                         Tozalash
                       </Button>
                       <Button
                         size="sm"
                         :disabled="isTableLoading || !hasPendingFilterChanges"
+                        class="gap-2"
                         @click="applyFilters"
                       >
+                        <LoaderCircle
+                          v-if="actionLoadingKey === 'commission-filter-apply'"
+                          class="h-4 w-4 animate-spin"
+                        />
                         Qo'llash
                       </Button>
                     </div>
@@ -4165,9 +4585,17 @@ onUnmounted(() => {
               <Button
                 variant="outline"
                 class="h-10 gap-2"
+                :disabled="actionLoadingKey === 'commission-download'"
                 @click="downloadCommissions"
               >
-                <Download class="h-4 w-4" />
+                <LoaderCircle
+                  v-if="actionLoadingKey === 'commission-download'"
+                  class="h-4 w-4 animate-spin"
+                />
+                <Download
+                  v-else
+                  class="h-4 w-4"
+                />
                 Yuklab olish
               </Button>
             </div>
@@ -4242,7 +4670,8 @@ onUnmounted(() => {
                               size="sm"
                               :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                             >
-                              <Ellipsis class="h-4 w-4" />
+                              <LoaderCircle v-if="isActionButtonLoading(`commission-view-${record.id}`, `commission-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                              <Ellipsis v-else class="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuPortal>
@@ -4261,7 +4690,7 @@ onUnmounted(() => {
                                 <span>Ko'rish</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                v-if="record.status !== 'Tasdiqlangan'"
+                                v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 @click="editCommission(record)"
                               >
@@ -4269,7 +4698,15 @@ onUnmounted(() => {
                                 <span>Tahrirlash</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                v-if="record.status === 'Jarayonda'"
+                                v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="requestSendCommission(record)"
+                              >
+                                <Check class="h-4 w-4 shrink-0" />
+                                <span>Yuborish</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="record.status === 'Yuborilgan'"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 @click="requestApproveCommission(record)"
                               >
@@ -4277,7 +4714,7 @@ onUnmounted(() => {
                                 <span>Tasdiqlash</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                v-if="record.status === 'Jarayonda'"
+                                v-if="record.status === 'Yuborilgan'"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
                                 @click="requestRejectCommission(record)"
                               >
@@ -4411,7 +4848,8 @@ onUnmounted(() => {
                             size="sm"
                             :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                           >
-                            <Ellipsis class="h-4 w-4" />
+                            <LoaderCircle v-if="isActionButtonLoading(`commission-view-${record.id}`, `commission-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                            <Ellipsis v-else class="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuPortal>
@@ -4430,7 +4868,7 @@ onUnmounted(() => {
                               <span>Ko'rish</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              v-if="record.status !== 'Tasdiqlangan'"
+                              v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
                               class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               @click="editCommission(record)"
                             >
@@ -4438,7 +4876,15 @@ onUnmounted(() => {
                               <span>Tahrirlash</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              v-if="record.status === 'Jarayonda'"
+                              v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="requestSendCommission(record)"
+                            >
+                              <Check class="h-4 w-4 shrink-0" />
+                              <span>Yuborish</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="record.status === 'Yuborilgan'"
                               class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               @click="requestApproveCommission(record)"
                             >
@@ -4446,7 +4892,7 @@ onUnmounted(() => {
                               <span>Tasdiqlash</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              v-if="record.status === 'Jarayonda'"
+                              v-if="record.status === 'Yuborilgan'"
                               class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
                               @click="requestRejectCommission(record)"
                             >
@@ -4802,6 +5248,7 @@ onUnmounted(() => {
         :title="pendingConfirmation?.title ?? ''"
         :description="pendingConfirmation?.description ?? ''"
         :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        :loading="isConfirmationLoading"
         @cancel="closeConfirmation"
         @confirm="confirmPendingAction"
       />
@@ -4895,10 +5342,7 @@ onUnmounted(() => {
               </label>
             </div>
 
-            <div
-              v-if="formRegion"
-              class="grid gap-4 xl:grid-cols-2"
-            >
+            <div class="grid gap-4 xl:grid-cols-2">
               <div class="space-y-4 rounded-3xl border border-border bg-card p-4">
                 <p class="text-sm font-semibold text-foreground">
                   Komissiya raisi
@@ -5155,10 +5599,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div
-              v-if="formRegion"
-              class="space-y-4 rounded-3xl border border-border bg-card p-4"
-            >
+            <div class="space-y-4 rounded-3xl border border-border bg-card p-4">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-sm font-semibold text-foreground">
@@ -5344,8 +5785,12 @@ onUnmounted(() => {
                 :class="isAssessmentFilterOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
                 @click="toggleAssessmentFiltersFromMenu(!isAssessmentFilterOpen)"
               >
+                <LoaderCircle
+                  v-if="actionLoadingKey && actionLoadingKey.startsWith('assessment-filter')"
+                  class="h-4 w-4 animate-spin"
+                />
                 <span
-                  v-if="assessmentActiveFilterCount > 0"
+                  v-else-if="assessmentActiveFilterCount > 0"
                   class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
                 >
                   {{ assessmentActiveFilterCount }}
@@ -5403,11 +5848,11 @@ onUnmounted(() => {
                           <Check v-if="draftAssessmentStatusFilter === 'all'" class="h-4 w-4 text-primary" />
                         </button>
                         <button
-                          v-for="status in ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']"
+                          v-for="status in assessmentStatusOptions"
                           :key="status"
                           type="button"
                           class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
-                          @click.stop.prevent="selectAssessmentStatusFilter(status as CommissionStatus)"
+                          @click.stop.prevent="selectAssessmentStatusFilter(status)"
                         >
                           <span>{{ status }}</span>
                           <Check v-if="draftAssessmentStatusFilter === status" class="h-4 w-4 text-primary" />
@@ -5521,8 +5966,14 @@ onUnmounted(() => {
                   </label>
 
                   <div class="flex items-center justify-end gap-3 border-t border-border pt-3">
-                    <Button variant="outline" size="sm" :disabled="isTableLoading || (!assessmentHasActiveFilters && !assessmentHasPendingFilterChanges)" @click="clearAssessmentFilters">Tozalash</Button>
-                    <Button size="sm" :disabled="isTableLoading || !assessmentHasPendingFilterChanges" @click="applyAssessmentFilters">Qo'llash</Button>
+                    <Button variant="outline" size="sm" class="gap-2" :disabled="isTableLoading || (!assessmentHasActiveFilters && !assessmentHasPendingFilterChanges)" @click="clearAssessmentFilters">
+                      <LoaderCircle v-if="actionLoadingKey === 'assessment-filter-clear'" class="h-4 w-4 animate-spin" />
+                      Tozalash
+                    </Button>
+                    <Button size="sm" class="gap-2" :disabled="isTableLoading || !assessmentHasPendingFilterChanges" @click="applyAssessmentFilters">
+                      <LoaderCircle v-if="actionLoadingKey === 'assessment-filter-apply'" class="h-4 w-4 animate-spin" />
+                      Qo'llash
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -5531,9 +5982,17 @@ onUnmounted(() => {
             <Button
               variant="outline"
               class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'assessment-download'"
               @click="downloadAssessments"
             >
-              <Download class="h-4 w-4" />
+              <LoaderCircle
+                v-if="actionLoadingKey === 'assessment-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download
+                v-else
+                class="h-4 w-4"
+              />
               Yuklab olish
             </Button>
           </div>
@@ -5591,13 +6050,48 @@ onUnmounted(() => {
                         <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
                           {{ record.status }}
                         </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          class="h-9 w-9 shrink-0 rounded-full p-0"
-                        >
-                          <Ellipsis class="h-4 w-4" />
-                        </Button>
+                        <DropdownMenuRoot @update:open="setActionMenuOpen(`assessment-${record.id}`, $event)">
+                          <DropdownMenuTrigger as-child>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              :class="openActionMenuId === `assessment-${record.id}` ? 'h-9 w-9 shrink-0 rounded-full border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-9 w-9 shrink-0 rounded-full p-0'"
+                            >
+                              <LoaderCircle v-if="isActionButtonLoading(`assessment-view-${record.id}`, `assessment-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                              <Ellipsis v-else class="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuContent
+                              side="bottom"
+                              align="end"
+                              :side-offset="6"
+                              :collision-padding="12"
+                              class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                            >
+                              <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewAssessment(record)">
+                                <Eye class="h-4 w-4 shrink-0" />
+                                <span>Ko'rish</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
+                                <Pencil class="h-4 w-4 shrink-0" />
+                                <span>Tahrirlash</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
+                                <Check class="h-4 w-4 shrink-0" />
+                                <span>Yuborish</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestCancelAssessment(record)">
+                                <X class="h-4 w-4 shrink-0" />
+                                <span>Bekor qilish</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestApproveAssessment(record)">
+                                <CheckCheck class="h-4 w-4 shrink-0" />
+                                <span>Tasdiqlash</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuRoot>
                       </div>
                     </div>
 
@@ -5613,7 +6107,13 @@ onUnmounted(() => {
                       </div>
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Natija</p>
-                        <p class="mt-1 text-sm text-foreground">{{ record.result }}</p>
+                        <span
+                          v-if="getAssessmentResultDisplay(record) !== '-'"
+                          :class="cn('mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(record))"
+                        >
+                          {{ getAssessmentResultDisplay(record) }}
+                        </span>
+                        <p v-else class="mt-1 text-sm text-muted-foreground">-</p>
                       </div>
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Manzil</p>
@@ -5672,13 +6172,48 @@ onUnmounted(() => {
                     class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
                     <td class="border-b border-border px-4 py-3 align-top">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        class="h-8 w-8 rounded-md p-0"
-                      >
-                        <Ellipsis class="h-4 w-4" />
-                      </Button>
+                      <DropdownMenuRoot @update:open="setActionMenuOpen(`assessment-${record.id}`, $event)">
+                        <DropdownMenuTrigger as-child>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            :class="openActionMenuId === `assessment-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                          >
+                            <LoaderCircle v-if="isActionButtonLoading(`assessment-view-${record.id}`, `assessment-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                            <Ellipsis v-else class="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuContent
+                            side="bottom"
+                            align="start"
+                            :side-offset="6"
+                            :collision-padding="12"
+                            class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                          >
+                            <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewAssessment(record)">
+                              <Eye class="h-4 w-4 shrink-0" />
+                              <span>Ko'rish</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
+                              <Pencil class="h-4 w-4 shrink-0" />
+                              <span>Tahrirlash</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
+                              <Check class="h-4 w-4 shrink-0" />
+                              <span>Yuborish</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestCancelAssessment(record)">
+                              <X class="h-4 w-4 shrink-0" />
+                              <span>Bekor qilish</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestApproveAssessment(record)">
+                              <CheckCheck class="h-4 w-4 shrink-0" />
+                              <span>Tasdiqlash</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuRoot>
                     </td>
                     <td class="border-b border-border px-4 py-3 align-top">
                       <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
@@ -5691,8 +6226,14 @@ onUnmounted(() => {
                     <td class="border-b border-border px-4 py-3 align-top text-foreground">
                       {{ record.serviceType }}
                     </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      {{ record.result }}
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <span
+                        v-if="getAssessmentResultDisplay(record) !== '-'"
+                        :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(record))"
+                      >
+                        {{ getAssessmentResultDisplay(record) }}
+                      </span>
+                      <span v-else class="text-muted-foreground">-</span>
                     </td>
                     <td class="border-b border-border px-4 py-3 align-top text-foreground">
                       <p class="font-medium text-foreground">{{ record.region }}</p>
@@ -5795,6 +6336,258 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <div
+    v-if="selectedAssessmentViewRecord"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.self="closeAssessmentViewDialog"
+  >
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <p class="text-lg font-semibold text-foreground">Barthel va Lawton baholashi</p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{ selectedAssessmentViewRecord.documentNumber }} bo'yicha parvarishga muhtojlik va kundalik mustaqillik baholanadi.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" class="h-9 w-9 p-0" aria-label="Oynani yopish" @click="closeAssessmentViewDialog">
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div class="flex-1 space-y-6 overflow-y-auto p-5">
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <p class="text-base font-semibold text-foreground">Xizmat oluvchi</p>
+          <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
+            <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
+              <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
+                Rasm yo'q
+              </div>
+              <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-border bg-background">
+              <div
+                v-for="[label, value] in selectedAssessmentServiceRecipientRows"
+                :key="`assessment-service-recipient-${label}`"
+                class="grid border-b border-border last:border-b-0 md:grid-cols-[220px_minmax(0,1fr)]"
+              >
+                <div class="bg-muted/35 px-4 py-3 text-sm font-medium text-muted-foreground">{{ label }}</div>
+                <div class="px-4 py-3 text-sm text-foreground">{{ value }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-base font-semibold text-foreground">Elementar harakatlarni baholash</p>
+              <p class="mt-1 text-sm text-muted-foreground">Barthel shkalasi bo'yicha 10 ta savol. Har bir savolda bitta variant tanlanadi.</p>
+            </div>
+            <div class="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground">
+              {{ formatAssessmentScore(assessmentBarthelTotal) }} ball
+            </div>
+          </div>
+          <div class="mt-4 space-y-4">
+            <div v-for="question in barthelQuestions" :key="question.id" class="rounded-2xl border border-border bg-background p-4">
+              <p class="text-sm font-semibold text-foreground">{{ question.order }}. {{ question.title }}</p>
+              <p class="mt-1 text-xs text-muted-foreground">Tanlangan ball: {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}</p>
+              <div class="mt-3 grid gap-2">
+                <button
+                  v-for="option in question.options"
+                  :key="option.id"
+                  type="button"
+                  :disabled="selectedAssessmentReadonly"
+                  :class="[
+                    'rounded-xl border px-3 py-3 text-left transition-colors disabled:cursor-default',
+                    getAssessmentSelectedOption(question)?.id === option.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/40 disabled:hover:bg-card',
+                  ]"
+                  @click="setAssessmentAnswer(question.id, option.id)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <p class="text-sm font-medium text-foreground">{{ option.label }}</p>
+                    <span class="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">{{ formatAssessmentScore(option.score) }} ball</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-base font-semibold text-foreground">Murakkab harakatlarni baholash</p>
+              <p class="mt-1 text-sm text-muted-foreground">Lawton shkalasi bo'yicha 9 ta savol. Har bir savolda bitta variant tanlanadi.</p>
+            </div>
+            <div class="rounded-full border border-border bg-background px-3 py-1 text-sm font-medium text-foreground">
+              {{ formatAssessmentScore(assessmentLawtonTotal) }} ball
+            </div>
+          </div>
+          <div class="mt-4 space-y-4">
+            <div v-for="question in lawtonQuestions" :key="question.id" class="rounded-2xl border border-border bg-background p-4">
+              <p class="text-sm font-semibold text-foreground">{{ question.order }}. {{ question.title }}</p>
+              <p class="mt-1 text-xs text-muted-foreground">Tanlangan ball: {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}</p>
+              <div class="mt-3 grid gap-2">
+                <button
+                  v-for="option in question.options"
+                  :key="option.id"
+                  type="button"
+                  :disabled="selectedAssessmentReadonly"
+                  :class="[
+                    'rounded-xl border px-3 py-3 text-left transition-colors disabled:cursor-default',
+                    getAssessmentSelectedOption(question)?.id === option.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/40 disabled:hover:bg-card',
+                  ]"
+                  @click="setAssessmentAnswer(question.id, option.id)"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <p class="text-sm font-medium text-foreground">{{ option.label }}</p>
+                    <span class="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground">{{ formatAssessmentScore(option.score) }} ball</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+            <div
+              :class="[
+                'flex min-w-0 flex-1 flex-col justify-between rounded-xl border p-4',
+                assessmentGroupLabel === 'Tezkor'
+                  ? 'border-destructive/25 bg-destructive/5'
+                  : assessmentGroupLabel === 'Rejali'
+                    ? 'border-emerald-500/25 bg-emerald-500/5'
+                    : 'border-border bg-muted/20',
+              ]"
+            >
+              <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Baholash natijasi</p>
+                <p v-if="isAssessmentComplete" :class="['mt-3 inline-flex rounded-full border px-4 py-2 text-lg font-semibold', assessmentGroupBadgeClass]">
+                  {{ assessmentGroupLabel }}
+                </p>
+                <p v-else class="mt-3 text-sm text-muted-foreground">
+                  So'rovnoma to'liq to'ldirilgandan keyin ko'rsatiladi.
+                </p>
+              </div>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span class="rounded-full border border-border bg-background px-3 py-1">Umumiy ball: {{ formatAssessmentScore(assessmentGrandTotal) }}</span>
+                <span class="rounded-full border border-border bg-background px-3 py-1">{{ isAssessmentComplete ? "So'rovnoma to'ldirilgan" : "So'rovnoma davom etmoqda" }}</span>
+              </div>
+            </div>
+            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2">
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">Barthel</p>
+                <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentBarthelTotal) }} ball</p>
+              </div>
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">Lawton</p>
+                <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentLawtonTotal) }} ball</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between gap-3 border-t border-border px-5 py-4">
+        <p class="text-sm text-muted-foreground">
+          {{ isAssessmentComplete ? "Barcha savollar to'ldirildi." : `${Object.keys(assessmentAnswers).length}/${allAssessmentQuestions.length} savol to'ldirildi.` }}
+        </p>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" @click="closeAssessmentViewDialog">
+            {{ selectedAssessmentReadonly ? 'Yopish' : 'Bekor qilish' }}
+          </Button>
+          <Button v-if="!selectedAssessmentReadonly" :disabled="!isAssessmentComplete" @click="saveAssessmentFromDialog">
+            Baholashni saqlash
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    v-if="false && selectedAssessmentViewRecord"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.self="closeAssessmentViewDialog"
+  >
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        <div>
+          <h2 class="text-lg font-semibold">
+            {{ selectedAssessmentViewMode === 'edit' ? 'Baholash hujjatini tahrirlash' : 'Baholash hujjatini ko‘rish' }}
+          </h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{ selectedAssessmentViewRecord?.documentNumber }} raqamli baholash hujjati.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="closeAssessmentViewDialog">
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+      <div class="space-y-4 px-6 py-5">
+        <div class="overflow-hidden rounded-xl border border-border">
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Hujjat</div>
+            <div class="px-4 py-3 font-medium text-foreground">{{ selectedAssessmentViewRecord?.documentNumber }}</div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Sana</div>
+            <div class="px-4 py-3 text-foreground">{{ formatDateDisplay(selectedAssessmentViewRecord?.createdAt ?? '') }}</div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Xizmat oluvchi</div>
+            <div class="px-4 py-3">
+              <p class="font-medium uppercase text-foreground">{{ normalizeFullName(selectedAssessmentViewRecord?.serviceRecipient ?? '') }}</p>
+              <p class="mt-1 text-muted-foreground">{{ selectedAssessmentViewRecord?.serviceRecipientPinfl }}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Xizmat turi</div>
+            <div class="px-4 py-3 text-foreground">{{ selectedAssessmentViewRecord?.serviceType }}</div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Natija</div>
+            <div class="px-4 py-3">
+              <span
+                v-if="selectedAssessmentViewRecord && getAssessmentResultDisplay(selectedAssessmentViewRecord) !== '-'"
+                :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(selectedAssessmentViewRecord))"
+              >
+                {{ getAssessmentResultDisplay(selectedAssessmentViewRecord) }}
+              </span>
+              <span v-else class="text-muted-foreground">-</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Manzil</div>
+            <div class="px-4 py-3 text-foreground">{{ selectedAssessmentViewRecord?.region }}, {{ selectedAssessmentViewRecord?.district }}</div>
+          </div>
+          <div class="grid grid-cols-[12rem_1fr] text-sm">
+            <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Status</div>
+            <div class="px-4 py-3">
+              <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[selectedAssessmentViewRecord?.status ?? 'Jarayonda'])">
+                {{ selectedAssessmentViewRecord?.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <p v-if="selectedAssessmentViewMode === 'edit'" class="text-sm text-muted-foreground">
+          Demo rejimida tahrirlash oynasi hujjat ma'lumotlarini ko‘rsatadi. Keyingi bosqichda maydonlarni shu yerga qo‘shamiz.
+        </p>
+      </div>
+    </div>
+  </div>
+
+      <ConfirmDialog
+        :open="Boolean(pendingConfirmation)"
+        :tone="pendingConfirmation?.tone"
+        :title="pendingConfirmation?.title ?? ''"
+        :description="pendingConfirmation?.description ?? ''"
+        :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        :loading="isConfirmationLoading"
+        @cancel="closeConfirmation"
+        @confirm="confirmPendingAction"
+      />
     </template>
 
     <template v-else-if="isServiceTypesPage">
@@ -5829,7 +6622,7 @@ onUnmounted(() => {
           ]"
         />
         <div class="min-w-0 flex-1">
-          <p class="font-semibold">{{ feedbackTitleMap[feedback.type] }}</p>
+          <p class="font-semibold">{{ feedback.title }}</p>
           <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
         </div>
         <button
@@ -5921,7 +6714,8 @@ onUnmounted(() => {
                           size="sm"
                           :class="openServiceTypeActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                         >
-                          <Ellipsis class="h-4 w-4" />
+                          <LoaderCircle v-if="isActionButtonLoading(`service-type-view-${record.id}`, `service-type-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                          <Ellipsis v-else class="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
@@ -6018,7 +6812,8 @@ onUnmounted(() => {
                           size="sm"
                           :class="openServiceTypeActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                         >
-                          <Ellipsis class="h-4 w-4" />
+                          <LoaderCircle v-if="isActionButtonLoading(`service-type-view-${record.id}`, `service-type-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                          <Ellipsis v-else class="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
@@ -6196,25 +6991,6 @@ onUnmounted(() => {
                 </label>
               </div>
 
-              <div class="grid gap-4 md:grid-cols-2">
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Minimal yosh</span>
-                  <Input
-                    v-model="serviceTypeForm.minAge"
-                    inputmode="numeric"
-                    placeholder="Masalan: 18"
-                  />
-                </label>
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Maksimal yosh</span>
-                  <Input
-                    v-model="serviceTypeForm.maxAge"
-                    inputmode="numeric"
-                    placeholder="Ixtiyoriy"
-                  />
-                </label>
-              </div>
-
               <button
                 type="button"
                 class="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
@@ -6240,6 +7016,25 @@ onUnmounted(() => {
                   </label>
                 </div>
               </div>
+            </section>
+
+            <section class="grid gap-4 md:grid-cols-2">
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Minimal yosh</span>
+                <Input
+                  v-model="serviceTypeForm.minAge"
+                  inputmode="numeric"
+                  placeholder="Masalan: 18"
+                />
+              </label>
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">Maksimal yosh</span>
+                <Input
+                  v-model="serviceTypeForm.maxAge"
+                  inputmode="numeric"
+                  placeholder="Ixtiyoriy"
+                />
+              </label>
             </section>
 
             <section class="grid gap-4 md:grid-cols-2">
@@ -6627,7 +7422,8 @@ onUnmounted(() => {
         :title="pendingConfirmation?.title ?? ''"
         :description="pendingConfirmation?.description ?? ''"
         :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
-        @close="closeConfirmation"
+        :loading="isConfirmationLoading"
+        @cancel="closeConfirmation"
         @confirm="confirmPendingAction"
       />
     </template>
@@ -6664,7 +7460,7 @@ onUnmounted(() => {
           ]"
         />
         <div class="min-w-0 flex-1">
-          <p class="font-semibold">{{ feedbackTitleMap[feedback.type] }}</p>
+          <p class="font-semibold">{{ feedback.title }}</p>
           <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
         </div>
         <button
@@ -6756,7 +7552,8 @@ onUnmounted(() => {
                           size="sm"
                           :class="openDiagnosisActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                         >
-                          <Ellipsis class="h-4 w-4" />
+                          <LoaderCircle v-if="isActionButtonLoading(`diagnosis-view-${record.id}`, `diagnosis-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                          <Ellipsis v-else class="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
@@ -6840,7 +7637,8 @@ onUnmounted(() => {
                           size="sm"
                           :class="openDiagnosisActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                         >
-                          <Ellipsis class="h-4 w-4" />
+                          <LoaderCircle v-if="isActionButtonLoading(`diagnosis-view-${record.id}`, `diagnosis-edit-${record.id}`)" class="h-4 w-4 animate-spin" />
+                          <Ellipsis v-else class="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
@@ -7265,7 +8063,8 @@ onUnmounted(() => {
         :title="pendingConfirmation?.title ?? ''"
         :description="pendingConfirmation?.description ?? ''"
         :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
-        @close="closeConfirmation"
+        :loading="isConfirmationLoading"
+        @cancel="closeConfirmation"
         @confirm="confirmPendingAction"
       />
     </template>

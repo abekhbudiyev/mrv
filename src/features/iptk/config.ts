@@ -63,15 +63,6 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: "IPTK moduli uchun arizalar jadvali, filtrlar va amallar keyingi bosqichda qo'shiladi.",
   },
   {
-    key: 'commissions-composition',
-    title: 'Komissiyalar tarkibi',
-    description: '',
-    route: '/apps/iptk/applications/commissions',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
-    sectionTitle: 'Komissiyalar tarkibi',
-    sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
-  },
-  {
     key: 'applications-assessment',
     title: 'Baholash',
     description: '',
@@ -79,6 +70,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Baholash'],
     sectionTitle: 'Baholash',
     sectionDescription: '',
+  },
+  {
+    key: 'commissions-composition',
+    title: 'Komissiyalar tarkibi',
+    description: '',
+    route: '/apps/iptk/applications/commissions',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+    sectionTitle: 'Komissiyalar tarkibi',
+    sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
   },
   {
     key: 'applications-report',
@@ -151,15 +151,15 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         icon: ListChecks,
       },
       {
-        id: 'commissions-composition',
-        title: 'Komissiyalar tarkibi',
-        route: '/apps/iptk/applications/commissions',
-        icon: NotebookText,
-      },
-      {
         id: 'applications-assessment',
         title: 'Baholash',
         route: '/apps/iptk/applications/assessment',
+        icon: NotebookText,
+      },
+      {
+        id: 'commissions-composition',
+        title: 'Komissiyalar tarkibi',
+        route: '/apps/iptk/applications/commissions',
         icon: NotebookText,
       },
     ],

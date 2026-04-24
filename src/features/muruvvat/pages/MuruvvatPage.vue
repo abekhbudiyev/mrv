@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, Plus, Search, X } from 'lucide-vue-next'
+import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, LoaderCircle, Plus, Search, X } from 'lucide-vue-next'
 import mermaid from 'mermaid'
 import {
   DropdownMenuContent,
@@ -14,7 +14,6 @@ import { getMuruvvatPage } from '@/features/muruvvat/config'
 import {
   allAssessmentQuestions,
   barthelAssessmentQuestions,
-  getAssessmentCategory,
   lawtonAssessmentQuestions,
   type AssessmentQuestion,
 } from '@/features/muruvvat/assessment'
@@ -25,6 +24,7 @@ import EmptyState from '@/shared/components/EmptyState.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
+import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import applicantManImage from '@/assets/applicant-man.png'
 import applicantWomanImage from '@/assets/applicant-woman.png'
 
@@ -834,15 +834,14 @@ const isRowsPerPageOpen = ref(false)
 const openActionMenuId = ref<string | null>(null)
 const isTableLoading = ref(true)
 const isExporting = ref(false)
+const actionLoadingKey = ref<string | null>(null)
+const isConfirmationLoading = ref(false)
 const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const selectedViewRow = ref<ApplicationRow | null>(null)
 const isIptkFlowDialogOpen = ref(false)
 const selectedAssessmentCreateRow = ref<ApplicationRow | null>(null)
 const assessmentAnswers = ref<AssessmentAnswers>({})
-const assessmentHasNoRelatives = ref(false)
-const assessmentHousingCondition = ref<'valid' | 'none' | 'unfit' | 'emergency'>('valid')
-const assessmentConclusionNote = ref('')
 const iptkFlowMermaidSvg = ref('')
 const selectedIptkFlowStepId = ref('A')
 const iptkFlowDiagramRef = ref<HTMLElement | null>(null)
@@ -892,6 +891,7 @@ let loadingTimer: ReturnType<typeof setTimeout> | null = null
 let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let notificationTimer: ReturnType<typeof setTimeout> | null = null
 let smsResendTimer: ReturnType<typeof setInterval> | null = null
+let actionLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
@@ -924,36 +924,42 @@ const assessmentLawtonTotal = computed(() => {
   }, 0)
 })
 const assessmentGrandTotal = computed(() => assessmentBarthelTotal.value + assessmentLawtonTotal.value)
-const assessmentCategory = computed(() => getAssessmentCategory(assessmentGrandTotal.value))
+const assessmentRelativesAvailable = computed(() => {
+  const row = selectedAssessmentCreateRow.value
+  if (!row) return false
+
+  return Number(row.pinfl.slice(-1)) % 2 === 0
+})
+const assessmentHousingAvailable = computed(() => {
+  const row = selectedAssessmentCreateRow.value
+  if (!row) return false
+
+  return Number(row.pinfl.slice(-2)) % 3 !== 0
+})
 const isAssessmentComplete = computed(() => {
   return allAssessmentQuestions.every((question) => Boolean(assessmentAnswers.value[question.id]))
 })
-const isAssessmentForHuzur = computed(() => selectedAssessmentCreateRow.value?.serviceId === 'huzur')
-const requiresGroupDecision = computed(() => isAssessmentForHuzur.value)
-const assessmentHousingConditionLabel = computed(() => {
-  switch (assessmentHousingCondition.value) {
-    case 'none':
-      return "Turar joy mavjud emas"
-    case 'unfit':
-      return "Yashash uchun yaroqsiz"
-    case 'emergency':
-      return 'Avariya holatidagi turar joy'
-    default:
-      return "Turar joy mavjud va yaroqli"
-  }
-})
-const isAssessmentEmergencyGroup = computed(() => (
-  requiresGroupDecision.value
-  && assessmentGrandTotal.value <= 62
-  && assessmentHasNoRelatives.value
-  && assessmentHousingCondition.value !== 'valid'
-))
 const assessmentGroupLabel = computed(() => {
-  if (!requiresGroupDecision.value) {
-    return null
+  if (!isAssessmentComplete.value) {
+    return 'Aniqlanmagan'
   }
 
-  return isAssessmentEmergencyGroup.value ? 'Tezkor guruh' : 'Rejali guruh'
+  if (assessmentGrandTotal.value <= 62 && !assessmentRelativesAvailable.value && !assessmentHousingAvailable.value) {
+    return 'Tezkor'
+  }
+
+  return 'Rejali'
+})
+const assessmentGroupBadgeClass = computed(() => {
+  if (assessmentGroupLabel.value === 'Tezkor') {
+    return 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300'
+  }
+
+  if (assessmentGroupLabel.value === 'Rejali') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300'
+  }
+
+  return 'border-border bg-background text-muted-foreground'
 })
 
 const filteredRows = computed(() => {
@@ -1022,9 +1028,6 @@ function setAssessmentAnswer(questionId: string, optionId: string) {
 
 function resetAssessmentDialogState() {
   assessmentAnswers.value = {}
-  assessmentHasNoRelatives.value = false
-  assessmentHousingCondition.value = 'valid'
-  assessmentConclusionNote.value = ''
 }
 
 const regionOptions = computed(() => {
@@ -1235,13 +1238,6 @@ const selectedViewApplicantImage = computed(() => {
   }
 
   return getApplicantImageByFullName(selectedViewDetail.value.applicant.fullName)
-})
-const selectedAssessmentImage = computed(() => {
-  if (!selectedAssessmentCreateRow.value) {
-    return ''
-  }
-
-  return getApplicantImageByFullName(selectedAssessmentCreateRow.value.fullName)
 })
 const selectedAssessmentServiceRecipient = computed(() => {
   if (!selectedAssessmentCreateRow.value) {
@@ -2383,6 +2379,20 @@ function showNotification(notification: PageNotification) {
   startNotificationCountdown(NOTIFICATION_DURATION)
 }
 
+function buildOperationNotification(
+  actionTitle: string,
+  actionName: string,
+  documentType: string,
+  documentId: string,
+  isSuccess = true,
+): PageNotification {
+  return {
+    tone: isSuccess ? 'success' : 'destructive',
+    title: `${actionTitle} ${isSuccess ? 'bajarildi' : 'bajarilmadi'}`,
+    description: `${documentId} raqamli ${documentType.toLowerCase()} bo‘yicha ${actionName} amali${isSuccess ? ' muvaffaqiyatli bajarildi' : 'ni bajarib bo‘lmadi'}.`,
+  }
+}
+
 function clearNotificationTimers() {
   if (notificationTimer) {
     clearTimeout(notificationTimer)
@@ -2403,7 +2413,10 @@ function closeNotification() {
 }
 
 function openViewDialog(row: ApplicationRow) {
-  selectedViewRow.value = row
+  runActionIconLoading(`application-view-${row.id}`, () => {
+    selectedViewRow.value = row
+    openActionMenuId.value = null
+  })
 }
 
 function openIptkFlowDialog() {
@@ -2782,17 +2795,26 @@ function buildConfirmationCopy(
 }
 
 function closeConfirmation() {
+  if (isConfirmationLoading.value) return
   pendingConfirmation.value = null
 }
 
 function confirmPendingAction() {
-  if (!pendingConfirmation.value) {
+  if (!pendingConfirmation.value || isConfirmationLoading.value) {
     return
   }
 
   const action = pendingConfirmation.value.action
-  pendingConfirmation.value = null
-  action()
+  isConfirmationLoading.value = true
+  const stopLoading = startActionLoading('confirmation-action', 700)
+  stopLoading(() => {
+    try {
+      pendingConfirmation.value = null
+      action()
+    } finally {
+      isConfirmationLoading.value = false
+    }
+  })
 }
 
 function updateRowStatus(rowId: string, nextStatus: ApplicationStatus, nextStep = getDefaultStepForStatus(nextStatus)) {
@@ -2846,19 +2868,18 @@ function confirmApprove(row: ApplicationRow) {
     action: () => {
       runTableLoading(() => {
         updateRowStatus(row.id, 'Tasdiqlangan', 'Tasdiqlandi')
-        showNotification({
-          tone: 'success',
-          title: 'Ariza tasdiqlandi',
-          description: `${row.id} muvaffaqiyatli tasdiqlandi.`,
-        })
+        showNotification(buildOperationNotification('Tasdiqlash', 'tasdiqlash', 'Ariza', row.id))
       })
     },
   })
 }
 
 function confirmStartAssessment(row: ApplicationRow) {
-  resetAssessmentDialogState()
-  selectedAssessmentCreateRow.value = row
+  runActionIconLoading(`application-assessment-${row.id}`, () => {
+    resetAssessmentDialogState()
+    selectedAssessmentCreateRow.value = row
+    openActionMenuId.value = null
+  })
 }
 
 function confirmSendToIptk(row: ApplicationRow) {
@@ -2871,11 +2892,7 @@ function confirmSendToIptk(row: ApplicationRow) {
     action: () => {
       runTableLoading(() => {
         updateRowStatus(row.id, 'Jarayonda', 'IPTKga yuborildi')
-        showNotification({
-          tone: 'success',
-          title: 'Ariza IPTKga yuborildi',
-          description: `${row.id} IPTK bosqichiga o'tkazildi.`,
-        })
+        showNotification(buildOperationNotification('IPTKga yuborish', 'IPTKga yuborish', 'Ariza', row.id))
       })
     },
   })
@@ -2898,11 +2915,7 @@ function createAssessmentAndSendToIptk() {
 
   runTableLoading(() => {
     updateRowStatus(row.id, 'Jarayonda', 'Baholash jarayoni')
-    showNotification({
-      tone: 'success',
-      title: 'Baholash hujjati yaratildi',
-      description: `${row.id} bo'yicha baholash hujjati yaratilib, baholash jarayoniga yuborildi.`,
-    })
+    showNotification(buildOperationNotification('Yaratish', 'yaratish', 'Baholash hujjati', row.id))
   })
 }
 
@@ -2916,11 +2929,7 @@ function confirmReject(row: ApplicationRow) {
     action: () => {
       runTableLoading(() => {
         updateRowStatus(row.id, 'Bekor qilingan', 'Bekor qilindi')
-        showNotification({
-          tone: 'destructive',
-          title: 'Ariza bekor qilindi',
-          description: `${row.id} bekor qilingan holatiga o'tkazildi.`,
-        })
+        showNotification(buildOperationNotification('Bekor qilish', 'bekor qilish', 'Ariza', row.id))
       })
     },
   })
@@ -2941,6 +2950,8 @@ async function downloadApplicationsAsExcel() {
   }
 
   let exportStartedAt = 0
+  let afterLoading: (() => void) | null = null
+  let exportNotification: PageNotification | null = null
 
   try {
     isExporting.value = true
@@ -2977,20 +2988,20 @@ async function downloadApplicationsAsExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Arizalar ro'yxati")
 
     const fileName = `arizalar-royxati-${new Date().toISOString().slice(0, 10)}.xlsx`
-    XLSX.writeFile(workbook, fileName, { compression: true })
-
-    showNotification({
+    const exportedCount = filteredRows.value.length
+    afterLoading = () => XLSX.writeFile(workbook, fileName, { compression: true })
+    exportNotification = {
       tone: 'success',
       title: 'Eksport tayyor',
-      description: `${filteredRows.value.length} ta yozuv .xlsx faylga yuklab olindi.`,
-    })
+      description: `${exportedCount} ta yozuv .xlsx faylga yuklab olindi.`,
+    }
   }
   catch {
-    showNotification({
+    exportNotification = {
       tone: 'destructive',
       title: 'Eksportda xatolik',
       description: 'Excel faylni yaratishda muammo yuz berdi.',
-    })
+    }
   }
   finally {
     const elapsed = performance.now() - exportStartedAt
@@ -3001,6 +3012,11 @@ async function downloadApplicationsAsExcel() {
     }
 
     isExporting.value = false
+    afterLoading?.()
+
+    if (exportNotification) {
+      showNotification(exportNotification)
+    }
   }
 }
 
@@ -3028,6 +3044,35 @@ function runTableLoading(update: () => void) {
   }, 200)
 }
 
+function startActionLoading(key: string, minimumDuration = 420) {
+  if (actionLoadingTimer) {
+    clearTimeout(actionLoadingTimer)
+  }
+
+  const startedAt = Date.now()
+  actionLoadingKey.value = key
+
+  return (afterLoading?: () => void) => {
+    const remaining = Math.max(minimumDuration - (Date.now() - startedAt), 0)
+    actionLoadingTimer = setTimeout(() => {
+      afterLoading?.()
+      if (actionLoadingKey.value === key) {
+        actionLoadingKey.value = null
+      }
+      actionLoadingTimer = null
+    }, remaining)
+  }
+}
+
+function runActionIconLoading(key: string, action: () => void) {
+  const stopLoading = startActionLoading(key, 520)
+  stopLoading(action)
+}
+
+function isActionButtonLoading(...keys: string[]) {
+  return Boolean(actionLoadingKey.value && keys.includes(actionLoadingKey.value))
+}
+
 onMounted(() => {
   ;(window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick = (nodeId: string) => {
     selectIptkFlowStep(nodeId)
@@ -3049,6 +3094,10 @@ onUnmounted(() => {
 
   if (loadingTimer) {
     clearTimeout(loadingTimer)
+  }
+
+  if (actionLoadingTimer) {
+    clearTimeout(actionLoadingTimer)
   }
 
   if (searchDebounceTimer) {
@@ -3116,44 +3165,16 @@ watch(serviceRecipientLookupResult, () => {
     />
 
     <div class="relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col xl:min-h-0">
-      <div
-        v-if="pendingConfirmation"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-      >
-        <div class="w-full max-w-md rounded-xl border border-border bg-card p-5">
-          <div class="flex items-start gap-3">
-            <div
-              :class="[
-                'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
-                pendingConfirmation.tone === 'success' ? 'bg-emerald-600' : 'bg-rose-600',
-              ]"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="text-base font-semibold text-foreground">
-                {{ pendingConfirmation.title }}
-              </p>
-              <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                {{ pendingConfirmation.description }}
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-5 flex items-center justify-end gap-2">
-            <Button
-              variant="outline"
-              @click="closeConfirmation"
-            >
-              Bekor qilish
-            </Button>
-            <Button
-              :variant="pendingConfirmation.tone === 'success' ? 'default' : 'destructive'"
-              @click="confirmPendingAction"
-            >
-              {{ pendingConfirmation.confirmLabel }}
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ConfirmDialog
+        :open="Boolean(pendingConfirmation)"
+        :tone="pendingConfirmation?.tone"
+        :title="pendingConfirmation?.title ?? ''"
+        :description="pendingConfirmation?.description ?? ''"
+        :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        :loading="isConfirmationLoading"
+        @cancel="closeConfirmation"
+        @confirm="confirmPendingAction"
+      />
 
       <div
         v-if="selectedViewRow && selectedViewDetail"
@@ -4459,7 +4480,8 @@ watch(serviceRecipientLookupResult, () => {
                                 size="sm"
                                 :class="openActionMenuId === row.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                               >
-                                <Ellipsis class="h-4 w-4" />
+                                <LoaderCircle v-if="isActionButtonLoading(`application-view-${row.id}`, `application-assessment-${row.id}`)" class="h-4 w-4 animate-spin" />
+                                <Ellipsis v-else class="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
 
@@ -4620,7 +4642,8 @@ watch(serviceRecipientLookupResult, () => {
                               size="sm"
                               :class="openActionMenuId === row.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                             >
-                              <Ellipsis class="h-4 w-4" />
+                              <LoaderCircle v-if="isActionButtonLoading(`application-view-${row.id}`, `application-assessment-${row.id}`)" class="h-4 w-4 animate-spin" />
+                              <Ellipsis v-else class="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
 
@@ -5609,11 +5632,9 @@ watch(serviceRecipientLookupResult, () => {
             </p>
             <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
               <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
-                <img
-                  :src="selectedAssessmentImage"
-                  alt="Xizmat oluvchi rasmi"
-                  class="h-32 w-24 rounded-2xl border border-border/60 object-cover"
-                >
+                <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
+                  Rasm yo'q
+                </div>
                 <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
               </div>
 
@@ -5773,182 +5794,76 @@ watch(serviceRecipientLookupResult, () => {
         </div>
 
         <div class="rounded-2xl border border-border bg-card p-4">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-base font-semibold text-foreground">
-                Baholash xulosasi
-              </p>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Ishchi guruh 5 ish kuni ichida parvarishga muhtojlik va yashash sharoitini baholab, natijani axborot moduliga kiritadi.
-              </p>
-            </div>
-            <div class="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
-              Ishchi guruh
-            </div>
-          </div>
-
-          <div class="mt-4 grid gap-3 lg:grid-cols-3">
-            <div class="rounded-xl border border-border bg-background px-4 py-3">
-              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Tarkib
-              </p>
-              <p class="mt-2 text-sm text-foreground">
-                Ijtimoiy xodim, oilaviy shifokor va FYO'B organi raisi
-              </p>
-            </div>
-            <div class="rounded-xl border border-border bg-background px-4 py-3">
-              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Baholash balli
-              </p>
-              <p class="mt-2 text-sm text-foreground">
-                Barthel va Lawton natijasi asosida {{ formatAssessmentScore(assessmentGrandTotal) }} ball
-              </p>
-            </div>
-            <div class="rounded-xl border border-border bg-background px-4 py-3">
-              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Xulosa
-              </p>
-              <p class="mt-2 text-sm text-foreground">
-                {{ assessmentCategory.label }}
-              </p>
-            </div>
-          </div>
-
-          <div class="mt-4 grid gap-4 lg:grid-cols-2">
-            <label class="space-y-2 rounded-xl border border-border bg-background px-4 py-4">
-              <span class="text-sm font-medium text-foreground">
-                Nogironligi bo'lgan shaxsning yaqin qarindoshlari mavjud emas
-              </span>
-              <button
-                type="button"
-                :class="[
-                  'flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors',
-                  assessmentHasNoRelatives ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground',
-                ]"
-                @click="assessmentHasNoRelatives = !assessmentHasNoRelatives"
-              >
-                <span>{{ assessmentHasNoRelatives ? 'Ha' : "Yo'q" }}</span>
-                <Check
-                  v-if="assessmentHasNoRelatives"
-                  class="h-4 w-4 text-primary"
-                />
-              </button>
-            </label>
-
-            <label class="space-y-2 rounded-xl border border-border bg-background px-4 py-4">
-              <span class="text-sm font-medium text-foreground">
-                Turar joy holati
-              </span>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <button
-                  type="button"
-                  :class="[
-                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                    assessmentHousingCondition === 'valid' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
-                  ]"
-                  @click="assessmentHousingCondition = 'valid'"
-                >
-                  Turar joy mavjud va yaroqli
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                    assessmentHousingCondition === 'none' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
-                  ]"
-                  @click="assessmentHousingCondition = 'none'"
-                >
-                  Turar joy mavjud emas
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                    assessmentHousingCondition === 'unfit' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
-                  ]"
-                  @click="assessmentHousingCondition = 'unfit'"
-                >
-                  Yashash uchun yaroqsiz
-                </button>
-                <button
-                  type="button"
-                  :class="[
-                    'rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-                    assessmentHousingCondition === 'emergency' ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card text-muted-foreground hover:bg-muted/40',
-                  ]"
-                  @click="assessmentHousingCondition = 'emergency'"
-                >
-                  Avariya holatidagi turar joy
-                </button>
-              </div>
-            </label>
-          </div>
-
-          <div
-            v-if="requiresGroupDecision"
-            class="mt-4 rounded-xl border border-border bg-background p-4"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch">
+            <div
+              :class="[
+                'flex min-w-0 flex-1 flex-col justify-between rounded-xl border p-4',
+                assessmentGroupLabel === 'Tezkor'
+                  ? 'border-destructive/25 bg-destructive/5'
+                  : assessmentGroupLabel === 'Rejali'
+                    ? 'border-emerald-500/25 bg-emerald-500/5'
+                    : 'border-border bg-muted/20',
+              ]"
+            >
               <div>
-                <p class="text-sm font-semibold text-foreground">
-                  Huzur bo'yicha guruh aniqlanishi
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Baholash natijasi
                 </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                  Tezkor guruh uchun 62 ballgacha, yaqin qarindosh yo'qligi va turar joy muammosi bir vaqtda bo'lishi kerak.
+                <p
+                  :class="[
+                    'mt-3 inline-flex rounded-full border px-4 py-2 text-lg font-semibold',
+                    assessmentGroupBadgeClass,
+                  ]"
+                >
+                  {{ assessmentGroupLabel }}
                 </p>
               </div>
-              <span
-                :class="[
-                  'inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium',
-                  isAssessmentEmergencyGroup
-                    ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200',
-                ]"
-              >
-                {{ assessmentGroupLabel }}
-              </span>
+              <div class="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span class="rounded-full border border-border bg-background px-3 py-1">
+                  Umumiy ball: {{ formatAssessmentScore(assessmentGrandTotal) }}
+                </span>
+                <span class="rounded-full border border-border bg-background px-3 py-1">
+                  {{ isAssessmentComplete ? 'So‘rovnoma to‘ldirilgan' : 'So‘rovnoma davom etmoqda' }}
+                </span>
+              </div>
             </div>
-
-            <div class="mt-4 grid gap-3 md:grid-cols-3">
-              <div class="rounded-lg border border-border bg-card px-3 py-3">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Ball mezoni
+            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">
+                  Barthel
                 </p>
-                <p class="mt-2 text-sm text-foreground">
-                  {{ assessmentGrandTotal <= 62 ? 'Mos keladi' : 'Mos kelmaydi' }}
-                </p>
-              </div>
-              <div class="rounded-lg border border-border bg-card px-3 py-3">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Yaqin qarindoshlar
-                </p>
-                <p class="mt-2 text-sm text-foreground">
-                  {{ assessmentHasNoRelatives ? "Mavjud emas" : 'Mavjud' }}
+                <p class="mt-1 text-base font-semibold text-foreground">
+                  {{ formatAssessmentScore(assessmentBarthelTotal) }} ball
                 </p>
               </div>
-              <div class="rounded-lg border border-border bg-card px-3 py-3">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Turar joy holati
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">
+                  Lawton
                 </p>
-                <p class="mt-2 text-sm text-foreground">
-                  {{ assessmentHousingConditionLabel }}
+                <p class="mt-1 text-base font-semibold text-foreground">
+                  {{ formatAssessmentScore(assessmentLawtonTotal) }} ball
+                </p>
+              </div>
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">
+                  Yaqin qarindoshlari
+                </p>
+                <p class="mt-1 text-base font-semibold text-foreground">
+                  {{ assessmentRelativesAvailable ? 'Bor' : "Yo'q" }}
+                </p>
+              </div>
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">
+                  Uy-joyi
+                </p>
+                <p class="mt-1 text-base font-semibold text-foreground">
+                  {{ assessmentHousingAvailable ? 'Bor' : "Yo'q" }}
                 </p>
               </div>
             </div>
           </div>
-
-          <label class="mt-4 block space-y-2">
-            <span class="text-sm font-medium text-foreground">
-              Baholash izohi
-            </span>
-            <textarea
-              v-model="assessmentConclusionNote"
-              rows="3"
-              class="flex min-h-[88px] w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20"
-              placeholder="Yashash sharoiti va parvarishga muhtojlik bo'yicha qo'shimcha izoh kiriting"
-            />
-          </label>
         </div>
+
       </div>
 
       <div class="flex items-center justify-between gap-3 border-t border-border px-5 py-4">
