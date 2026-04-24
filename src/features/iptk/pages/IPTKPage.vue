@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, Filter, LoaderCircle, Pencil, Plus, Search, Trash2, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
@@ -26,6 +26,20 @@ type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Be
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
 type AssessmentAnswers = Record<string, string>
+type ApplicationReportStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ApplicationReportStep =
+  | 'Ariza yaratildi'
+  | 'Baholash jarayoni'
+  | 'Qo‘shimcha hujjatlar yig‘ilmoqda'
+  | 'IPTKga yuborildi'
+  | 'IPTK qabul qildi'
+  | 'Qayta ishlashga qaytarildi'
+  | 'IPTK yig‘ilishiga kiritildi'
+  | 'IPTK tekshiruvi o‘tkazildi'
+  | 'Tasdiqlandi'
+  | 'Boshqa xizmat tavsiya qilindi'
+  | 'Bekor qilindi'
+  | 'Rad etildi'
 
 type PendingConfirmation = {
   tone: 'success' | 'destructive'
@@ -108,6 +122,8 @@ interface AssessmentRecord {
   serviceType: string
   result: string
   answers?: AssessmentAnswers
+  hasCloseRelatives?: boolean
+  hasHousing?: boolean
   region: string
   district: string
   status: AssessmentStatus
@@ -221,6 +237,7 @@ const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
 const isDocumentsPage = computed(() => props.pageKey === 'info-4')
 const isQuestionnaireTemplatesPage = computed(() => props.pageKey === 'info-5')
 const isCategoryGroupsPage = computed(() => props.pageKey === 'info-6')
+const isApplicationsReportPage = computed(() => props.pageKey === 'applications-report')
 const isMedicalReferencePage = computed(() => (
   isDiagnosesPage.value
   || isContraindicationsPage.value
@@ -252,6 +269,107 @@ const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
   Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
+}
+
+const applicationReportStatuses: ApplicationReportStatus[] = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']
+const applicationReportSteps: ApplicationReportStep[] = [
+  'Ariza yaratildi',
+  'Baholash jarayoni',
+  'Qo‘shimcha hujjatlar yig‘ilmoqda',
+  'IPTKga yuborildi',
+  'IPTK qabul qildi',
+  'Qayta ishlashga qaytarildi',
+  'IPTK yig‘ilishiga kiritildi',
+  'IPTK tekshiruvi o‘tkazildi',
+  'Tasdiqlandi',
+  'Boshqa xizmat tavsiya qilindi',
+  'Bekor qilindi',
+  'Rad etildi',
+]
+const applicationReportStepStatusMap: Record<ApplicationReportStep, ApplicationReportStatus> = {
+  'Ariza yaratildi': 'Jarayonda',
+  'Baholash jarayoni': 'Jarayonda',
+  'Qo‘shimcha hujjatlar yig‘ilmoqda': 'Jarayonda',
+  'IPTKga yuborildi': 'Jarayonda',
+  'IPTK qabul qildi': 'Jarayonda',
+  'Qayta ishlashga qaytarildi': 'Jarayonda',
+  'IPTK yig‘ilishiga kiritildi': 'Jarayonda',
+  'IPTK tekshiruvi o‘tkazildi': 'Jarayonda',
+  Tasdiqlandi: 'Tasdiqlangan',
+  'Boshqa xizmat tavsiya qilindi': 'Tasdiqlangan',
+  'Bekor qilindi': 'Bekor qilingan',
+  'Rad etildi': 'Bekor qilingan',
+}
+const applicationReportServiceTypes = [
+  'Huzur',
+  'Madad',
+  'Ijtimoiy ta’til',
+  'Uyda qarab turish',
+  'Yangi kun',
+] as const
+const applicationReportDisabilityGroups = ['1-guruh', '2-guruh'] as const
+const applicationReportDiagnoses = ['F00-F03', 'F71', 'F72', 'F73'] as const
+const applicationReportGenders = ['Erkak', 'Ayol'] as const
+const applicationReportAgeGroups = ['18-55/60', '55/60+'] as const
+const applicationReportMetricGroups = [
+  {
+    key: 'serviceTypes',
+    label: 'Xizmat turi',
+    options: applicationReportServiceTypes,
+  },
+  {
+    key: 'disabilityGroups',
+    label: 'Nogironlik guruhi',
+    options: applicationReportDisabilityGroups,
+  },
+  {
+    key: 'diagnoses',
+    label: 'Tashxis',
+    options: applicationReportDiagnoses,
+  },
+  {
+    key: 'genders',
+    label: 'Jins',
+    options: applicationReportGenders,
+  },
+  {
+    key: 'ageGroups',
+    label: 'Yosh',
+    options: applicationReportAgeGroups,
+  },
+] as const
+type ApplicationReportMetricKey = typeof applicationReportMetricGroups[number]['key']
+const applicationReportRegions = [
+  'Qoraqalpog‘iston Respublikasi',
+  'Andijon viloyati',
+  'Buxoro viloyati',
+  'Farg‘ona viloyati',
+  'Jizzax viloyati',
+  'Namangan viloyati',
+  'Navoiy viloyati',
+  'Qashqadaryo viloyati',
+  'Samarqand viloyati',
+  'Sirdaryo viloyati',
+  'Surxondaryo viloyati',
+  'Toshkent viloyati',
+  'Toshkent shahri',
+  'Xorazm viloyati',
+]
+const applicationReportDistricts: Record<string, string[]> = {
+  'Qoraqalpog‘iston Respublikasi': ['Nukus shahri', 'Beruniy tumani', 'Qo‘ng‘irot tumani'],
+  'Andijon viloyati': ['Andijon shahri', 'Asaka tumani', 'Xo‘jaobod tumani'],
+  'Buxoro viloyati': ['Buxoro shahri', 'G‘ijduvon tumani', 'Kogon tumani'],
+  'Farg‘ona viloyati': ['Farg‘ona shahri', 'Qo‘qon shahri', 'Marg‘ilon shahri'],
+  'Jizzax viloyati': ['Jizzax shahri', 'Zomin tumani', 'G‘allaorol tumani'],
+  'Namangan viloyati': ['Namangan shahri', 'Chortoq tumani', 'Pop tumani'],
+  'Navoiy viloyati': ['Navoiy shahri', 'Zarafshon shahri', 'Karmana tumani'],
+  'Qashqadaryo viloyati': ['Qarshi shahri', 'Shahrisabz shahri', 'Kitob tumani'],
+  'Samarqand viloyati': ['Samarqand shahri', 'Kattaqo‘rg‘on shahri', 'Urgut tumani'],
+  'Sirdaryo viloyati': ['Guliston shahri', 'Yangiyer shahri', 'Sirdaryo tumani'],
+  'Surxondaryo viloyati': ['Termiz shahri', 'Denov tumani', 'Sherobod tumani'],
+  'Toshkent viloyati': ['Zangiota tumani', 'Chirchiq shahri', 'Olmaliq shahri'],
+  'Toshkent shahri': ['Yunusobod tumani', 'Chilonzor tumani', 'Yakkasaroy tumani'],
+  'Xorazm viloyati': ['Urganch shahri', 'Xiva shahri', 'Hazorasp tumani'],
 }
 
 const assessmentStatusOptions: AssessmentStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
@@ -446,6 +564,8 @@ const assessments = ref<AssessmentRecord[]>([
     serviceType: 'Huzur',
     answers: buildAssessmentAnswersByScoreMode('low'),
     result: 'Tezkor guruh',
+    hasCloseRelatives: false,
+    hasHousing: false,
     region: 'Toshkent viloyati',
     district: 'Zangiota tumani',
     status: 'Jarayonda',
@@ -459,6 +579,8 @@ const assessments = ref<AssessmentRecord[]>([
     serviceType: 'Madad',
     answers: buildAssessmentAnswersByScoreMode('high'),
     result: 'Rejali guruh',
+    hasCloseRelatives: true,
+    hasHousing: true,
     region: 'Samarqand viloyati',
     district: 'Samarqand shahri',
     status: 'Yuborilgan',
@@ -472,6 +594,8 @@ const assessments = ref<AssessmentRecord[]>([
     serviceType: 'Huzur',
     answers: buildAssessmentAnswersByScoreMode('low'),
     result: 'Baholash to‘xtatilgan',
+    hasCloseRelatives: false,
+    hasHousing: false,
     region: 'Andijon viloyati',
     district: 'Andijon shahri',
     status: 'Tasdiqlangan',
@@ -484,6 +608,8 @@ const assessments = ref<AssessmentRecord[]>([
     serviceRecipientPinfl: '10000000000411',
     serviceType: 'Madad',
     result: 'Rejali guruh',
+    hasCloseRelatives: true,
+    hasHousing: true,
     region: "Farg'ona viloyati",
     district: "Qo'qon shahri",
     status: 'Bekor qilingan',
@@ -1100,6 +1226,19 @@ const draftAssessmentStartDateFilter = ref('')
 const appliedAssessmentStartDateFilter = ref('')
 const draftAssessmentEndDateFilter = ref('')
 const appliedAssessmentEndDateFilter = ref('')
+const isApplicationReportFilterOpen = ref(false)
+const openApplicationReportFilterField = ref<'status' | 'step' | ApplicationReportMetricKey | null>(null)
+const draftApplicationReportStatusFilter = ref<ApplicationReportStatus[]>([])
+const appliedApplicationReportStatusFilter = ref<ApplicationReportStatus[]>([])
+const draftApplicationReportStepFilter = ref<ApplicationReportStep[]>([])
+const appliedApplicationReportStepFilter = ref<ApplicationReportStep[]>([])
+const draftApplicationReportMetricFilters = ref<Record<ApplicationReportMetricKey, string[]>>(createApplicationReportMetricFilterState())
+const appliedApplicationReportMetricFilters = ref<Record<ApplicationReportMetricKey, string[]>>(createApplicationReportMetricFilterState())
+const draftApplicationReportStartDateFilter = ref('')
+const appliedApplicationReportStartDateFilter = ref('')
+const draftApplicationReportEndDateFilter = ref('')
+const appliedApplicationReportEndDateFilter = ref('')
+const selectedApplicationReportCells = ref<Record<string, { label: string, value: number }>>({})
 const draftStatusFilter = ref<'all' | CommissionStatus>('all')
 const appliedStatusFilter = ref<'all' | CommissionStatus>('all')
 const draftRegionFilter = ref<'all' | string>('all')
@@ -1142,6 +1281,7 @@ const diagnosisRowsPerPage = ref(20)
 const diagnosisCurrentPage = ref(1)
 const isDiagnosisRowsPerPageOpen = ref(false)
 const openDiagnosisActionMenuId = ref<string | null>(null)
+const selectedApplicationReportRegion = ref<string | null>(null)
 const isDiagnosisDialogOpen = ref(false)
 const isDiagnosisStatusOpen = ref(false)
 const isDiagnosisIcdOpen = ref(false)
@@ -2209,7 +2349,10 @@ const isAssessmentComplete = computed(() => {
 })
 const assessmentGroupLabel = computed(() => {
   if (!isAssessmentComplete.value) return 'Aniqlanmagan'
-  return assessmentGrandTotal.value <= 62 ? 'Tezkor' : 'Rejali'
+  const record = selectedAssessmentViewRecord.value
+  const hasCloseRelatives = getAssessmentHasCloseRelatives(record)
+  const hasHousing = getAssessmentHasHousing(record)
+  return assessmentGrandTotal.value <= 62 && hasCloseRelatives === false && hasHousing === false ? 'Tezkor' : 'Rejali'
 })
 const assessmentGroupBadgeClass = computed(() => {
   if (assessmentGroupLabel.value === 'Tezkor') {
@@ -2245,6 +2388,327 @@ const activeFilterCount = computed(() => {
 
   return count
 })
+
+function getApplicationReportDemoCount(regionIndex: number, stepIndex: number) {
+  if ((regionIndex + stepIndex) % 6 === 0) return 0
+  return ((regionIndex + 2) * (stepIndex + 3)) % 11 + 1
+}
+
+function getApplicationReportMetricCount(regionIndex: number, groupIndex: number, optionIndex: number) {
+  const seed = (regionIndex + 3) * (groupIndex + 2) * (optionIndex + 1)
+  if (seed % 7 === 0) return 0
+  return (seed % 19) + 2
+}
+
+function buildApplicationReportRow(label: string, seedIndex: number) {
+  const steps = Object.fromEntries(
+    applicationReportSteps.map((step, stepIndex) => [
+      step,
+      getApplicationReportDemoCount(seedIndex, stepIndex),
+    ]),
+  ) as Record<ApplicationReportStep, number>
+
+  const statuses = Object.fromEntries(
+    applicationReportStatuses.map((status) => [
+      status,
+      applicationReportSteps
+        .filter((step) => applicationReportStepStatusMap[step] === status)
+        .reduce((total, step) => total + steps[step], 0),
+    ]),
+  ) as Record<ApplicationReportStatus, number>
+
+  const total = applicationReportSteps.reduce((sum, step) => sum + steps[step], 0)
+  const metrics = Object.fromEntries(
+    applicationReportMetricGroups.map((group, groupIndex) => [
+      group.key,
+      Object.fromEntries(
+        group.options.map((option, optionIndex) => [
+          option,
+          getApplicationReportMetricCount(seedIndex, groupIndex, optionIndex),
+        ]),
+      ),
+    ]),
+  ) as Record<
+    typeof applicationReportMetricGroups[number]['key'],
+    Partial<Record<
+      typeof applicationReportMetricGroups[number]['options'][number],
+      number
+    >>
+  >
+
+  return {
+    region: label,
+    statuses,
+    steps,
+    metrics,
+    total,
+  }
+}
+
+function areApplicationReportFiltersEqual<T extends string>(first: T[], second: T[]) {
+  return first.length === second.length && first.every((item) => second.includes(item))
+}
+
+function createApplicationReportMetricFilterState() {
+  return Object.fromEntries(
+    applicationReportMetricGroups.map((group) => [group.key, []]),
+  ) as unknown as Record<ApplicationReportMetricKey, string[]>
+}
+
+function areApplicationReportMetricFiltersEqual(
+  first: Record<ApplicationReportMetricKey, string[]>,
+  second: Record<ApplicationReportMetricKey, string[]>,
+) {
+  return applicationReportMetricGroups.every((group) => areApplicationReportFiltersEqual(
+    first[group.key],
+    second[group.key],
+  ))
+}
+
+const applicationReportStepFilterOptions = computed(() => {
+  if (!draftApplicationReportStatusFilter.value.length) return applicationReportSteps
+
+  return applicationReportSteps.filter((step) => (
+    draftApplicationReportStatusFilter.value.includes(applicationReportStepStatusMap[step])
+  ))
+})
+
+const applicationReportVisibleStatuses = computed(() => (
+  appliedApplicationReportStatusFilter.value.length
+    ? appliedApplicationReportStatusFilter.value
+    : applicationReportStatuses
+))
+
+const applicationReportVisibleSteps = computed(() => {
+  const statusFilteredSteps = applicationReportSteps.filter((step) => (
+    !appliedApplicationReportStatusFilter.value.length
+    || appliedApplicationReportStatusFilter.value.includes(applicationReportStepStatusMap[step])
+  ))
+
+  if (!appliedApplicationReportStepFilter.value.length) return statusFilteredSteps
+
+  return statusFilteredSteps.filter((step) => appliedApplicationReportStepFilter.value.includes(step))
+})
+
+const applicationReportVisibleMetricGroups = computed(() => applicationReportMetricGroups.map((group) => {
+  const selectedOptions = appliedApplicationReportMetricFilters.value[group.key]
+
+  return {
+    ...group,
+    options: selectedOptions.length
+      ? group.options.filter((option) => selectedOptions.includes(option))
+    : group.options,
+  }
+}).filter((group) => group.options.length > 0))
+
+const applicationReportMetricFilterGroups = computed(() => (
+  applicationReportMetricGroups.filter((group) => group.key !== 'serviceTypes')
+))
+
+const applicationReportStatusFilterLabel = computed(() => {
+  if (!draftApplicationReportStatusFilter.value.length) return 'Barchasi'
+  if (draftApplicationReportStatusFilter.value.length === 1) return draftApplicationReportStatusFilter.value[0]
+  return `${draftApplicationReportStatusFilter.value.length} ta tanlandi`
+})
+
+const applicationReportStepFilterLabel = computed(() => {
+  if (!draftApplicationReportStepFilter.value.length) return 'Barchasi'
+  if (draftApplicationReportStepFilter.value.length === 1) return draftApplicationReportStepFilter.value[0]
+  return `${draftApplicationReportStepFilter.value.length} ta tanlandi`
+})
+
+function getApplicationReportMetricFilterLabel(key: ApplicationReportMetricKey) {
+  const selectedItems = draftApplicationReportMetricFilters.value[key]
+  if (!selectedItems.length) return 'Barchasi'
+  if (selectedItems.length === 1) return selectedItems[0]
+  return `${selectedItems.length} ta tanlandi`
+}
+
+const applicationReportActiveFilterCount = computed(() => {
+  let count = 0
+
+  if (appliedApplicationReportStatusFilter.value.length) count += 1
+  if (appliedApplicationReportStepFilter.value.length) count += 1
+  applicationReportMetricGroups.forEach((group) => {
+    if (appliedApplicationReportMetricFilters.value[group.key].length) count += 1
+  })
+  if (appliedApplicationReportStartDateFilter.value) count += 1
+  if (appliedApplicationReportEndDateFilter.value) count += 1
+
+  return count
+})
+
+const applicationReportHasActiveFilters = computed(() => applicationReportActiveFilterCount.value > 0)
+const applicationReportHasPendingFilterChanges = computed(() => {
+  return !areApplicationReportFiltersEqual(
+    draftApplicationReportStatusFilter.value,
+    appliedApplicationReportStatusFilter.value,
+  )
+    || !areApplicationReportFiltersEqual(
+      draftApplicationReportStepFilter.value,
+      appliedApplicationReportStepFilter.value,
+    )
+    || !areApplicationReportMetricFiltersEqual(
+      draftApplicationReportMetricFilters.value,
+      appliedApplicationReportMetricFilters.value,
+    )
+    || draftApplicationReportStartDateFilter.value !== appliedApplicationReportStartDateFilter.value
+    || draftApplicationReportEndDateFilter.value !== appliedApplicationReportEndDateFilter.value
+})
+
+function getApplicationReportDateFactor() {
+  if (appliedApplicationReportStartDateFilter.value && appliedApplicationReportEndDateFilter.value) return 0.64
+  if (appliedApplicationReportStartDateFilter.value || appliedApplicationReportEndDateFilter.value) return 0.82
+  return 1
+}
+
+function getApplicationReportDisplayCount(value: number) {
+  return Math.round(value * getApplicationReportDateFactor())
+}
+
+function getApplicationReportStatusCount(
+  row: ReturnType<typeof buildApplicationReportRow>,
+  status: ApplicationReportStatus,
+) {
+  return applicationReportVisibleSteps.value
+    .filter((step) => applicationReportStepStatusMap[step] === status)
+    .reduce((total, step) => total + getApplicationReportDisplayCount(row.steps[step]), 0)
+}
+
+function buildApplicationReportDisplayRow(
+  row: ReturnType<typeof buildApplicationReportRow>,
+  isTotal = false,
+) {
+  const metrics = Object.fromEntries(
+    applicationReportVisibleMetricGroups.value.map((group) => [
+      group.key,
+      Object.fromEntries(
+        group.options.map((option) => [
+          option,
+          getApplicationReportDisplayCount(row.metrics[group.key][option] ?? 0),
+        ]),
+      ),
+    ]),
+  ) as ReturnType<typeof buildApplicationReportRow>['metrics']
+  const steps = Object.fromEntries(
+    applicationReportVisibleSteps.value.map((step) => [
+      step,
+      getApplicationReportDisplayCount(row.steps[step]),
+    ]),
+  ) as Partial<Record<ApplicationReportStep, number>>
+  const statuses = Object.fromEntries(
+    applicationReportVisibleStatuses.value.map((status) => [
+      status,
+      getApplicationReportStatusCount(row, status),
+    ]),
+  ) as Partial<Record<ApplicationReportStatus, number>>
+
+  return {
+    ...row,
+    statuses,
+    steps,
+    metrics,
+    total: applicationReportVisibleSteps.value.reduce((sum, step) => sum + (steps[step] ?? 0), 0),
+    isTotal,
+  }
+}
+
+const applicationReportRows = computed(() => {
+  return applicationReportRegions.map((region, regionIndex) => {
+    return buildApplicationReportRow(region, regionIndex)
+  })
+})
+
+const selectedApplicationReportDistrictRows = computed(() => {
+  if (!selectedApplicationReportRegion.value) return []
+  const regionIndex = Math.max(0, applicationReportRegions.indexOf(selectedApplicationReportRegion.value))
+  const districts = applicationReportDistricts[selectedApplicationReportRegion.value] ?? []
+
+  return districts.map((district, districtIndex) => (
+    buildApplicationReportRow(district, (regionIndex + 1) * 10 + districtIndex)
+  ))
+})
+
+const applicationReportTotals = computed(() => {
+  const sourceRows = selectedApplicationReportRegion.value
+    ? selectedApplicationReportDistrictRows.value
+    : applicationReportRows.value
+
+  const steps = Object.fromEntries(
+    applicationReportVisibleSteps.value.map((step) => [
+      step,
+      sourceRows.reduce((total, row) => total + getApplicationReportDisplayCount(row.steps[step]), 0),
+    ]),
+  ) as Partial<Record<ApplicationReportStep, number>>
+
+  const statuses = Object.fromEntries(
+    applicationReportVisibleStatuses.value.map((status) => [
+      status,
+      sourceRows.reduce((total, row) => total + getApplicationReportStatusCount(row, status), 0),
+    ]),
+  ) as Partial<Record<ApplicationReportStatus, number>>
+  const metrics = Object.fromEntries(
+    applicationReportVisibleMetricGroups.value.map((group) => [
+      group.key,
+      Object.fromEntries(
+        group.options.map((option) => [
+          option,
+          sourceRows.reduce((total, row) => (
+            total + getApplicationReportDisplayCount(row.metrics[group.key][option] ?? 0)
+          ), 0),
+        ]),
+      ),
+    ]),
+  ) as ReturnType<typeof buildApplicationReportRow>['metrics']
+
+  return {
+    statuses,
+    steps,
+    metrics,
+    total: applicationReportVisibleSteps.value.reduce((total, step) => total + (steps[step] ?? 0), 0),
+  }
+})
+
+const applicationReportDisplayRows = computed(() => [
+  {
+    region: selectedApplicationReportRegion.value
+      ? `${selectedApplicationReportRegion.value} bo'yicha jami`
+      : "Respublika bo'yicha jami",
+    statuses: applicationReportTotals.value.statuses,
+    steps: applicationReportTotals.value.steps,
+    metrics: applicationReportTotals.value.metrics,
+    total: applicationReportTotals.value.total,
+    isTotal: true,
+  },
+  ...(selectedApplicationReportRegion.value ? selectedApplicationReportDistrictRows.value : applicationReportRows.value)
+    .map((row) => buildApplicationReportDisplayRow(row, false)),
+])
+
+const selectedApplicationReportCellValues = computed(() => Object.values(selectedApplicationReportCells.value))
+const applicationReportSelectionAnalytics = computed(() => {
+  const values = selectedApplicationReportCellValues.value.map((cell) => cell.value)
+
+  if (!values.length) {
+    return {
+      count: 0,
+      sum: 0,
+      min: 0,
+      max: 0,
+      average: 0,
+    }
+  }
+
+  const sum = values.reduce((total, value) => total + value, 0)
+
+  return {
+    count: values.length,
+    sum,
+    min: Math.min(...values),
+    max: Math.max(...values),
+    average: sum / values.length,
+  }
+})
+
 const hasActiveFilters = computed(() => {
   return appliedStatusFilter.value !== 'all'
     || appliedRegionFilter.value !== 'all'
@@ -3149,9 +3613,30 @@ function getAssessmentTotalByAnswers(answers?: AssessmentAnswers) {
   }, 0)
 }
 
-function getAssessmentGroupByAnswers(answers?: AssessmentAnswers) {
-  if (!isAssessmentAnswersComplete(answers)) return ''
-  return getAssessmentTotalByAnswers(answers) <= 62 ? 'Tezkor' : 'Rejali'
+function getAssessmentHasCloseRelatives(record?: AssessmentRecord | null) {
+  if (typeof record?.hasCloseRelatives === 'boolean') return record.hasCloseRelatives
+  return true
+}
+
+function getAssessmentHasHousing(record?: AssessmentRecord | null) {
+  if (typeof record?.hasHousing === 'boolean') return record.hasHousing
+  return true
+}
+
+function getAssessmentCloseRelativesLabel(record?: AssessmentRecord | null) {
+  return getAssessmentHasCloseRelatives(record) ? 'Bor' : "Yo'q"
+}
+
+function getAssessmentHousingLabel(record?: AssessmentRecord | null) {
+  return getAssessmentHasHousing(record) ? 'Bor' : "Yo'q"
+}
+
+function getAssessmentGroupByRecord(record?: AssessmentRecord | null) {
+  if (!record || !isAssessmentAnswersComplete(record.answers)) return ''
+  const isUrgent = getAssessmentTotalByAnswers(record.answers) <= 62
+    && getAssessmentHasCloseRelatives(record) === false
+    && getAssessmentHasHousing(record) === false
+  return isUrgent ? 'Tezkor' : 'Rejali'
 }
 
 function getAssessmentRecipientBirthDate(record: AssessmentRecord) {
@@ -3171,7 +3656,7 @@ function getAssessmentRecipientDisabilityGroup(record: AssessmentRecord) {
 
 function getAssessmentResultDisplay(record?: AssessmentRecord | null) {
   if (!record) return '-'
-  return getAssessmentGroupByAnswers(record.answers) || '-'
+  return getAssessmentGroupByRecord(record) || '-'
 }
 
 function getAssessmentResultBadgeClass(record?: AssessmentRecord | null) {
@@ -3239,7 +3724,21 @@ function requestSendAssessment(record: AssessmentRecord) {
     title: copy.title,
     description: copy.description,
     confirmLabel: 'Yuborish',
-    action: () => updateAssessmentStatus(record.id, 'Yuborilgan', 'Yuborish', 'yuborish'),
+    action: () => {
+      if (!isAssessmentAnswersComplete(record.answers)) {
+        const notification = buildOperationNotification('Yuborish', 'yuborish', 'Baholash hujjati', record.documentNumber, false)
+        nextTick(() => {
+          pushFeedback(
+            'error',
+            `${notification.message} So'rovnoma to'liq to'ldirilmagan.`,
+            notification.title,
+          )
+        })
+        return
+      }
+
+      updateAssessmentStatus(record.id, 'Yuborilgan', 'Yuborish', 'yuborish')
+    },
   })
 }
 
@@ -4021,6 +4520,274 @@ function setDiagnosisActionMenuOpen(recordId: string, nextOpen: boolean) {
   openDiagnosisActionMenuId.value = nextOpen ? recordId : (openDiagnosisActionMenuId.value === recordId ? null : openDiagnosisActionMenuId.value)
 }
 
+function openApplicationReportRegion(region: string, isTotal: boolean) {
+  if (isTotal || selectedApplicationReportRegion.value) return
+  clearApplicationReportCellSelection()
+  selectedApplicationReportRegion.value = region
+}
+
+function closeApplicationReportRegion() {
+  clearApplicationReportCellSelection()
+  selectedApplicationReportRegion.value = null
+}
+
+function getApplicationReportCellKey(region: string, group: string, column: string) {
+  return `${region}::${group}::${column}`
+}
+
+function isApplicationReportCellSelected(region: string, group: string, column: string) {
+  return Boolean(selectedApplicationReportCells.value[getApplicationReportCellKey(region, group, column)])
+}
+
+function getApplicationReportCellClass(region: string, group: string, column: string) {
+  return isApplicationReportCellSelected(region, group, column)
+    ? 'bg-primary/10 text-primary ring-1 ring-inset ring-primary/35'
+    : 'hover:bg-primary/5'
+}
+
+function clearApplicationReportCellSelection() {
+  selectedApplicationReportCells.value = {}
+}
+
+function handleApplicationReportCellClick(
+  event: MouseEvent,
+  region: string,
+  group: string,
+  column: string,
+  value: number,
+) {
+  event.preventDefault()
+  const key = getApplicationReportCellKey(region, group, column)
+  const hasSelectedCells = selectedApplicationReportCellValues.value.length > 0
+
+  if (!event.ctrlKey && !event.metaKey) {
+    selectedApplicationReportCells.value = {
+      [key]: {
+        label: `${region} / ${column}`,
+        value,
+      },
+    }
+    return
+  }
+
+  if (!hasSelectedCells) return
+
+  const nextSelectedCells = { ...selectedApplicationReportCells.value }
+  if (nextSelectedCells[key]) {
+    delete nextSelectedCells[key]
+  } else {
+    nextSelectedCells[key] = {
+      label: `${region} / ${column}`,
+      value,
+    }
+  }
+
+  selectedApplicationReportCells.value = nextSelectedCells
+}
+
+function syncApplicationReportDraftFilters() {
+  draftApplicationReportStatusFilter.value = [...appliedApplicationReportStatusFilter.value]
+  draftApplicationReportStepFilter.value = [...appliedApplicationReportStepFilter.value]
+  draftApplicationReportMetricFilters.value = Object.fromEntries(
+    applicationReportMetricGroups.map((group) => [
+      group.key,
+      [...appliedApplicationReportMetricFilters.value[group.key]],
+    ]),
+  ) as Record<ApplicationReportMetricKey, string[]>
+  draftApplicationReportStartDateFilter.value = appliedApplicationReportStartDateFilter.value
+  draftApplicationReportEndDateFilter.value = appliedApplicationReportEndDateFilter.value
+}
+
+function closeApplicationReportFilters() {
+  isApplicationReportFilterOpen.value = false
+  openApplicationReportFilterField.value = null
+}
+
+function toggleApplicationReportFilters(nextOpen: boolean) {
+  if (nextOpen) {
+    syncApplicationReportDraftFilters()
+  }
+
+  isApplicationReportFilterOpen.value = nextOpen
+  openApplicationReportFilterField.value = null
+}
+
+function toggleApplicationReportFilterField(field: 'status' | 'step' | ApplicationReportMetricKey) {
+  openApplicationReportFilterField.value = openApplicationReportFilterField.value === field ? null : field
+}
+
+function toggleApplicationReportStatusFilter(status: ApplicationReportStatus) {
+  const nextStatuses = draftApplicationReportStatusFilter.value.includes(status)
+    ? draftApplicationReportStatusFilter.value.filter((item) => item !== status)
+    : [...draftApplicationReportStatusFilter.value, status]
+
+  draftApplicationReportStatusFilter.value = nextStatuses
+  draftApplicationReportStepFilter.value = draftApplicationReportStepFilter.value.filter((step) => (
+    !nextStatuses.length || nextStatuses.includes(applicationReportStepStatusMap[step])
+  ))
+}
+
+function toggleApplicationReportStepFilter(step: ApplicationReportStep) {
+  draftApplicationReportStepFilter.value = draftApplicationReportStepFilter.value.includes(step)
+    ? draftApplicationReportStepFilter.value.filter((item) => item !== step)
+    : [...draftApplicationReportStepFilter.value, step]
+}
+
+function toggleApplicationReportMetricFilter(key: ApplicationReportMetricKey, option: string) {
+  const selectedItems = draftApplicationReportMetricFilters.value[key]
+  draftApplicationReportMetricFilters.value = {
+    ...draftApplicationReportMetricFilters.value,
+    [key]: selectedItems.includes(option)
+      ? selectedItems.filter((item) => item !== option)
+      : [...selectedItems, option],
+  }
+}
+
+function handleApplicationReportStartDateChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftApplicationReportStartDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftApplicationReportEndDateFilter.value.length === 10
+    && parseDisplayDate(draftApplicationReportEndDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(draftApplicationReportEndDateFilter.value)! < parseDisplayDate(normalizedValue)!
+  ) {
+    draftApplicationReportEndDateFilter.value = normalizedValue
+  }
+}
+
+function handleApplicationReportEndDateChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftApplicationReportEndDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftApplicationReportStartDateFilter.value.length === 10
+    && parseDisplayDate(draftApplicationReportStartDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(normalizedValue)! < parseDisplayDate(draftApplicationReportStartDateFilter.value)!
+  ) {
+    draftApplicationReportStartDateFilter.value = normalizedValue
+  }
+}
+
+function applyApplicationReportFilters() {
+  const stopLoading = startActionLoading('application-report-filter-apply')
+  closeApplicationReportFilters()
+  clearApplicationReportCellSelection()
+
+  runTableLoading(() => {
+    appliedApplicationReportStatusFilter.value = [...draftApplicationReportStatusFilter.value]
+    appliedApplicationReportStepFilter.value = [...draftApplicationReportStepFilter.value]
+    appliedApplicationReportMetricFilters.value = Object.fromEntries(
+      applicationReportMetricGroups.map((group) => [
+        group.key,
+        [...draftApplicationReportMetricFilters.value[group.key]],
+      ]),
+    ) as Record<ApplicationReportMetricKey, string[]>
+    appliedApplicationReportStartDateFilter.value = draftApplicationReportStartDateFilter.value
+    appliedApplicationReportEndDateFilter.value = draftApplicationReportEndDateFilter.value
+    stopLoading()
+  })
+}
+
+function clearApplicationReportFilters() {
+  const stopLoading = startActionLoading('application-report-filter-clear')
+  closeApplicationReportFilters()
+  clearApplicationReportCellSelection()
+
+  draftApplicationReportStatusFilter.value = []
+  draftApplicationReportStepFilter.value = []
+  draftApplicationReportMetricFilters.value = createApplicationReportMetricFilterState()
+  draftApplicationReportStartDateFilter.value = ''
+  draftApplicationReportEndDateFilter.value = ''
+
+  runTableLoading(() => {
+    appliedApplicationReportStatusFilter.value = []
+    appliedApplicationReportStepFilter.value = []
+    appliedApplicationReportMetricFilters.value = createApplicationReportMetricFilterState()
+    appliedApplicationReportStartDateFilter.value = ''
+    appliedApplicationReportEndDateFilter.value = ''
+    stopLoading()
+  })
+}
+
+function closeTransientUi() {
+  closeFilters()
+  closeAssessmentFilters()
+  closeApplicationReportFilters()
+  clearApplicationReportCellSelection()
+  openActionMenuId.value = null
+  openServiceTypeActionMenuId.value = null
+  openDiagnosisActionMenuId.value = null
+  isRowsPerPageOpen.value = false
+  isAssessmentRowsPerPageOpen.value = false
+  isServiceTypeRowsPerPageOpen.value = false
+  isDiagnosisRowsPerPageOpen.value = false
+  isFormRegionOpen.value = false
+  isServiceTypeStatusOpen.value = false
+  isServiceTypeDiagnosesOpen.value = false
+  isServiceTypeContraindicationsOpen.value = false
+  isServiceTypeDocumentsOpen.value = false
+  isServiceTypeTranslationsOpen.value = false
+  isDiagnosisStatusOpen.value = false
+  isDiagnosisIcdOpen.value = false
+  isDiagnosisTranslationsOpen.value = false
+}
+
+function closeTopLayer() {
+  if (pendingConfirmation.value && !isConfirmationLoading.value) {
+    closeConfirmation()
+    return
+  }
+
+  if (selectedAssessmentViewRecord.value) {
+    closeAssessmentViewDialog()
+    return
+  }
+
+  if (selectedViewRecord.value) {
+    closeViewDialog()
+    return
+  }
+
+  if (selectedServiceTypeRecord.value) {
+    closeServiceTypeViewDialog()
+    return
+  }
+
+  if (selectedDiagnosisRecord.value) {
+    closeDiagnosisViewDialog()
+    return
+  }
+
+  if (isCreateDialogOpen.value) {
+    closeCreateDialog()
+    return
+  }
+
+  if (isServiceTypeDialogOpen.value) {
+    closeServiceTypeDialog()
+    return
+  }
+
+  if (isDiagnosisDialogOpen.value) {
+    closeDiagnosisDialog()
+    return
+  }
+
+  closeTransientUi()
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+
+  event.preventDefault()
+  closeTopLayer()
+}
+
 async function downloadDiagnoses() {
   const xlsx = await import('xlsx')
 
@@ -4094,7 +4861,12 @@ watch(isAnyDialogOpen, (isOpen) => {
   document.body.style.overflow = isOpen ? 'hidden' : ''
 }, { immediate: true })
 
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
   clearNotificationTimers()
   document.body.style.overflow = ''
 
@@ -5760,6 +6532,49 @@ onUnmounted(() => {
     </template>
 
     <template v-else-if="isAssessmentPage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div class="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-lg bg-transparent">
+          <div
+            :class="[
+              'h-full transition-[width] duration-200 ease-out',
+              feedback.type === 'success' && 'bg-emerald-500',
+              feedback.type === 'error' && 'bg-rose-500',
+              feedback.type === 'info' && 'bg-sky-500',
+            ]"
+            :style="{ width: `${notificationProgress}%` }"
+          />
+        </div>
+        <div
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedback.title }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
@@ -6185,7 +7000,7 @@ onUnmounted(() => {
                         </DropdownMenuTrigger>
                         <DropdownMenuPortal>
                           <DropdownMenuContent
-                            side="bottom"
+                            side="right"
                             align="start"
                             :side-offset="6"
                             :collision-padding="12"
@@ -6476,7 +7291,7 @@ onUnmounted(() => {
                 <span class="rounded-full border border-border bg-background px-3 py-1">{{ isAssessmentComplete ? "So'rovnoma to'ldirilgan" : "So'rovnoma davom etmoqda" }}</span>
               </div>
             </div>
-            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2">
+            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div class="rounded-xl border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Barthel</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentBarthelTotal) }} ball</p>
@@ -6484,6 +7299,14 @@ onUnmounted(() => {
               <div class="rounded-xl border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Lawton</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentLawtonTotal) }} ball</p>
+              </div>
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">Yaqin qarindoshlari</p>
+                <p class="mt-1 text-base font-semibold text-foreground">{{ getAssessmentCloseRelativesLabel(selectedAssessmentViewRecord) }}</p>
+              </div>
+              <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <p class="text-xs font-medium text-muted-foreground">Uy-joyi</p>
+                <p class="mt-1 text-base font-semibold text-foreground">{{ getAssessmentHousingLabel(selectedAssessmentViewRecord) }}</p>
               </div>
             </div>
           </div>
@@ -8067,6 +8890,472 @@ onUnmounted(() => {
         @cancel="closeConfirmation"
         @confirm="confirmPendingAction"
       />
+    </template>
+
+    <template v-else-if="isApplicationsReportPage">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex min-w-0 items-center gap-2">
+            <Button
+              v-if="selectedApplicationReportRegion"
+              variant="outline"
+              class="h-10 gap-2"
+              @click="closeApplicationReportRegion"
+            >
+              <ChevronLeft class="h-4 w-4" />
+              Ortga
+            </Button>
+            <span
+              v-if="selectedApplicationReportRegion"
+              class="truncate text-sm font-medium text-muted-foreground"
+            >
+              {{ selectedApplicationReportRegion }} tumanlari kesimi
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+            >
+              <Download class="h-4 w-4" />
+              Yuklab olish
+            </Button>
+
+            <div class="relative">
+            <div
+              v-if="isApplicationReportFilterOpen"
+              class="fixed inset-0 z-40 bg-background/40 xl:hidden"
+              @click="closeApplicationReportFilters"
+            />
+
+            <Button
+              variant="outline"
+              :class="isApplicationReportFilterOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
+              @click="toggleApplicationReportFilters(!isApplicationReportFilterOpen)"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey && actionLoadingKey.startsWith('application-report-filter')"
+                class="h-4 w-4 animate-spin"
+              />
+              <span
+                v-else-if="applicationReportActiveFilterCount > 0"
+                class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
+              >
+                {{ applicationReportActiveFilterCount }}
+              </span>
+              <Filter v-else class="h-4 w-4" />
+              Filter
+            </Button>
+
+            <div
+              v-if="isApplicationReportFilterOpen"
+              class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none xl:absolute xl:right-0 xl:left-auto xl:top-[calc(100%+0.4rem)] xl:w-[21rem] xl:origin-top-right"
+            >
+              <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                  <button
+                    type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground"
+                    @click="closeApplicationReportFilters"
+                  >
+                    <X class="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div class="relative space-y-1.5">
+                  <p class="text-sm font-medium text-foreground">Status</p>
+                  <button
+                    type="button"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                      openApplicationReportFilterField === 'status'
+                        ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                        : 'border-input hover:border-ring',
+                    ]"
+                    @click="toggleApplicationReportFilterField('status')"
+                  >
+                    <span class="truncate">{{ applicationReportStatusFilterLabel }}</span>
+                    <ChevronDown
+                      :class="[
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                        openApplicationReportFilterField === 'status' ? 'rotate-180' : '',
+                      ]"
+                    />
+                  </button>
+                  <div
+                    v-if="openApplicationReportFilterField === 'status'"
+                    class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                  >
+                    <button
+                      v-for="status in applicationReportStatuses"
+                      :key="`report-filter-status-${status}`"
+                      type="button"
+                      class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                      @click="toggleApplicationReportStatusFilter(status)"
+                    >
+                      <span>{{ status }}</span>
+                      <Check
+                        v-if="draftApplicationReportStatusFilter.includes(status)"
+                        class="h-4 w-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="relative space-y-1.5">
+                  <p class="text-sm font-medium text-foreground">Bosqich</p>
+                  <button
+                    type="button"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                      openApplicationReportFilterField === 'step'
+                        ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                        : 'border-input hover:border-ring',
+                    ]"
+                    @click="toggleApplicationReportFilterField('step')"
+                  >
+                    <span class="truncate">{{ applicationReportStepFilterLabel }}</span>
+                    <ChevronDown
+                      :class="[
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                        openApplicationReportFilterField === 'step' ? 'rotate-180' : '',
+                      ]"
+                    />
+                  </button>
+                  <div
+                    v-if="openApplicationReportFilterField === 'step'"
+                    class="max-h-64 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                  >
+                    <button
+                      v-for="step in applicationReportStepFilterOptions"
+                      :key="`report-filter-step-${step}`"
+                      type="button"
+                      class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                      @click="toggleApplicationReportStepFilter(step)"
+                    >
+                      <span>{{ step }}</span>
+                      <Check
+                        v-if="draftApplicationReportStepFilter.includes(step)"
+                        class="h-4 w-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  v-for="group in applicationReportMetricFilterGroups"
+                  :key="`report-filter-metric-${group.key}`"
+                  class="relative space-y-1.5"
+                >
+                  <p class="text-sm font-medium text-foreground">{{ group.label }}</p>
+                  <button
+                    type="button"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                      openApplicationReportFilterField === group.key
+                        ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                        : 'border-input hover:border-ring',
+                    ]"
+                    @click="toggleApplicationReportFilterField(group.key)"
+                  >
+                    <span class="truncate">{{ getApplicationReportMetricFilterLabel(group.key) }}</span>
+                    <ChevronDown
+                      :class="[
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                        openApplicationReportFilterField === group.key ? 'rotate-180' : '',
+                      ]"
+                    />
+                  </button>
+                  <div
+                    v-if="openApplicationReportFilterField === group.key"
+                    class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                  >
+                    <button
+                      v-for="option in group.options"
+                      :key="`report-filter-metric-${group.key}-${option}`"
+                      type="button"
+                      class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                      @click="toggleApplicationReportMetricFilter(group.key, option)"
+                    >
+                      <span>{{ option }}</span>
+                      <Check
+                        v-if="draftApplicationReportMetricFilters[group.key].includes(option)"
+                        class="h-4 w-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <label class="space-y-1.5">
+                    <span class="text-sm font-medium text-foreground">Boshlanish sanasi</span>
+                    <div class="relative">
+                      <Input
+                        :model-value="draftApplicationReportStartDateFilter"
+                        class="h-10 pr-10"
+                        inputmode="numeric"
+                        maxlength="10"
+                        placeholder="dd.mm.yyyy"
+                        @update:model-value="handleApplicationReportStartDateChange"
+                      />
+                      <CalendarDays class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                  </label>
+
+                  <label class="space-y-1.5">
+                    <span class="text-sm font-medium text-foreground">Tugash sanasi</span>
+                    <div class="relative">
+                      <Input
+                        :model-value="draftApplicationReportEndDateFilter"
+                        class="h-10 pr-10"
+                        inputmode="numeric"
+                        maxlength="10"
+                        placeholder="dd.mm.yyyy"
+                        @update:model-value="handleApplicationReportEndDateChange"
+                      />
+                      <CalendarDays class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                  </label>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-border pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-2"
+                    :disabled="isTableLoading || (!applicationReportHasActiveFilters && !applicationReportHasPendingFilterChanges)"
+                    @click="clearApplicationReportFilters"
+                  >
+                    <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-clear'" class="h-4 w-4 animate-spin" />
+                    Tozalash
+                  </Button>
+                  <Button
+                    size="sm"
+                    class="gap-2"
+                    :disabled="isTableLoading || !applicationReportHasPendingFilterChanges"
+                    @click="applyApplicationReportFilters"
+                  >
+                    <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-apply'" class="h-4 w-4 animate-spin" />
+                    Qo'llash
+                  </Button>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+          <div
+            v-if="isTableLoading"
+            class="absolute inset-0 z-20 flex items-center justify-center bg-card/70 backdrop-blur-[1px]"
+          >
+            <LoaderCircle class="h-6 w-6 animate-spin text-primary" />
+          </div>
+
+          <div class="min-h-[22rem] flex-1 overflow-auto">
+            <table class="min-w-[2600px] w-full border-separate border-spacing-0 text-sm">
+              <thead class="bg-muted/45 text-left text-muted-foreground">
+                <tr>
+                  <th
+                    rowspan="2"
+                    class="sticky left-0 top-0 z-50 h-28 w-64 min-w-64 max-w-64 border-b border-r border-border bg-muted px-4 py-0 text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Hudud
+                  </th>
+                  <th
+                    rowspan="2"
+                    class="sticky top-0 z-40 h-28 min-w-24 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Jami
+                  </th>
+                  <th
+                    :colspan="applicationReportVisibleStatuses.length"
+                    class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Status
+                  </th>
+                  <th
+                    :colspan="applicationReportVisibleSteps.length"
+                    class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Bosqich
+                  </th>
+                  <th
+                    v-for="group in applicationReportVisibleMetricGroups"
+                    :key="`report-metric-group-${group.key}`"
+                    :colspan="group.options.length"
+                    class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0"
+                  >
+                    {{ group.label }}
+                  </th>
+                </tr>
+                <tr>
+                  <th
+                    v-for="status in applicationReportVisibleStatuses"
+                    :key="`report-status-head-${status}`"
+                    class="sticky top-12 z-40 h-16 min-w-32 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    {{ status }}
+                  </th>
+                  <th
+                    v-for="step in applicationReportVisibleSteps"
+                    :key="`report-step-head-${step}`"
+                    class="sticky top-12 z-40 h-16 min-w-40 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    {{ step }}
+                  </th>
+                  <template
+                    v-for="group in applicationReportVisibleMetricGroups"
+                    :key="`report-metric-head-group-${group.key}`"
+                  >
+                    <th
+                      v-for="option in group.options"
+                      :key="`report-metric-head-${group.key}-${option}`"
+                      class="sticky top-12 z-40 h-16 min-w-28 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0"
+                    >
+                      {{ option }}
+                    </th>
+                  </template>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="row in applicationReportDisplayRows"
+                  :key="`report-region-${row.region}`"
+                  :class="[
+                    'transition-colors duration-200 ease-out hover:bg-muted/25',
+                    row.isTotal ? 'bg-muted/35' : '',
+                  ]"
+                >
+                  <td
+                    :class="[
+                      'sticky left-0 z-20 w-64 min-w-64 max-w-64 border-b border-r border-border px-4 py-3 font-medium text-foreground',
+                      row.isTotal ? 'bg-muted font-semibold' : 'bg-card',
+                    ]"
+                  >
+                    <button
+                      type="button"
+                      :disabled="row.isTotal || Boolean(selectedApplicationReportRegion)"
+                      :class="[
+                        'inline-flex items-center text-left transition-colors duration-200 ease-out',
+                        !row.isTotal && !selectedApplicationReportRegion
+                          ? 'cursor-pointer hover:text-primary focus-visible:outline-none focus-visible:text-primary'
+                          : 'cursor-default disabled:opacity-100',
+                      ]"
+                      @click="openApplicationReportRegion(row.region, row.isTotal)"
+                    >
+                      {{ row.region }}
+                    </button>
+                  </td>
+                  <td
+                    :class="[
+                      'select-none border-b border-r border-border px-4 py-3 text-center font-semibold text-foreground transition-colors duration-150 ease-out',
+                      getApplicationReportCellClass(row.region, 'total', 'Jami'),
+                    ]"
+                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    @click="handleApplicationReportCellClick($event, row.region, 'total', 'Jami', row.total)"
+                  >
+                    {{ row.total }}
+                  </td>
+                  <td
+                    v-for="status in applicationReportVisibleStatuses"
+                    :key="`report-status-${row.region}-${status}`"
+                    :class="[
+                      'select-none border-b border-r border-border px-4 py-3 text-center transition-colors duration-150 ease-out',
+                      getApplicationReportCellClass(row.region, 'status', status),
+                    ]"
+                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    @click="handleApplicationReportCellClick($event, row.region, 'status', status, row.statuses[status] ?? 0)"
+                  >
+                    <span :class="cn('inline-flex min-w-10 justify-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[status])">
+                      {{ row.statuses[status] ?? 0 }}
+                    </span>
+                  </td>
+                  <td
+                    v-for="step in applicationReportVisibleSteps"
+                    :key="`report-step-${row.region}-${step}`"
+                    :class="[
+                      'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out',
+                      getApplicationReportCellClass(row.region, 'step', step),
+                    ]"
+                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    @click="handleApplicationReportCellClick($event, row.region, 'step', step, row.steps[step] ?? 0)"
+                  >
+                    {{ row.steps[step] ?? 0 }}
+                  </td>
+                  <template
+                    v-for="group in applicationReportVisibleMetricGroups"
+                    :key="`report-metric-body-group-${row.region}-${group.key}`"
+                  >
+                    <td
+                      v-for="option in group.options"
+                      :key="`report-metric-${row.region}-${group.key}-${option}`"
+                      :class="[
+                        'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out last:border-r-0',
+                        getApplicationReportCellClass(row.region, group.key, option),
+                      ]"
+                      title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                      @click="handleApplicationReportCellClick($event, row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
+                    >
+                      {{ row.metrics[group.key][option] ?? 0 }}
+                    </td>
+                  </template>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border-t border-border bg-card px-3 py-2">
+            <div
+              v-if="applicationReportSelectionAnalytics.count > 0"
+              class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Tanlangan:
+                  <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.count }} ta</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Jami:
+                  <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.sum }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Minimum:
+                  <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.min }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Maksimum:
+                  <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.max }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  O'rtacha:
+                  <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.average.toFixed(1) }}</strong>
+                </span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-8 shrink-0"
+                @click="clearApplicationReportCellSelection"
+              >
+                Tanlovni tozalash
+              </Button>
+            </div>
+
+            <p
+              v-else
+              class="text-sm text-muted-foreground"
+            >
+              Analitika uchun jadvaldagi raqamni bosing. Davom ettirish uchun Ctrl + click ishlating.
+            </p>
+          </div>
+        </div>
+      </div>
     </template>
 
     <SectionBlock

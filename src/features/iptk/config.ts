@@ -83,7 +83,7 @@ export const iptkPages: MuruvvatPageDefinition[] = [
   {
     key: 'applications-report',
     title: "Arizalar bo'yicha hisobot",
-    description: "IPTK moduli bo'yicha arizalar kesimidagi hisobotlar, eksportlar va agregatsiyalar uchun tayyor blok.",
+    description: '',
     route: '/apps/iptk/reports/applications',
     breadcrumb: ['Ilovalar', 'IPTK', 'Hisobotlar', "Arizalar bo'yicha hisobot"],
   },
