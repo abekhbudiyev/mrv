@@ -56,11 +56,11 @@ export const iptkPages: MuruvvatPageDefinition[] = [
   {
     key: 'applications-list',
     title: 'Arizalar',
-    description: "IPTK moduli bo'yicha arizalar ro'yxati va keyingi ish jarayonlari shu sahifada shakllantiriladi.",
+    description: '',
     route: '/apps/iptk/applications/list',
     breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Arizalar'],
-    sectionTitle: 'Arizalar',
-    sectionDescription: "IPTK moduli uchun arizalar jadvali, filtrlar va amallar keyingi bosqichda qo'shiladi.",
+    sectionTitle: '',
+    sectionDescription: '',
   },
   {
     key: 'applications-assessment',

@@ -9,6 +9,7 @@ const DEMO_PASSWORD = 'aBekhbudiyev.2003'
 
 const mockPermissions: PermissionKey[] = [
   'apps.view',
+  'iptk.view',
   'dashboard.view',
   'citizens.view',
   'applications.view',
@@ -31,6 +32,20 @@ function buildMockUser(username: string): CurrentUser {
     fullName: normalized,
     role: 'Ichki operator',
     permissions: mockPermissions,
+  }
+}
+
+function normalizePersistedSession(user: CurrentUser): CurrentUser {
+  if (user.id !== 'mock-user') {
+    return user
+  }
+
+  return {
+    ...user,
+    permissions: Array.from(new Set([
+      ...(user.permissions ?? []),
+      ...mockPermissions,
+    ])),
   }
 }
 
@@ -65,7 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      currentUser.value = JSON.parse(session) as CurrentUser
+      currentUser.value = normalizePersistedSession(JSON.parse(session) as CurrentUser)
     }
     catch {
       currentUser.value = null
@@ -90,9 +105,18 @@ export const useAuthStore = defineStore('auth', () => {
     persistSession()
   }
 
+  function hasPermission(permission?: PermissionKey) {
+    if (!permission) {
+      return true
+    }
+
+    return currentUser.value?.permissions.includes(permission) ?? false
+  }
+
   return {
     currentUser,
     isAuthenticated,
+    hasPermission,
     login,
     logout,
     restoreSession,

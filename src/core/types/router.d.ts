@@ -1,3 +1,5 @@
+import type { PermissionKey } from '@/core/types/permissions'
+
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
@@ -6,6 +8,7 @@ declare module 'vue-router' {
     breadcrumb?: string[]
     moduleKey?: string
     moduleTitle?: string
+    permission?: PermissionKey
   }
 }
 

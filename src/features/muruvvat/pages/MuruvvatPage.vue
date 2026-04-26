@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from 'reka-ui'
 import { useRoute } from 'vue-router'
+import { getIPTKPage } from '@/features/iptk/config'
 import { getMuruvvatPage } from '@/features/muruvvat/config'
 import {
   allAssessmentQuestions,
@@ -164,9 +165,13 @@ type PendingConfirmation = {
 
 type AssessmentAnswers = Record<string, string>
 
-const page = computed(() => getMuruvvatPage(props.pageKey))
 const isApplicationsListPage = computed(() => props.pageKey === 'applications-list')
 const isIptkApplicationsListPage = computed(() => isApplicationsListPage.value && route.meta.moduleKey === 'iptk')
+const page = computed(() => (
+  isIptkApplicationsListPage.value
+    ? getIPTKPage(props.pageKey)
+    : getMuruvvatPage(props.pageKey)
+))
 
 const statusStyles = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',

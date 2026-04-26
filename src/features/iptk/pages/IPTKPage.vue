@@ -4520,6 +4520,110 @@ function setDiagnosisActionMenuOpen(recordId: string, nextOpen: boolean) {
   openDiagnosisActionMenuId.value = nextOpen ? recordId : (openDiagnosisActionMenuId.value === recordId ? null : openDiagnosisActionMenuId.value)
 }
 
+function getApplicationReportExportFilePart(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/['‘’`]/g, '')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    || 'hisobot'
+}
+
+function getApplicationReportFilterExportValue(values: string[]) {
+  return values.length ? values.join(', ') : 'Barchasi'
+}
+
+function getApplicationReportFilterExportRows() {
+  return [
+    {
+      Filter: 'Kesim',
+      Qiymat: selectedApplicationReportRegion.value
+        ? `${selectedApplicationReportRegion.value} tumanlari kesimi`
+        : 'Hududlar kesimi',
+    },
+    {
+      Filter: 'Status',
+      Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportStatusFilter.value),
+    },
+    {
+      Filter: 'Bosqich',
+      Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportStepFilter.value),
+    },
+    ...applicationReportMetricGroups.map((group) => ({
+      Filter: group.label,
+      Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportMetricFilters.value[group.key]),
+    })),
+    {
+      Filter: 'Boshlanish sanasi',
+      Qiymat: appliedApplicationReportStartDateFilter.value || 'Belgilanmagan',
+    },
+    {
+      Filter: 'Tugash sanasi',
+      Qiymat: appliedApplicationReportEndDateFilter.value || 'Belgilanmagan',
+    },
+  ]
+}
+
+async function downloadApplicationReport() {
+  const stopLoading = startActionLoading('application-report-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+
+    const exportRows = applicationReportDisplayRows.value.map((row) => {
+      const exportRow: Record<string, string | number> = {
+        Hudud: row.region,
+        Jami: row.total,
+      }
+
+      applicationReportVisibleStatuses.value.forEach((status) => {
+        exportRow[`Status: ${status}`] = row.statuses[status] ?? 0
+      })
+
+      applicationReportVisibleSteps.value.forEach((step) => {
+        exportRow[`Bosqich: ${step}`] = row.steps[step] ?? 0
+      })
+
+      applicationReportVisibleMetricGroups.value.forEach((group) => {
+        group.options.forEach((option) => {
+          exportRow[`${group.label}: ${option}`] = row.metrics[group.key][option] ?? 0
+        })
+      })
+
+      return exportRow
+    })
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    worksheet['!cols'] = Object.keys(exportRows[0] ?? { Hudud: '', Jami: 0 }).map((key) => ({
+      wch: Math.min(Math.max(key.length + 4, key === 'Hudud' ? 30 : 14), 42),
+    }))
+
+    const filterWorksheet = xlsx.utils.json_to_sheet(getApplicationReportFilterExportRows())
+    filterWorksheet['!cols'] = [{ wch: 24 }, { wch: 48 }]
+
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Arizalar hisoboti')
+    xlsx.utils.book_append_sheet(workbook, filterWorksheet, 'Filterlar')
+
+    const reportScope = selectedApplicationReportRegion.value
+      ? getApplicationReportExportFilePart(selectedApplicationReportRegion.value)
+      : 'hududlar'
+    const reportDate = new Date().toISOString().slice(0, 10)
+
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, `iptk-arizalar-hisoboti-${reportScope}-${reportDate}.xlsx`)
+      pushFeedback('success', 'Arizalar bo‘yicha hisobot Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'application-report-download') {
+      stopLoading()
+    }
+  }
+}
+
 function openApplicationReportRegion(region: string, isTotal: boolean) {
   if (isTotal || selectedApplicationReportRegion.value) return
   clearApplicationReportCellSelection()
@@ -8893,6 +8997,49 @@ onUnmounted(() => {
     </template>
 
     <template v-else-if="isApplicationsReportPage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div class="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-lg bg-transparent">
+          <div
+            :class="[
+              'h-full transition-[width] duration-200 ease-out',
+              feedback.type === 'success' && 'bg-emerald-500',
+              feedback.type === 'error' && 'bg-rose-500',
+              feedback.type === 'info' && 'bg-sky-500',
+            ]"
+            :style="{ width: `${notificationProgress}%` }"
+          />
+        </div>
+        <div
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedback.title }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex min-w-0 items-center gap-2">
@@ -8917,8 +9064,14 @@ onUnmounted(() => {
             <Button
               variant="outline"
               class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'application-report-download'"
+              @click="downloadApplicationReport"
             >
-              <Download class="h-4 w-4" />
+              <LoaderCircle
+                v-if="actionLoadingKey === 'application-report-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download v-else class="h-4 w-4" />
               Yuklab olish
             </Button>
 

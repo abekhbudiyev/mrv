@@ -6,6 +6,7 @@ import logoMark from '@/assets/logo-mark.svg'
 import { appModules } from '@/features/apps/registry/apps'
 import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
+import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { cn } from '@/shared/lib/utils'
 
@@ -18,7 +19,10 @@ defineEmits<{
 }>()
 
 const route = useRoute()
-const modules = computed(() => appModules.filter((module) => module.enabled))
+const authStore = useAuthStore()
+const modules = computed(() => appModules.filter((module) => (
+  module.enabled && authStore.hasPermission(module.permission)
+)))
 const activeModuleKey = computed(() => route.meta.moduleKey ?? null)
 const openSections = ref<Record<string, boolean>>({})
 const brandHomeRoute = computed(() => {

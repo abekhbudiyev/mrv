@@ -1,19 +1,21 @@
 import type { RouteRecordRaw } from 'vue-router'
-import AppLayout from '@/layouts/app-layout/AppLayout.vue'
-import LoginPage from '@/features/auth/pages/LoginPage.vue'
-import AppsPage from '@/features/apps/pages/AppsPage.vue'
-import DashboardPage from '@/features/dashboard/pages/DashboardPage.vue'
-import CitizensPage from '@/features/citizens/pages/CitizensPage.vue'
-import ApplicationsPage from '@/features/applications/pages/ApplicationsPage.vue'
-import BenefitsPage from '@/features/benefits/pages/BenefitsPage.vue'
-import PaymentsPage from '@/features/payments/pages/PaymentsPage.vue'
-import DocumentsPage from '@/features/documents/pages/DocumentsPage.vue'
-import MonitoringPage from '@/features/monitoring/pages/MonitoringPage.vue'
-import ReportsPage from '@/features/reports/pages/ReportsPage.vue'
-import SettingsPage from '@/features/settings/pages/SettingsPage.vue'
-import UsersPage from '@/features/users/pages/UsersPage.vue'
-import IPTKPage from '@/features/iptk/pages/IPTKPage.vue'
-import MuruvvatPage from '@/features/muruvvat/pages/MuruvvatPage.vue'
+
+const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
+const LoginPage = () => import('@/features/auth/pages/LoginPage.vue')
+const AppsPage = () => import('@/features/apps/pages/AppsPage.vue')
+const DashboardPage = () => import('@/features/dashboard/pages/DashboardPage.vue')
+const CitizensPage = () => import('@/features/citizens/pages/CitizensPage.vue')
+const ApplicationsPage = () => import('@/features/applications/pages/ApplicationsPage.vue')
+const BenefitsPage = () => import('@/features/benefits/pages/BenefitsPage.vue')
+const PaymentsPage = () => import('@/features/payments/pages/PaymentsPage.vue')
+const DocumentsPage = () => import('@/features/documents/pages/DocumentsPage.vue')
+const MonitoringPage = () => import('@/features/monitoring/pages/MonitoringPage.vue')
+const ReportsPage = () => import('@/features/reports/pages/ReportsPage.vue')
+const SettingsPage = () => import('@/features/settings/pages/SettingsPage.vue')
+const UsersPage = () => import('@/features/users/pages/UsersPage.vue')
+const IPTKPage = () => import('@/features/iptk/pages/IPTKPage.vue')
+const IPTKApplicationsListPage = () => import('@/features/iptk/pages/IPTKApplicationsListPage.vue')
+const MuruvvatPage = () => import('@/features/muruvvat/pages/MuruvvatPage.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -155,10 +157,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'apps/iptk/applications/list',
         name: 'iptk-applications-list',
-        component: MuruvvatPage,
-        props: {
-          pageKey: 'applications-list',
-        },
+        component: IPTKApplicationsListPage,
         meta: {
           title: 'Arizalar',
           requiresAuth: true,

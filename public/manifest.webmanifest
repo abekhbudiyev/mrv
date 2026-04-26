@@ -1,0 +1,30 @@
+{
+  "name": "IHMA axborot tizimi",
+  "short_name": "IHMA",
+  "description": "Ijtimoiy himoya agentligi axborot tizimi",
+  "lang": "uz",
+  "dir": "ltr",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "start_url": ".",
+  "scope": ".",
+  "id": ".",
+  "background_color": "#f8faf8",
+  "theme_color": "#659961",
+  "categories": ["productivity", "government", "utilities"],
+  "icons": [
+    {
+      "src": "pwa/logo-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "pwa/logo-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

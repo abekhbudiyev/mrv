@@ -1,6 +1,7 @@
 import type { Pinia } from 'pinia'
 import type { Router } from 'vue-router'
 import { DEFAULT_AUTH_REDIRECT } from '@/core/constants/app'
+import { MODULE_PERMISSION_BY_KEY } from '@/core/constants/permissions'
 import { useAuthStore } from '@/stores/auth'
 
 export function setupAuthGuard(router: Router, pinia: Pinia) {
@@ -14,6 +15,15 @@ export function setupAuthGuard(router: Router, pinia: Pinia) {
           redirect: to.fullPath,
         },
       }
+    }
+
+    const routePermission = to.meta.permission
+      ?? (typeof to.meta.moduleKey === 'string'
+        ? MODULE_PERMISSION_BY_KEY[to.meta.moduleKey]
+        : undefined)
+
+    if (routePermission && !authStore.hasPermission(routePermission)) {
+      return DEFAULT_AUTH_REDIRECT
     }
 
     if (to.meta.guestOnly && authStore.isAuthenticated) {
