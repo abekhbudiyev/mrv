@@ -2908,6 +2908,7 @@ const applicationDashboardKpis = computed(() => {
       trend: getApplicationDashboardTrend(total, 'Jami arizalar'),
       icon: FileCheck2,
       className: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-200',
+      barClass: 'bg-slate-500/70',
     },
     {
       label: 'Jarayondagi arizalar',
@@ -2918,6 +2919,7 @@ const applicationDashboardKpis = computed(() => {
       trend: getApplicationDashboardTrend(inProcess, 'Jarayondagi arizalar'),
       icon: Clock3,
       className: statusClassMap.Jarayonda,
+      barClass: 'bg-amber-500/80',
     },
     {
       label: 'Tasdiqlangan arizalar',
@@ -2928,6 +2930,7 @@ const applicationDashboardKpis = computed(() => {
       trend: getApplicationDashboardTrend(approved, 'Tasdiqlangan arizalar'),
       icon: CheckCheck,
       className: statusClassMap.Tasdiqlangan,
+      barClass: 'bg-emerald-500/80',
     },
     {
       label: 'Bekor qilingan',
@@ -2938,6 +2941,7 @@ const applicationDashboardKpis = computed(() => {
       trend: getApplicationDashboardTrend(canceled, 'Bekor qilingan'),
       icon: X,
       className: statusClassMap['Bekor qilingan'],
+      barClass: 'bg-rose-500/80',
     },
   ]
 })
@@ -3048,35 +3052,30 @@ const applicationDashboardAgeDistribution = computed(() => {
 const applicationDashboardDistributionCards = computed(() => [
   {
     title: 'Xizmat turlari',
-    description: 'Arizalar kesimidagi taqsimot',
     icon: FileCheck2,
     items: applicationDashboardServiceDistribution.value,
     barClass: 'bg-emerald-500/80',
   },
   {
     title: 'Nogironlik guruhi',
-    description: '1-guruh va 2-guruh kesimida',
     icon: UsersRound,
     items: applicationDashboardDisabilityGroupDistribution.value,
     barClass: 'bg-amber-500/80',
   },
   {
     title: 'Tashxislar',
-    description: 'ICD-10 guruhlari bo‘yicha',
     icon: Activity,
     items: applicationDashboardDiagnosisDistribution.value,
     barClass: 'bg-sky-500/80',
   },
   {
     title: 'Jins',
-    description: 'Erkak va ayol kesimida',
     icon: UsersRound,
     items: applicationDashboardGenderDistribution.value,
     barClass: 'bg-rose-500/80',
   },
   {
     title: 'Yosh',
-    description: 'Yosh guruhlari bo‘yicha',
     icon: BarChart3,
     items: applicationDashboardAgeDistribution.value,
     barClass: 'bg-primary',
@@ -6270,6 +6269,12 @@ onUnmounted(() => {
               </div>
             </div>
             <p class="mt-3 text-xs text-muted-foreground">{{ item.note }}</p>
+            <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div
+                :class="['h-full rounded-full', item.barClass]"
+                :style="{ width: `${item.percent}%` }"
+              />
+            </div>
             <div
               v-if="item.status"
               class="mt-4 flex-1 border-t border-border pt-3"
@@ -6280,7 +6285,10 @@ onUnmounted(() => {
                 class="flex items-center justify-between gap-3 py-1 text-xs"
               >
                 <span class="min-w-0 truncate text-muted-foreground">{{ step.label }}</span>
-                <span class="shrink-0 font-semibold text-foreground">{{ step.value }} ({{ step.percent }}%)</span>
+                <span class="shrink-0 font-medium text-foreground">
+                  {{ step.value }}
+                  <span class="font-normal text-muted-foreground">({{ step.percent }}%)</span>
+                </span>
               </div>
             </div>
             <div
@@ -6494,7 +6502,6 @@ onUnmounted(() => {
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-base font-semibold text-foreground">{{ card.title }}</p>
-                <p class="text-sm text-muted-foreground">{{ card.description }}</p>
               </div>
               <component :is="card.icon" class="h-5 w-5 text-muted-foreground" />
             </div>
@@ -6508,6 +6515,7 @@ onUnmounted(() => {
                   <span class="truncate text-foreground">{{ item.label }}</span>
                   <span class="flex shrink-0 items-center gap-1.5">
                     <span class="font-semibold text-foreground">{{ item.value }}</span>
+                    <span class="text-xs font-medium text-muted-foreground">({{ item.percent }}%)</span>
                   </span>
                 </div>
                 <div class="h-1.5 overflow-hidden rounded-full bg-muted">
