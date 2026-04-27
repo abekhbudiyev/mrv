@@ -4,12 +4,10 @@ import type { MuruvvatMenuItem, MuruvvatPageDefinition } from '@/features/muruvv
 export const iptkPages: MuruvvatPageDefinition[] = [
   {
     key: 'dashboard',
-    title: 'Dashboard',
-    description: "IPTK moduli uchun umumiy holat, asosiy indikatorlar va tezkor ko'rsatkichlar joylashuvi.",
+    title: "Arizalar bo'yicha dashboard",
+    description: '',
     route: '/apps/iptk',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Dashboard'],
-    sectionTitle: "Asosiy ko'rsatkichlar",
-    sectionDescription: "IPTK moduli bo'yicha dashboard kartalari, statistik bloklar va monitoring vidjetlari keyinroq qo'shiladi.",
+    breadcrumb: ['Ilovalar', 'IPTK', "Arizalar bo'yicha dashboard"],
   },
   {
     key: 'info-1',

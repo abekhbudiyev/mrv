@@ -6,6 +6,7 @@ import { usePageMeta } from '@/shared/composables/use-page-meta'
 import { Button } from '@/shared/ui/shadcn/button'
 import ThemeToggle from '@/shared/components/ThemeToggle.vue'
 import PageBreadcrumbs from '@/shared/components/PageBreadcrumbs.vue'
+import AppHeaderLanguageMenu from './AppHeaderLanguageMenu.vue'
 import AppHeaderUserMenu from './AppHeaderUserMenu.vue'
 
 withDefaults(defineProps<{
@@ -69,6 +70,7 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
           <LayoutGrid class="h-4 w-4" />
         </Button>
       </RouterLink>
+      <AppHeaderLanguageMenu />
       <ThemeToggle />
       <AppHeaderUserMenu />
     </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, Filter, LoaderCircle, Pencil, Plus, Search, Trash2, X } from 'lucide-vue-next'
+import { Activity, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -40,6 +40,7 @@ type ApplicationReportStep =
   | 'Boshqa xizmat tavsiya qilindi'
   | 'Bekor qilindi'
   | 'Rad etildi'
+type ApplicationReportDateField = 'start' | 'end'
 
 type PendingConfirmation = {
   tone: 'success' | 'destructive'
@@ -229,6 +230,7 @@ const props = defineProps<{
 }>()
 
 const page = computed(() => getIPTKPage(props.pageKey))
+const isDashboardPage = computed(() => props.pageKey === 'dashboard')
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
 const isAssessmentPage = computed(() => props.pageKey === 'applications-assessment')
 const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
@@ -260,8 +262,8 @@ const regionOptions = [
   'Sirdaryo viloyati',
   'Surxondaryo viloyati',
   'Toshkent viloyati',
-  'Toshkent shahri',
   'Xorazm viloyati',
+  'Toshkent shahri',
 ] as const
 
 const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
@@ -339,6 +341,7 @@ const applicationReportMetricGroups = [
   },
 ] as const
 type ApplicationReportMetricKey = typeof applicationReportMetricGroups[number]['key']
+type ApplicationReportMetricOption = typeof applicationReportMetricGroups[number]['options'][number]
 const applicationReportRegions = [
   'Qoraqalpog‘iston Respublikasi',
   'Andijon viloyati',
@@ -352,8 +355,8 @@ const applicationReportRegions = [
   'Sirdaryo viloyati',
   'Surxondaryo viloyati',
   'Toshkent viloyati',
-  'Toshkent shahri',
   'Xorazm viloyati',
+  'Toshkent shahri',
 ]
 const applicationReportDistricts: Record<string, string[]> = {
   'Qoraqalpog‘iston Respublikasi': ['Nukus shahri', 'Beruniy tumani', 'Qo‘ng‘irot tumani'],
@@ -1227,17 +1230,29 @@ const appliedAssessmentStartDateFilter = ref('')
 const draftAssessmentEndDateFilter = ref('')
 const appliedAssessmentEndDateFilter = ref('')
 const isApplicationReportFilterOpen = ref(false)
-const openApplicationReportFilterField = ref<'status' | 'step' | ApplicationReportMetricKey | null>(null)
+const openApplicationReportFilterField = ref<'status' | 'step' | 'region' | 'district' | ApplicationReportMetricKey | null>(null)
+const openApplicationReportCalendarField = ref<ApplicationReportDateField | null>(null)
+const applicationReportCalendarMonth = ref('')
 const draftApplicationReportStatusFilter = ref<ApplicationReportStatus[]>([])
 const appliedApplicationReportStatusFilter = ref<ApplicationReportStatus[]>([])
 const draftApplicationReportStepFilter = ref<ApplicationReportStep[]>([])
 const appliedApplicationReportStepFilter = ref<ApplicationReportStep[]>([])
+const draftApplicationReportRegionFilter = ref<string[]>([])
+const appliedApplicationReportRegionFilter = ref<string[]>([])
+const draftApplicationReportDistrictFilter = ref<string[]>([])
+const appliedApplicationReportDistrictFilter = ref<string[]>([])
 const draftApplicationReportMetricFilters = ref<Record<ApplicationReportMetricKey, string[]>>(createApplicationReportMetricFilterState())
 const appliedApplicationReportMetricFilters = ref<Record<ApplicationReportMetricKey, string[]>>(createApplicationReportMetricFilterState())
 const draftApplicationReportStartDateFilter = ref('')
 const appliedApplicationReportStartDateFilter = ref('')
 const draftApplicationReportEndDateFilter = ref('')
 const appliedApplicationReportEndDateFilter = ref('')
+const defaultApplicationReportSnapshotDate = getTodayDisplayDate()
+const defaultApplicationReportComparisonDate = getPreviousMonthDisplayDate()
+const draftApplicationReportSnapshotDateFilter = ref(defaultApplicationReportSnapshotDate)
+const appliedApplicationReportSnapshotDateFilter = ref(defaultApplicationReportSnapshotDate)
+const draftApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
+const appliedApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
 const selectedApplicationReportCells = ref<Record<string, { label: string, value: number }>>({})
 const draftStatusFilter = ref<'all' | CommissionStatus>('all')
 const appliedStatusFilter = ref<'all' | CommissionStatus>('all')
@@ -1435,6 +1450,10 @@ const monthNames = [
   'Dekabr',
 ]
 const calendarWeekdays = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']
+const applicationReportDateFieldGroups: Array<Array<{ key: ApplicationReportDateField, label: string }>> = [
+  [{ key: 'start', label: 'Boshlanish sanasi' }],
+  [{ key: 'end', label: 'Tugash sanasi' }],
+]
 const regionDistrictOptions: Record<string, string[]> = {
   "Qoraqalpog'iston Respublikasi": ['Nukus shahri', "To'rtko'l tumani", "Xo'jayli tumani"],
   'Andijon viloyati': ['Andijon shahri', 'Asaka tumani', 'Buloqboshi tumani'],
@@ -1669,6 +1688,48 @@ function sanitizeDateFilterInput(value: string) {
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean)
 
   return parts.join('.')
+}
+
+function formatDateForDisplay(date: Date) {
+  return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`
+}
+
+function getTodayDisplayDate() {
+  return formatDateForDisplay(new Date())
+}
+
+function getPreviousMonthDisplayDate() {
+  const today = new Date()
+  const targetYear = today.getFullYear()
+  const targetMonth = today.getMonth() - 1
+  const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate()
+  const targetDay = Math.min(today.getDate(), lastDayOfTargetMonth)
+
+  return formatDateForDisplay(new Date(targetYear, targetMonth, targetDay))
+}
+
+function preventDateNonDigitKeydown(event: KeyboardEvent) {
+  const allowedControlKeys = [
+    'Backspace',
+    'Delete',
+    'Tab',
+    'Enter',
+    'Escape',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+    'Home',
+    'End',
+  ]
+
+  if (event.ctrlKey || event.metaKey || event.altKey || allowedControlKeys.includes(event.key)) {
+    return
+  }
+
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault()
+  }
 }
 
 function getTodayIso() {
@@ -2473,6 +2534,15 @@ const applicationReportStepFilterOptions = computed(() => {
   ))
 })
 
+const applicationReportDistrictFilterOptions = computed(() => {
+  const selectedRegions = draftApplicationReportRegionFilter.value
+  if (!selectedRegions.length) return []
+
+  return selectedRegions.flatMap((region) => applicationReportDistricts[region] ?? [])
+})
+
+const isApplicationReportDistrictFilterDisabled = computed(() => !draftApplicationReportRegionFilter.value.length)
+
 const applicationReportVisibleStatuses = computed(() => (
   appliedApplicationReportStatusFilter.value.length
     ? appliedApplicationReportStatusFilter.value
@@ -2517,6 +2587,19 @@ const applicationReportStepFilterLabel = computed(() => {
   return `${draftApplicationReportStepFilter.value.length} ta tanlandi`
 })
 
+const applicationReportRegionFilterLabel = computed(() => {
+  if (!draftApplicationReportRegionFilter.value.length) return 'Barchasi'
+  if (draftApplicationReportRegionFilter.value.length === 1) return draftApplicationReportRegionFilter.value[0]
+  return `${draftApplicationReportRegionFilter.value.length} ta tanlandi`
+})
+
+const applicationReportDistrictFilterLabel = computed(() => {
+  if (isApplicationReportDistrictFilterDisabled.value) return 'Avval hududni tanlang'
+  if (!draftApplicationReportDistrictFilter.value.length) return 'Barchasi'
+  if (draftApplicationReportDistrictFilter.value.length === 1) return draftApplicationReportDistrictFilter.value[0]
+  return `${draftApplicationReportDistrictFilter.value.length} ta tanlandi`
+})
+
 function getApplicationReportMetricFilterLabel(key: ApplicationReportMetricKey) {
   const selectedItems = draftApplicationReportMetricFilters.value[key]
   if (!selectedItems.length) return 'Barchasi'
@@ -2529,6 +2612,8 @@ const applicationReportActiveFilterCount = computed(() => {
 
   if (appliedApplicationReportStatusFilter.value.length) count += 1
   if (appliedApplicationReportStepFilter.value.length) count += 1
+  if (appliedApplicationReportRegionFilter.value.length) count += 1
+  if (appliedApplicationReportDistrictFilter.value.length) count += 1
   applicationReportMetricGroups.forEach((group) => {
     if (appliedApplicationReportMetricFilters.value[group.key].length) count += 1
   })
@@ -2548,6 +2633,14 @@ const applicationReportHasPendingFilterChanges = computed(() => {
       draftApplicationReportStepFilter.value,
       appliedApplicationReportStepFilter.value,
     )
+    || !areApplicationReportFiltersEqual(
+      draftApplicationReportRegionFilter.value,
+      appliedApplicationReportRegionFilter.value,
+    )
+    || !areApplicationReportFiltersEqual(
+      draftApplicationReportDistrictFilter.value,
+      appliedApplicationReportDistrictFilter.value,
+    )
     || !areApplicationReportMetricFiltersEqual(
       draftApplicationReportMetricFilters.value,
       appliedApplicationReportMetricFilters.value,
@@ -2562,8 +2655,17 @@ function getApplicationReportDateFactor() {
   return 1
 }
 
+function getApplicationReportMetricFactor() {
+  return applicationReportMetricGroups.reduce((factor, group) => {
+    const selectedOptions = appliedApplicationReportMetricFilters.value[group.key]
+    if (!selectedOptions.length) return factor
+
+    return factor * Math.min(1, selectedOptions.length / group.options.length)
+  }, 1)
+}
+
 function getApplicationReportDisplayCount(value: number) {
-  return Math.round(value * getApplicationReportDateFactor())
+  return Math.round(value * getApplicationReportDateFactor() * getApplicationReportMetricFactor())
 }
 
 function getApplicationReportStatusCount(
@@ -2575,76 +2677,613 @@ function getApplicationReportStatusCount(
     .reduce((total, step) => total + getApplicationReportDisplayCount(row.steps[step]), 0)
 }
 
+function normalizeApplicationReportCounts<T extends string>(
+  entries: Array<[T, number]>,
+  targetTotal: number,
+) {
+  const normalized = Object.fromEntries(entries.map(([key]) => [key, 0])) as Partial<Record<T, number>>
+  const safeTarget = Math.max(0, Math.round(targetTotal))
+
+  if (!entries.length || safeTarget <= 0) {
+    return normalized
+  }
+
+  const safeEntries = entries.map(([key, value]) => [key, Math.max(0, value)] as [T, number])
+  const rawTotal = safeEntries.reduce((sum, [, value]) => sum + value, 0)
+
+  if (rawTotal <= 0) {
+    const baseValue = Math.floor(safeTarget / safeEntries.length)
+    let remainder = safeTarget - baseValue * safeEntries.length
+
+    safeEntries.forEach(([key]) => {
+      normalized[key] = baseValue + (remainder > 0 ? 1 : 0)
+      remainder -= 1
+    })
+
+    return normalized
+  }
+
+  const scaledEntries = safeEntries.map(([key, value]) => {
+    const scaledValue = (value / rawTotal) * safeTarget
+
+    return {
+      key,
+      value: Math.floor(scaledValue),
+      fraction: scaledValue - Math.floor(scaledValue),
+    }
+  })
+
+  let remainder = safeTarget - scaledEntries.reduce((sum, item) => sum + item.value, 0)
+  scaledEntries
+    .sort((first, second) => second.fraction - first.fraction)
+    .forEach((item) => {
+      const extra = remainder > 0 ? 1 : 0
+      normalized[item.key] = item.value + extra
+      remainder -= extra
+    })
+
+  return normalized
+}
+
 function buildApplicationReportDisplayRow(
   row: ReturnType<typeof buildApplicationReportRow>,
   isTotal = false,
 ) {
-  const metrics = Object.fromEntries(
-    applicationReportVisibleMetricGroups.value.map((group) => [
-      group.key,
-      Object.fromEntries(
-        group.options.map((option) => [
-          option,
-          getApplicationReportDisplayCount(row.metrics[group.key][option] ?? 0),
-        ]),
-      ),
-    ]),
-  ) as ReturnType<typeof buildApplicationReportRow>['metrics']
   const steps = Object.fromEntries(
     applicationReportVisibleSteps.value.map((step) => [
       step,
       getApplicationReportDisplayCount(row.steps[step]),
     ]),
   ) as Partial<Record<ApplicationReportStep, number>>
+  const total = applicationReportVisibleSteps.value.reduce((sum, step) => sum + (steps[step] ?? 0), 0)
   const statuses = Object.fromEntries(
     applicationReportVisibleStatuses.value.map((status) => [
       status,
       getApplicationReportStatusCount(row, status),
     ]),
   ) as Partial<Record<ApplicationReportStatus, number>>
+  const metrics = Object.fromEntries(
+    applicationReportVisibleMetricGroups.value.map((group) => [
+      group.key,
+      normalizeApplicationReportCounts(
+        group.options.map((option) => [
+          option,
+          getApplicationReportDisplayCount(row.metrics[group.key][option] ?? 0),
+        ]),
+        total,
+      ),
+    ]),
+  ) as ReturnType<typeof buildApplicationReportRow>['metrics']
 
   return {
     ...row,
-    statuses,
+    statuses: normalizeApplicationReportCounts(
+      applicationReportVisibleStatuses.value.map((status) => [status, statuses[status] ?? 0]),
+      total,
+    ),
     steps,
     metrics,
-    total: applicationReportVisibleSteps.value.reduce((sum, step) => sum + (steps[step] ?? 0), 0),
+    total,
     isTotal,
   }
 }
 
-const applicationReportRows = computed(() => {
+const applicationReportAllRegionRows = computed(() => {
   return applicationReportRegions.map((region, regionIndex) => {
     return buildApplicationReportRow(region, regionIndex)
   })
 })
 
-const selectedApplicationReportDistrictRows = computed(() => {
-  if (!selectedApplicationReportRegion.value) return []
-  const regionIndex = Math.max(0, applicationReportRegions.indexOf(selectedApplicationReportRegion.value))
-  const districts = applicationReportDistricts[selectedApplicationReportRegion.value] ?? []
+function buildApplicationReportDistrictRows(region: string) {
+  const regionIndex = Math.max(0, applicationReportRegions.indexOf(region))
+  const districts = applicationReportDistricts[region] ?? []
 
   return districts.map((district, districtIndex) => (
     buildApplicationReportRow(district, (regionIndex + 1) * 10 + districtIndex)
   ))
+}
+
+const applicationReportRows = computed(() => {
+  const selectedRegions = appliedApplicationReportRegionFilter.value.length
+    ? appliedApplicationReportRegionFilter.value
+    : applicationReportRegions
+
+  if (appliedApplicationReportDistrictFilter.value.length) {
+    return selectedRegions
+      .flatMap((region) => buildApplicationReportDistrictRows(region))
+      .filter((row) => appliedApplicationReportDistrictFilter.value.includes(row.region))
+  }
+
+  return applicationReportAllRegionRows.value.filter((row) => selectedRegions.includes(row.region))
 })
 
-const applicationReportTotals = computed(() => {
+function getApplicationDashboardMetricTotal(key: ApplicationReportMetricKey, option: ApplicationReportMetricOption) {
+  const selectedOptions = appliedApplicationReportMetricFilters.value[key]
+
+  if (selectedOptions.length && !selectedOptions.includes(option)) return 0
+
+  return applicationReportRows.value.reduce((sum, row) => (
+    sum + getApplicationReportDisplayCount(row.metrics[key][option] ?? 0)
+  ), 0)
+}
+
+function getDashboardPercent(value: number, total: number) {
+  if (!total) return 0
+  return Math.round((value / total) * 100)
+}
+
+function getDashboardTrendSeed(value: string) {
+  return value.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+}
+
+function getDashboardDateFactor(value: string, seed: number) {
+  const parsedDate = parseDisplayDate(value)
+
+  if (!parsedDate) return null
+
+  const day = parsedDate.getDate()
+  const month = parsedDate.getMonth() + 1
+  const year = parsedDate.getFullYear()
+  const spread = ((day * 3 + month * 5 + (year % 19) + seed) % 23) - 11
+
+  return 1 + (spread / 100)
+}
+
+function getApplicationDashboardTrend(value: number, label: string) {
+  const seed = getDashboardTrendSeed(label)
+  const snapshotFactor = getDashboardDateFactor(appliedApplicationReportSnapshotDateFilter.value, seed)
+  const comparisonFactor = getDashboardDateFactor(appliedApplicationReportComparisonDateFilter.value, seed + 7)
+
+  if (!snapshotFactor || !comparisonFactor) return null
+
+  const previousValue = Math.max(1, Math.round(value * (comparisonFactor / snapshotFactor)))
+  const change = Math.round(((value - previousValue) / previousValue) * 100)
+  const delta = value - previousValue
+  const isPositive = change > 0
+  const isNegative = change < 0
+
+  return {
+    value: change,
+    delta,
+    label: `${isPositive ? '↑' : isNegative ? '↓' : '→'} ${Math.abs(change)}% (${delta > 0 ? '+' : ''}${delta})`,
+    className: isPositive
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+      : isNegative
+        ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300'
+        : 'border-border bg-muted text-muted-foreground',
+    textClassName: isPositive
+      ? 'text-emerald-600 dark:text-emerald-300'
+      : isNegative
+        ? 'text-rose-600 dark:text-rose-300'
+        : 'text-muted-foreground',
+  }
+}
+
+const applicationDashboardStepTotals = computed(() => Object.fromEntries(
+  applicationReportSteps.map((step) => [
+    step,
+    applicationReportVisibleSteps.value.includes(step)
+      ? applicationReportRows.value.reduce((sum, row) => (
+        sum + getApplicationReportDisplayCount(row.steps[step])
+      ), 0)
+      : 0,
+  ]),
+) as Record<ApplicationReportStep, number>)
+
+const applicationDashboardStatusTotals = computed(() => Object.fromEntries(
+  applicationReportStatuses.map((status) => [
+    status,
+    applicationReportVisibleStatuses.value.includes(status)
+      ? applicationReportSteps
+        .filter((step) => applicationReportStepStatusMap[step] === status)
+        .reduce((sum, step) => sum + applicationDashboardStepTotals.value[step], 0)
+      : 0,
+  ]),
+) as Record<ApplicationReportStatus, number>)
+
+const applicationDashboardTotal = computed(() => (
+  applicationReportSteps.reduce((sum, step) => sum + applicationDashboardStepTotals.value[step], 0)
+))
+
+const applicationDashboardKpis = computed(() => {
+  const total = applicationDashboardTotal.value
+  const inProcess = applicationDashboardStatusTotals.value.Jarayonda
+  const approved = applicationDashboardStatusTotals.value.Tasdiqlangan
+  const canceled = applicationDashboardStatusTotals.value['Bekor qilingan']
+  const iptkQueue = (
+    applicationDashboardStepTotals.value['IPTKga yuborildi']
+    + applicationDashboardStepTotals.value['IPTK qabul qildi']
+    + applicationDashboardStepTotals.value['IPTK yig‘ilishiga kiritildi']
+  )
+
+  void iptkQueue
+
+  return [
+    {
+      label: 'Jami arizalar',
+      value: total,
+      note: '100% umumiy ulush',
+      percent: 100,
+      status: null,
+      trend: getApplicationDashboardTrend(total, 'Jami arizalar'),
+      icon: FileCheck2,
+      className: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-200',
+    },
+    {
+      label: 'Jarayondagi arizalar',
+      value: inProcess,
+      note: `${getDashboardPercent(inProcess, total)}% umumiy ulush`,
+      percent: getDashboardPercent(inProcess, total),
+      status: 'Jarayonda' as ApplicationReportStatus,
+      trend: getApplicationDashboardTrend(inProcess, 'Jarayondagi arizalar'),
+      icon: Clock3,
+      className: statusClassMap.Jarayonda,
+    },
+    {
+      label: 'Tasdiqlangan arizalar',
+      value: approved,
+      note: `${getDashboardPercent(approved, total)}% umumiy ulush`,
+      percent: getDashboardPercent(approved, total),
+      status: 'Tasdiqlangan' as ApplicationReportStatus,
+      trend: getApplicationDashboardTrend(approved, 'Tasdiqlangan arizalar'),
+      icon: CheckCheck,
+      className: statusClassMap.Tasdiqlangan,
+    },
+    {
+      label: 'Bekor qilingan',
+      value: canceled,
+      note: `${getDashboardPercent(canceled, total)}% umumiy ulush`,
+      percent: getDashboardPercent(canceled, total),
+      status: 'Bekor qilingan' as ApplicationReportStatus,
+      trend: getApplicationDashboardTrend(canceled, 'Bekor qilingan'),
+      icon: X,
+      className: statusClassMap['Bekor qilingan'],
+    },
+  ]
+})
+
+const applicationDashboardStatusSummary = computed(() => applicationReportStatuses.map((status) => {
+  const value = applicationDashboardStatusTotals.value[status]
+
+  return {
+    label: status,
+    value,
+    percent: getDashboardPercent(value, applicationDashboardTotal.value),
+    className: statusClassMap[status],
+  }
+}))
+
+const applicationDashboardStatusStepGroups = computed(() => applicationDashboardStatusSummary.value.map((status) => ({
+  ...status,
+  steps: applicationReportSteps
+    .filter((step) => applicationReportStepStatusMap[step] === status.label)
+    .map((step) => {
+      const value = applicationDashboardStepTotals.value[step]
+
+      return {
+        label: step,
+        value,
+        percent: getDashboardPercent(value, status.value),
+        trend: getApplicationDashboardTrend(value, step),
+      }
+    }),
+})))
+
+function getApplicationDashboardStatusSteps(status: ApplicationReportStatus | null) {
+  if (!status) return []
+
+  return applicationDashboardStatusStepGroups.value.find((item) => item.label === status)?.steps ?? []
+}
+
+const applicationDashboardServiceDistribution = computed(() => {
+  const entries = applicationReportServiceTypes.map((service) => ({
+    label: service,
+    value: getApplicationDashboardMetricTotal('serviceTypes', service),
+  }))
+  const total = entries.reduce((sum, item) => sum + item.value, 0)
+
+  return entries.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, total),
+    trend: getApplicationDashboardTrend(item.value, `Xizmat turlari ${item.label}`),
+  }))
+})
+
+const applicationDashboardDisabilityGroupDistribution = computed(() => {
+  const entries = applicationReportDisabilityGroups.map((group) => ({
+    label: group,
+    value: getApplicationDashboardMetricTotal('disabilityGroups', group),
+  }))
+  const total = entries.reduce((sum, item) => sum + item.value, 0)
+
+  return entries.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, total),
+    trend: getApplicationDashboardTrend(item.value, `Nogironlik guruhi ${item.label}`),
+  }))
+})
+
+const applicationDashboardDiagnosisDistribution = computed(() => {
+  const entries = applicationReportDiagnoses.map((diagnosis) => ({
+    label: diagnosis,
+    value: getApplicationDashboardMetricTotal('diagnoses', diagnosis),
+  }))
+  const total = entries.reduce((sum, item) => sum + item.value, 0)
+
+  return entries.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, total),
+    trend: getApplicationDashboardTrend(item.value, `Tashxis ${item.label}`),
+  }))
+})
+
+const applicationDashboardGenderDistribution = computed(() => {
+  const entries = applicationReportGenders.map((gender) => ({
+    label: gender,
+    value: getApplicationDashboardMetricTotal('genders', gender),
+  }))
+  const total = entries.reduce((sum, item) => sum + item.value, 0)
+
+  return entries.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, total),
+    trend: getApplicationDashboardTrend(item.value, `Jins ${item.label}`),
+  }))
+})
+
+const applicationDashboardAgeDistribution = computed(() => {
+  const entries = applicationReportAgeGroups.map((ageGroup) => ({
+    label: ageGroup,
+    value: getApplicationDashboardMetricTotal('ageGroups', ageGroup),
+  }))
+  const total = entries.reduce((sum, item) => sum + item.value, 0)
+
+  return entries.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, total),
+    trend: getApplicationDashboardTrend(item.value, `Yosh ${item.label}`),
+  }))
+})
+
+const applicationDashboardDistributionCards = computed(() => [
+  {
+    title: 'Xizmat turlari',
+    description: 'Arizalar kesimidagi taqsimot',
+    icon: FileCheck2,
+    items: applicationDashboardServiceDistribution.value,
+    barClass: 'bg-emerald-500/80',
+  },
+  {
+    title: 'Nogironlik guruhi',
+    description: '1-guruh va 2-guruh kesimida',
+    icon: UsersRound,
+    items: applicationDashboardDisabilityGroupDistribution.value,
+    barClass: 'bg-amber-500/80',
+  },
+  {
+    title: 'Tashxislar',
+    description: 'ICD-10 guruhlari bo‘yicha',
+    icon: Activity,
+    items: applicationDashboardDiagnosisDistribution.value,
+    barClass: 'bg-sky-500/80',
+  },
+  {
+    title: 'Jins',
+    description: 'Erkak va ayol kesimida',
+    icon: UsersRound,
+    items: applicationDashboardGenderDistribution.value,
+    barClass: 'bg-rose-500/80',
+  },
+  {
+    title: 'Yosh',
+    description: 'Yosh guruhlari bo‘yicha',
+    icon: BarChart3,
+    items: applicationDashboardAgeDistribution.value,
+    barClass: 'bg-primary',
+  },
+])
+
+const applicationDashboardStatusBarClassMap: Record<ApplicationReportStatus, string> = {
+  Jarayonda: 'bg-amber-500',
+  Tasdiqlangan: 'bg-emerald-500',
+  'Bekor qilingan': 'bg-rose-500',
+}
+
+const applicationDashboardRegionBars = computed(() => {
+  const rows = applicationReportRows.value.map((row) => {
+    const segments = applicationReportStatuses.map((status) => ({
+      status,
+      value: getApplicationReportStatusCount(row, status),
+      barClass: applicationDashboardStatusBarClassMap[status],
+      badgeClass: statusClassMap[status],
+    }))
+    const total = segments.reduce((sum, segment) => sum + segment.value, 0)
+
+    return {
+      region: row.region,
+      total,
+      segments,
+    }
+  })
+  const maxTotal = Math.max(...rows.map((row) => row.total), 1)
+
+  return rows
+    .map((row) => ({
+      ...row,
+      percent: getDashboardPercent(row.total, maxTotal),
+      segments: row.segments.map((segment) => ({
+        ...segment,
+        percent: getDashboardPercent(segment.value, row.total),
+      })),
+    }))
+})
+
+const applicationDashboardMonthlyTrend = computed(() => {
+  const labels = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+  const total = applicationDashboardTotal.value
+  const values = labels.map((label, index) => {
+    const value = Math.max(8, Math.round((total / labels.length) * (0.72 + ((index * 7) % 9) / 10)))
+
+    return { label, value }
+  })
+  const maxValue = Math.max(...values.map((item) => item.value), 1)
+
+  return values.map((item) => ({
+    ...item,
+    percent: getDashboardPercent(item.value, maxValue),
+  }))
+})
+
+function buildSmoothDashboardPath(points: Array<{ x: number, y: number }>) {
+  if (!points.length) return ''
+  const firstPoint = points[0]
+
+  if (!firstPoint) return ''
+  if (points.length === 1) return `M ${firstPoint.x.toFixed(1)} ${firstPoint.y.toFixed(1)}`
+
+  const smoothing = 0.18
+
+  function controlPoint(
+    current: { x: number, y: number },
+    previous: { x: number, y: number } | undefined,
+    next: { x: number, y: number } | undefined,
+    reverse = false,
+  ) {
+    const previousPoint = previous ?? current
+    const nextPoint = next ?? current
+    const factor = reverse ? -smoothing : smoothing
+
+    return {
+      x: current.x + (nextPoint.x - previousPoint.x) * factor,
+      y: current.y + (nextPoint.y - previousPoint.y) * factor,
+    }
+  }
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) {
+      return `M ${point.x.toFixed(1)} ${point.y.toFixed(1)}`
+    }
+
+    const previousPoint = points[index - 1] ?? point
+    const controlStart = controlPoint(previousPoint, points[index - 2], point)
+    const controlEnd = controlPoint(point, previousPoint, points[index + 1], true)
+
+    return `${path} C ${controlStart.x.toFixed(1)} ${controlStart.y.toFixed(1)}, ${controlEnd.x.toFixed(1)} ${controlEnd.y.toFixed(1)}, ${point.x.toFixed(1)} ${point.y.toFixed(1)}`
+  }, '')
+}
+
+const applicationDashboardAreaChart = computed(() => {
+  const labels = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+  const width = 1280
+  const height = 320
+  const padding = {
+    top: 22,
+    right: 28,
+    bottom: 44,
+    left: 54,
+  }
+  const innerWidth = width - padding.left - padding.right
+  const innerHeight = height - padding.top - padding.bottom
+  const bottomY = padding.top + innerHeight
+  const statusColors: Record<ApplicationReportStatus, string> = {
+    Jarayonda: '#f59e0b',
+    Tasdiqlangan: '#10b981',
+    'Bekor qilingan': '#e11d48',
+  }
+  const rawSeries = applicationReportVisibleStatuses.value.map((status, statusIndex) => {
+    const total = applicationDashboardStatusTotals.value[status]
+    const monthlyAverage = total / labels.length
+    const values = labels.map((label, monthIndex) => {
+      const factor = 0.62 + (((monthIndex + 2) * (statusIndex + 3)) % 8) / 10
+      const value = total > 0 ? Math.max(1, Math.round(monthlyAverage * factor)) : 0
+
+      return {
+        label,
+        value,
+      }
+    })
+
+    return {
+      status,
+      values,
+    }
+  })
+  const maxValue = Math.max(...rawSeries.flatMap((series) => series.values.map((item) => item.value)), 1)
+  const monthPoints = labels.map((label, index) => ({
+    label,
+    x: padding.left + (innerWidth / Math.max(labels.length - 1, 1)) * index,
+  }))
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio) => ({
+    y: bottomY - innerHeight * ratio,
+    label: Math.round(maxValue * ratio),
+  }))
+  const series = rawSeries.map((raw) => {
+    const points = raw.values.map((item, index) => {
+      const monthPoint = monthPoints[index] ?? { x: padding.left, label: item.label }
+
+      return {
+        ...item,
+        x: monthPoint.x,
+        y: bottomY - (item.value / maxValue) * innerHeight,
+      }
+    })
+    const linePath = buildSmoothDashboardPath(points)
+    const firstPoint = points[0] ?? { x: padding.left, y: bottomY }
+    const lastPoint = points[points.length - 1] ?? firstPoint
+    const areaPath = `${linePath} L ${lastPoint.x.toFixed(1)} ${bottomY.toFixed(1)} L ${firstPoint.x.toFixed(1)} ${bottomY.toFixed(1)} Z`
+
+    return {
+      label: raw.status,
+      stroke: statusColors[raw.status],
+      fillId: `dashboard-${raw.status.toLowerCase().replace(/\s+/g, '-')}-gradient`,
+      linePath,
+      areaPath,
+      points,
+      total: applicationDashboardStatusTotals.value[raw.status],
+    }
+  })
+
+  return {
+    width,
+    height,
+    bottomY,
+    leftX: padding.left,
+    rightX: padding.left + innerWidth,
+    monthPoints,
+    gridLines,
+    series,
+  }
+})
+
+const selectedApplicationReportDistrictRows = computed(() => {
+  if (!selectedApplicationReportRegion.value) return []
+  const rows = buildApplicationReportDistrictRows(selectedApplicationReportRegion.value)
+
+  if (!appliedApplicationReportDistrictFilter.value.length) return rows
+
+  return rows.filter((row) => appliedApplicationReportDistrictFilter.value.includes(row.region))
+})
+
+const applicationReportBodyRows = computed(() => {
   const sourceRows = selectedApplicationReportRegion.value
     ? selectedApplicationReportDistrictRows.value
     : applicationReportRows.value
 
+  return sourceRows.map((row) => buildApplicationReportDisplayRow(row, false))
+})
+
+function aggregateApplicationReportRows(rows: Array<ReturnType<typeof buildApplicationReportDisplayRow>>) {
   const steps = Object.fromEntries(
     applicationReportVisibleSteps.value.map((step) => [
       step,
-      sourceRows.reduce((total, row) => total + getApplicationReportDisplayCount(row.steps[step]), 0),
+      rows.reduce((total, row) => total + (row.steps[step] ?? 0), 0),
     ]),
   ) as Partial<Record<ApplicationReportStep, number>>
 
   const statuses = Object.fromEntries(
     applicationReportVisibleStatuses.value.map((status) => [
       status,
-      sourceRows.reduce((total, row) => total + getApplicationReportStatusCount(row, status), 0),
+      rows.reduce((total, row) => total + (row.statuses[status] ?? 0), 0),
     ]),
   ) as Partial<Record<ApplicationReportStatus, number>>
   const metrics = Object.fromEntries(
@@ -2653,20 +3292,34 @@ const applicationReportTotals = computed(() => {
       Object.fromEntries(
         group.options.map((option) => [
           option,
-          sourceRows.reduce((total, row) => (
-            total + getApplicationReportDisplayCount(row.metrics[group.key][option] ?? 0)
-          ), 0),
+          rows.reduce((total, row) => total + (row.metrics[group.key][option] ?? 0), 0),
         ]),
       ),
     ]),
   ) as ReturnType<typeof buildApplicationReportRow>['metrics']
+  const total = rows.reduce((sum, row) => sum + row.total, 0)
 
   return {
-    statuses,
+    statuses: normalizeApplicationReportCounts(
+      applicationReportVisibleStatuses.value.map((status) => [status, statuses[status] ?? 0]),
+      total,
+    ),
     steps,
-    metrics,
-    total: applicationReportVisibleSteps.value.reduce((total, step) => total + (steps[step] ?? 0), 0),
+    metrics: Object.fromEntries(
+      applicationReportVisibleMetricGroups.value.map((group) => [
+        group.key,
+        normalizeApplicationReportCounts(
+          group.options.map((option) => [option, metrics[group.key][option] ?? 0]),
+          total,
+        ),
+      ]),
+    ) as ReturnType<typeof buildApplicationReportRow>['metrics'],
+    total,
   }
+}
+
+const applicationReportTotals = computed(() => {
+  return aggregateApplicationReportRows(applicationReportBodyRows.value)
 })
 
 const applicationReportDisplayRows = computed(() => [
@@ -2680,8 +3333,7 @@ const applicationReportDisplayRows = computed(() => [
     total: applicationReportTotals.value.total,
     isTotal: true,
   },
-  ...(selectedApplicationReportRegion.value ? selectedApplicationReportDistrictRows.value : applicationReportRows.value)
-    .map((row) => buildApplicationReportDisplayRow(row, false)),
+  ...applicationReportBodyRows.value,
 ])
 
 const selectedApplicationReportCellValues = computed(() => Object.values(selectedApplicationReportCells.value))
@@ -2774,6 +3426,63 @@ const calendarDays = computed(() => {
   while (days.length % 7 !== 0) {
     days.push({
       key: `empty-end-${days.length}`,
+      label: '',
+      value: '',
+      isCurrentMonth: false,
+    })
+  }
+
+  return days
+})
+
+const applicationReportCalendarMonthLabel = computed(() => {
+  const monthValue = applicationReportCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [year, month] = monthValue.split('-')
+
+  if (!year || !month) {
+    return ''
+  }
+
+  return `${monthNames[Number(month) - 1] ?? month} ${year}`
+})
+const applicationReportCalendarDays = computed(() => {
+  const monthValue = applicationReportCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return []
+  }
+
+  const year = Number(yearString)
+  const monthIndex = Number(monthString) - 1
+  const firstDay = new Date(year, monthIndex, 1)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7
+  const days: Array<{ key: string, label: string, value: string, isCurrentMonth: boolean }> = []
+
+  for (let index = 0; index < leadingEmptyDays; index += 1) {
+    days.push({
+      key: `application-report-empty-start-${index}`,
+      label: '',
+      value: '',
+      isCurrentMonth: false,
+    })
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dayValue = String(day).padStart(2, '0')
+
+    days.push({
+      key: `application-report-${yearString}-${monthString}-${dayValue}`,
+      label: String(day),
+      value: `${dayValue}.${monthString}.${yearString}`,
+      isCurrentMonth: true,
+    })
+  }
+
+  while (days.length % 7 !== 0) {
+    days.push({
+      key: `application-report-empty-end-${days.length}`,
       label: '',
       value: '',
       isCurrentMonth: false,
@@ -4550,6 +5259,14 @@ function getApplicationReportFilterExportRows() {
       Filter: 'Bosqich',
       Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportStepFilter.value),
     },
+    {
+      Filter: 'Hudud',
+      Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportRegionFilter.value),
+    },
+    {
+      Filter: 'Tuman (shahar)',
+      Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportDistrictFilter.value),
+    },
     ...applicationReportMetricGroups.map((group) => ({
       Filter: group.label,
       Qiymat: getApplicationReportFilterExportValue(appliedApplicationReportMetricFilters.value[group.key]),
@@ -4624,8 +5341,61 @@ async function downloadApplicationReport() {
   }
 }
 
+async function downloadApplicationDashboard() {
+  const stopLoading = startActionLoading('application-dashboard-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+    const workbook = xlsx.utils.book_new()
+
+    const kpiRows = applicationDashboardKpis.value.map((item) => ({
+      "Ko'rsatkich": item.label,
+      Qiymat: item.value,
+      Ulush: `${item.percent}%`,
+      Izoh: item.note,
+    }))
+    const statusRows = applicationReportVisibleStatuses.value.map((status) => ({
+      Status: status,
+      Qiymat: applicationDashboardStatusTotals.value[status],
+      Ulush: `${getDashboardPercent(applicationDashboardStatusTotals.value[status], applicationDashboardTotal.value)}%`,
+    }))
+    const stepRows = applicationReportVisibleSteps.value.map((step) => ({
+      Bosqich: step,
+      Qiymat: applicationDashboardStepTotals.value[step],
+      Ulush: `${getDashboardPercent(applicationDashboardStepTotals.value[step], applicationDashboardTotal.value)}%`,
+    }))
+
+    const kpiWorksheet = xlsx.utils.json_to_sheet(kpiRows)
+    const statusWorksheet = xlsx.utils.json_to_sheet(statusRows)
+    const stepWorksheet = xlsx.utils.json_to_sheet(stepRows)
+    const filterWorksheet = xlsx.utils.json_to_sheet(getApplicationReportFilterExportRows())
+
+    kpiWorksheet['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 32 }]
+    statusWorksheet['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 12 }]
+    stepWorksheet['!cols'] = [{ wch: 42 }, { wch: 12 }, { wch: 12 }]
+    filterWorksheet['!cols'] = [{ wch: 24 }, { wch: 48 }]
+
+    xlsx.utils.book_append_sheet(workbook, kpiWorksheet, 'Dashboard')
+    xlsx.utils.book_append_sheet(workbook, statusWorksheet, 'Statuslar')
+    xlsx.utils.book_append_sheet(workbook, stepWorksheet, 'Bosqichlar')
+    xlsx.utils.book_append_sheet(workbook, filterWorksheet, 'Filterlar')
+
+    const reportDate = new Date().toISOString().slice(0, 10)
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, `iptk-arizalar-dashboard-${reportDate}.xlsx`)
+      pushFeedback('success', 'Dashboard maʼlumotlari Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'application-dashboard-download') {
+      stopLoading()
+    }
+  }
+}
+
 function openApplicationReportRegion(region: string, isTotal: boolean) {
-  if (isTotal || selectedApplicationReportRegion.value) return
+  if (isTotal || selectedApplicationReportRegion.value || appliedApplicationReportDistrictFilter.value.length) return
   clearApplicationReportCellSelection()
   selectedApplicationReportRegion.value = region
 }
@@ -4692,6 +5462,8 @@ function handleApplicationReportCellClick(
 function syncApplicationReportDraftFilters() {
   draftApplicationReportStatusFilter.value = [...appliedApplicationReportStatusFilter.value]
   draftApplicationReportStepFilter.value = [...appliedApplicationReportStepFilter.value]
+  draftApplicationReportRegionFilter.value = [...appliedApplicationReportRegionFilter.value]
+  draftApplicationReportDistrictFilter.value = [...appliedApplicationReportDistrictFilter.value]
   draftApplicationReportMetricFilters.value = Object.fromEntries(
     applicationReportMetricGroups.map((group) => [
       group.key,
@@ -4700,11 +5472,14 @@ function syncApplicationReportDraftFilters() {
   ) as Record<ApplicationReportMetricKey, string[]>
   draftApplicationReportStartDateFilter.value = appliedApplicationReportStartDateFilter.value
   draftApplicationReportEndDateFilter.value = appliedApplicationReportEndDateFilter.value
+  draftApplicationReportSnapshotDateFilter.value = appliedApplicationReportSnapshotDateFilter.value
+  draftApplicationReportComparisonDateFilter.value = appliedApplicationReportComparisonDateFilter.value
 }
 
 function closeApplicationReportFilters() {
   isApplicationReportFilterOpen.value = false
   openApplicationReportFilterField.value = null
+  openApplicationReportCalendarField.value = null
 }
 
 function toggleApplicationReportFilters(nextOpen: boolean) {
@@ -4714,10 +5489,12 @@ function toggleApplicationReportFilters(nextOpen: boolean) {
 
   isApplicationReportFilterOpen.value = nextOpen
   openApplicationReportFilterField.value = null
+  openApplicationReportCalendarField.value = null
 }
 
-function toggleApplicationReportFilterField(field: 'status' | 'step' | ApplicationReportMetricKey) {
+function toggleApplicationReportFilterField(field: 'status' | 'step' | 'region' | 'district' | ApplicationReportMetricKey) {
   openApplicationReportFilterField.value = openApplicationReportFilterField.value === field ? null : field
+  openApplicationReportCalendarField.value = null
 }
 
 function toggleApplicationReportStatusFilter(status: ApplicationReportStatus) {
@@ -4735,6 +5512,27 @@ function toggleApplicationReportStepFilter(step: ApplicationReportStep) {
   draftApplicationReportStepFilter.value = draftApplicationReportStepFilter.value.includes(step)
     ? draftApplicationReportStepFilter.value.filter((item) => item !== step)
     : [...draftApplicationReportStepFilter.value, step]
+}
+
+function toggleApplicationReportRegionFilter(region: string) {
+  draftApplicationReportRegionFilter.value = draftApplicationReportRegionFilter.value.includes(region)
+    ? draftApplicationReportRegionFilter.value.filter((item) => item !== region)
+    : [...draftApplicationReportRegionFilter.value, region]
+
+  const availableDistricts = draftApplicationReportRegionFilter.value
+    .flatMap((selectedRegion) => applicationReportDistricts[selectedRegion] ?? [])
+
+  draftApplicationReportDistrictFilter.value = draftApplicationReportDistrictFilter.value.filter((district) => (
+    availableDistricts.includes(district)
+  ))
+}
+
+function toggleApplicationReportDistrictFilter(district: string) {
+  if (isApplicationReportDistrictFilterDisabled.value) return
+
+  draftApplicationReportDistrictFilter.value = draftApplicationReportDistrictFilter.value.includes(district)
+    ? draftApplicationReportDistrictFilter.value.filter((item) => item !== district)
+    : [...draftApplicationReportDistrictFilter.value, district]
 }
 
 function toggleApplicationReportMetricFilter(key: ApplicationReportMetricKey, option: string) {
@@ -4777,6 +5575,66 @@ function handleApplicationReportEndDateChange(value: unknown) {
   }
 }
 
+function getApplicationReportDateFieldValue(field: ApplicationReportDateField) {
+  if (field === 'start') return draftApplicationReportStartDateFilter.value
+  return draftApplicationReportEndDateFilter.value
+}
+
+function handleApplicationReportDateFieldChange(field: ApplicationReportDateField, value: unknown) {
+  if (field === 'start') {
+    handleApplicationReportStartDateChange(value)
+    return
+  }
+
+  if (field === 'end') {
+    handleApplicationReportEndDateChange(value)
+  }
+}
+
+function openApplicationReportCalendar(field: ApplicationReportDateField) {
+  openApplicationReportCalendarField.value = openApplicationReportCalendarField.value === field ? null : field
+  openApplicationReportFilterField.value = null
+
+  if (!openApplicationReportCalendarField.value) {
+    return
+  }
+
+  applicationReportCalendarMonth.value = calendarMonthFromDisplayDate(getApplicationReportDateFieldValue(field))
+}
+
+function shiftApplicationReportCalendarMonth(direction: -1 | 1) {
+  const monthValue = applicationReportCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString), Number(monthString) - 1 + direction, 1)
+  applicationReportCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function shiftApplicationReportCalendarYear(direction: -1 | 1) {
+  const monthValue = applicationReportCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString) + direction, Number(monthString) - 1, 1)
+  applicationReportCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function selectApplicationReportCalendarDate(field: ApplicationReportDateField, value: string) {
+  handleApplicationReportDateFieldChange(field, value)
+  openApplicationReportCalendarField.value = null
+}
+
+function isApplicationReportCalendarDateSelected(field: ApplicationReportDateField, value: string) {
+  return getApplicationReportDateFieldValue(field) === value
+}
+
 function applyApplicationReportFilters() {
   const stopLoading = startActionLoading('application-report-filter-apply')
   closeApplicationReportFilters()
@@ -4785,6 +5643,8 @@ function applyApplicationReportFilters() {
   runTableLoading(() => {
     appliedApplicationReportStatusFilter.value = [...draftApplicationReportStatusFilter.value]
     appliedApplicationReportStepFilter.value = [...draftApplicationReportStepFilter.value]
+    appliedApplicationReportRegionFilter.value = [...draftApplicationReportRegionFilter.value]
+    appliedApplicationReportDistrictFilter.value = [...draftApplicationReportDistrictFilter.value]
     appliedApplicationReportMetricFilters.value = Object.fromEntries(
       applicationReportMetricGroups.map((group) => [
         group.key,
@@ -4793,6 +5653,15 @@ function applyApplicationReportFilters() {
     ) as Record<ApplicationReportMetricKey, string[]>
     appliedApplicationReportStartDateFilter.value = draftApplicationReportStartDateFilter.value
     appliedApplicationReportEndDateFilter.value = draftApplicationReportEndDateFilter.value
+    appliedApplicationReportSnapshotDateFilter.value = draftApplicationReportSnapshotDateFilter.value
+    appliedApplicationReportComparisonDateFilter.value = draftApplicationReportComparisonDateFilter.value
+    if (
+      selectedApplicationReportRegion.value
+      && appliedApplicationReportRegionFilter.value.length
+      && !appliedApplicationReportRegionFilter.value.includes(selectedApplicationReportRegion.value)
+    ) {
+      selectedApplicationReportRegion.value = null
+    }
     stopLoading()
   })
 }
@@ -4804,6 +5673,8 @@ function clearApplicationReportFilters() {
 
   draftApplicationReportStatusFilter.value = []
   draftApplicationReportStepFilter.value = []
+  draftApplicationReportRegionFilter.value = []
+  draftApplicationReportDistrictFilter.value = []
   draftApplicationReportMetricFilters.value = createApplicationReportMetricFilterState()
   draftApplicationReportStartDateFilter.value = ''
   draftApplicationReportEndDateFilter.value = ''
@@ -4811,6 +5682,8 @@ function clearApplicationReportFilters() {
   runTableLoading(() => {
     appliedApplicationReportStatusFilter.value = []
     appliedApplicationReportStepFilter.value = []
+    appliedApplicationReportRegionFilter.value = []
+    appliedApplicationReportDistrictFilter.value = []
     appliedApplicationReportMetricFilters.value = createApplicationReportMetricFilterState()
     appliedApplicationReportStartDateFilter.value = ''
     appliedApplicationReportEndDateFilter.value = ''
@@ -5004,7 +5877,714 @@ onUnmounted(() => {
       :description="page.description"
     />
 
-    <template v-if="isCommissionCompositionPage">
+    <template v-if="isDashboardPage">
+      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-card p-5">
+        <div class="relative flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-end">
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              class="order-2 h-10 gap-2"
+              :disabled="actionLoadingKey === 'application-dashboard-download'"
+              @click="downloadApplicationDashboard"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'application-dashboard-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download v-else class="h-4 w-4" />
+              Yuklab olish
+            </Button>
+
+            <div class="relative order-1">
+              <div
+                v-if="isApplicationReportFilterOpen"
+                class="fixed inset-0 z-40 bg-background/40 xl:hidden"
+                @click="closeApplicationReportFilters"
+              />
+
+              <Button
+                variant="outline"
+                :class="isApplicationReportFilterOpen ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
+                @click="toggleApplicationReportFilters(!isApplicationReportFilterOpen)"
+              >
+                <LoaderCircle
+                  v-if="actionLoadingKey && actionLoadingKey.startsWith('application-report-filter')"
+                  class="h-4 w-4 animate-spin"
+                />
+                <span
+                  v-else-if="applicationReportActiveFilterCount > 0"
+                  class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-none text-primary-foreground"
+                >
+                  {{ applicationReportActiveFilterCount }}
+                </span>
+                <Filter v-else class="h-4 w-4" />
+                Filter
+              </Button>
+
+              <div
+                v-if="isApplicationReportFilterOpen"
+                class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none xl:absolute xl:right-0 xl:left-auto xl:top-[calc(100%+0.4rem)] xl:w-[21rem] xl:origin-top-right"
+              >
+                <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                    <button
+                      type="button"
+                      class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground"
+                      @click="closeApplicationReportFilters"
+                    >
+                      <X class="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div class="relative space-y-1.5">
+                    <p class="text-sm font-medium text-foreground">Status</p>
+                    <button
+                      type="button"
+                      :class="[
+                        'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                        openApplicationReportFilterField === 'status'
+                          ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                          : 'border-input hover:border-ring',
+                      ]"
+                      @click="toggleApplicationReportFilterField('status')"
+                    >
+                      <span class="truncate">{{ applicationReportStatusFilterLabel }}</span>
+                      <ChevronDown
+                        :class="[
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                          openApplicationReportFilterField === 'status' ? 'rotate-180' : '',
+                        ]"
+                      />
+                    </button>
+                    <div
+                      v-if="openApplicationReportFilterField === 'status'"
+                      class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                    >
+                      <button
+                        v-for="status in applicationReportStatuses"
+                        :key="`dashboard-filter-status-${status}`"
+                        type="button"
+                        class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                        @click="toggleApplicationReportStatusFilter(status)"
+                      >
+                        <span>{{ status }}</span>
+                        <Check
+                          v-if="draftApplicationReportStatusFilter.includes(status)"
+                          class="h-4 w-4 text-primary"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="relative space-y-1.5">
+                    <p class="text-sm font-medium text-foreground">Bosqich</p>
+                    <button
+                      type="button"
+                      :class="[
+                        'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                        openApplicationReportFilterField === 'step'
+                          ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                          : 'border-input hover:border-ring',
+                      ]"
+                      @click="toggleApplicationReportFilterField('step')"
+                    >
+                      <span class="truncate">{{ applicationReportStepFilterLabel }}</span>
+                      <ChevronDown
+                        :class="[
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                          openApplicationReportFilterField === 'step' ? 'rotate-180' : '',
+                        ]"
+                      />
+                    </button>
+                    <div
+                      v-if="openApplicationReportFilterField === 'step'"
+                      class="max-h-64 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                    >
+                      <button
+                        v-for="step in applicationReportStepFilterOptions"
+                        :key="`dashboard-filter-step-${step}`"
+                        type="button"
+                        class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                        @click="toggleApplicationReportStepFilter(step)"
+                      >
+                        <span>{{ step }}</span>
+                        <Check
+                          v-if="draftApplicationReportStepFilter.includes(step)"
+                          class="h-4 w-4 text-primary"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="relative space-y-1.5">
+                    <p class="text-sm font-medium text-foreground">Hudud</p>
+                    <button
+                      type="button"
+                      :class="[
+                        'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                        openApplicationReportFilterField === 'region'
+                          ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                          : 'border-input hover:border-ring',
+                      ]"
+                      @click="toggleApplicationReportFilterField('region')"
+                    >
+                      <span class="truncate">{{ applicationReportRegionFilterLabel }}</span>
+                      <ChevronDown
+                        :class="[
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                          openApplicationReportFilterField === 'region' ? 'rotate-180' : '',
+                        ]"
+                      />
+                    </button>
+                    <div
+                      v-if="openApplicationReportFilterField === 'region'"
+                      class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                    >
+                      <button
+                        v-for="region in applicationReportRegions"
+                        :key="`dashboard-filter-region-${region}`"
+                        type="button"
+                        class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                        @click="toggleApplicationReportRegionFilter(region)"
+                      >
+                        <span>{{ region }}</span>
+                        <Check
+                          v-if="draftApplicationReportRegionFilter.includes(region)"
+                          class="h-4 w-4 text-primary"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="relative space-y-1.5">
+                    <p class="text-sm font-medium text-foreground">Tuman (shahar)</p>
+                    <button
+                      type="button"
+                      :disabled="isApplicationReportDistrictFilterDisabled"
+                      :class="[
+                        'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                        openApplicationReportFilterField === 'district'
+                          ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                          : 'border-input hover:border-ring',
+                      ]"
+                      @click="toggleApplicationReportFilterField('district')"
+                    >
+                      <span class="truncate">{{ applicationReportDistrictFilterLabel }}</span>
+                      <ChevronDown
+                        :class="[
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                          openApplicationReportFilterField === 'district' ? 'rotate-180' : '',
+                        ]"
+                      />
+                    </button>
+                    <div
+                      v-if="openApplicationReportFilterField === 'district'"
+                      class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                    >
+                      <button
+                        v-for="district in applicationReportDistrictFilterOptions"
+                        :key="`dashboard-filter-district-${district}`"
+                        type="button"
+                        class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                        @click="toggleApplicationReportDistrictFilter(district)"
+                      >
+                        <span>{{ district }}</span>
+                        <Check
+                          v-if="draftApplicationReportDistrictFilter.includes(district)"
+                          class="h-4 w-4 text-primary"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    v-for="group in applicationReportMetricFilterGroups"
+                    :key="`dashboard-filter-metric-${group.key}`"
+                    class="relative space-y-1.5"
+                  >
+                    <p class="text-sm font-medium text-foreground">{{ group.label }}</p>
+                    <button
+                      type="button"
+                      :class="[
+                        'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                        openApplicationReportFilterField === group.key
+                          ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                          : 'border-input hover:border-ring',
+                      ]"
+                      @click="toggleApplicationReportFilterField(group.key)"
+                    >
+                      <span class="truncate">{{ getApplicationReportMetricFilterLabel(group.key) }}</span>
+                      <ChevronDown
+                        :class="[
+                          'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                          openApplicationReportFilterField === group.key ? 'rotate-180' : '',
+                        ]"
+                      />
+                    </button>
+                    <div
+                      v-if="openApplicationReportFilterField === group.key"
+                      class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                    >
+                      <button
+                        v-for="option in group.options"
+                        :key="`dashboard-filter-metric-${group.key}-${option}`"
+                        type="button"
+                        class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                        @click="toggleApplicationReportMetricFilter(group.key, option)"
+                      >
+                        <span>{{ option }}</span>
+                        <Check
+                          v-if="draftApplicationReportMetricFilters[group.key].includes(option)"
+                          class="h-4 w-4 text-primary"
+                        />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    v-for="dateFieldGroup in applicationReportDateFieldGroups"
+                    :key="`dashboard-date-group-${dateFieldGroup[0]?.key}`"
+                    class="grid gap-3"
+                  >
+                    <label
+                      v-for="dateField in dateFieldGroup"
+                      :key="`dashboard-date-${dateField.key}`"
+                      class="space-y-1.5 sm:relative"
+                    >
+                      <span class="text-sm font-medium text-foreground">{{ dateField.label }}</span>
+                      <div class="relative space-y-2">
+                        <div class="relative">
+                          <Input
+                            :model-value="getApplicationReportDateFieldValue(dateField.key)"
+                            class="h-10 pr-10"
+                            inputmode="numeric"
+                            maxlength="10"
+                            placeholder="dd.mm.yyyy"
+                            @keydown="preventDateNonDigitKeydown"
+                            @update:model-value="handleApplicationReportDateFieldChange(dateField.key, $event)"
+                          />
+                          <button
+                            type="button"
+                            class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
+                            :aria-label="`${dateField.label}ni tanlash`"
+                            @click="openApplicationReportCalendar(dateField.key)"
+                          >
+                            <CalendarDays class="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        <div
+                          v-if="openApplicationReportCalendarField === dateField.key"
+                          class="rounded-lg border border-border bg-background p-3 shadow-sm sm:absolute sm:left-0 sm:right-0 sm:top-[calc(100%+0.5rem)] sm:z-30"
+                        >
+                          <div class="mb-3 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Oldingi yil" @click="shiftApplicationReportCalendarYear(-1)">
+                                <ChevronsLeft class="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Oldingi oy" @click="shiftApplicationReportCalendarMonth(-1)">
+                                <ChevronLeft class="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <p class="text-sm font-medium text-foreground">{{ applicationReportCalendarMonthLabel }}</p>
+                            <div class="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Keyingi oy" @click="shiftApplicationReportCalendarMonth(1)">
+                                <ChevronRight class="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Keyingi yil" @click="shiftApplicationReportCalendarYear(1)">
+                                <ChevronsRight class="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                            <span v-for="weekday in calendarWeekdays" :key="`dashboard-${dateField.key}-${weekday}`" class="py-1">{{ weekday }}</span>
+                          </div>
+
+                          <div class="grid grid-cols-7 gap-1">
+                            <button
+                              v-for="day in applicationReportCalendarDays"
+                              :key="`dashboard-${dateField.key}-${day.key}`"
+                              type="button"
+                              class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
+                              :class="day.isCurrentMonth
+                                ? isApplicationReportCalendarDateSelected(dateField.key, day.value)
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'text-foreground hover:bg-muted'
+                                : 'pointer-events-none opacity-0'"
+                              :disabled="!day.isCurrentMonth"
+                              @click="selectApplicationReportCalendarDate(dateField.key, day.value)"
+                            >
+                              {{ day.label }}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="flex justify-end gap-2 border-t border-border pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      class="gap-2"
+                      :disabled="isTableLoading || (!applicationReportHasActiveFilters && !applicationReportHasPendingFilterChanges)"
+                      @click="clearApplicationReportFilters"
+                    >
+                      <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-clear'" class="h-4 w-4 animate-spin" />
+                      Tozalash
+                    </Button>
+                    <Button
+                      size="sm"
+                      class="gap-2"
+                      :disabled="isTableLoading || !applicationReportHasPendingFilterChanges"
+                      @click="applyApplicationReportFilters"
+                    >
+                      <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-apply'" class="h-4 w-4 animate-spin" />
+                      Qo'llash
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div
+            v-for="item in applicationDashboardKpis"
+            :key="item.label"
+            class="flex min-h-[15.5rem] flex-col rounded-xl border border-border bg-background p-4"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-medium text-muted-foreground">{{ item.label }}</p>
+                <p class="mt-2 text-3xl font-semibold leading-none text-foreground">{{ item.value }}</p>
+              </div>
+              <div :class="cn('flex h-10 w-10 items-center justify-center rounded-lg border', item.className)">
+                <component
+                  :is="item.icon"
+                  class="h-5 w-5"
+                />
+              </div>
+            </div>
+            <p class="mt-3 text-xs text-muted-foreground">{{ item.note }}</p>
+            <div
+              v-if="item.status"
+              class="mt-4 flex-1 border-t border-border pt-3"
+            >
+              <div
+                v-for="step in getApplicationDashboardStatusSteps(item.status)"
+                :key="step.label"
+                class="flex items-center justify-between gap-3 py-1 text-xs"
+              >
+                <span class="min-w-0 truncate text-muted-foreground">{{ step.label }}</span>
+                <span class="shrink-0 font-semibold text-foreground">{{ step.value }} ({{ step.percent }}%)</span>
+              </div>
+            </div>
+            <div
+              v-else
+              class="mt-4 flex-1 border-t border-border pt-3"
+            >
+              <p class="text-xs text-muted-foreground">Barcha statuslar bo‘yicha umumiy ko‘rsatkich.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-border bg-background p-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-base font-semibold text-foreground">Statuslar bo'yicha oylik dinamika</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span
+                v-for="item in applicationDashboardAreaChart.series"
+                :key="item.label"
+                class="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
+              >
+                <span
+                  class="h-2.5 w-2.5 rounded-full"
+                  :style="{ backgroundColor: item.stroke }"
+                />
+                {{ item.label }}: {{ item.total }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-5 w-full overflow-hidden">
+            <svg
+              class="block h-auto w-full max-w-full overflow-visible"
+              :viewBox="`0 0 ${applicationDashboardAreaChart.width} ${applicationDashboardAreaChart.height}`"
+              preserveAspectRatio="xMidYMid meet"
+              role="img"
+              aria-label="Oylar va statuslar bo'yicha arizalar area chart"
+            >
+              <defs>
+                <linearGradient
+                  v-for="item in applicationDashboardAreaChart.series"
+                  :id="item.fillId"
+                  :key="item.fillId"
+                  x1="0"
+                  x2="0"
+                  y1="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    :stop-color="item.stroke"
+                    stop-opacity="0.24"
+                  />
+                  <stop
+                    offset="100%"
+                    :stop-color="item.stroke"
+                    stop-opacity="0.02"
+                  />
+                </linearGradient>
+              </defs>
+
+              <g>
+                <line
+                  v-for="line in applicationDashboardAreaChart.gridLines"
+                  :key="`grid-${line.label}`"
+                  :x1="applicationDashboardAreaChart.leftX"
+                  :x2="applicationDashboardAreaChart.rightX"
+                  :y1="line.y"
+                  :y2="line.y"
+                  class="stroke-border"
+                  stroke-dasharray="4 6"
+                />
+                <text
+                  v-for="line in applicationDashboardAreaChart.gridLines"
+                  :key="`grid-label-${line.label}`"
+                  x="18"
+                  :y="line.y + 4"
+                  class="fill-muted-foreground text-[11px]"
+                >
+                  {{ line.label }}
+                </text>
+              </g>
+
+              <g>
+                <path
+                  v-for="item in applicationDashboardAreaChart.series"
+                  :key="`area-${item.label}`"
+                  :d="item.areaPath"
+                  :fill="`url(#${item.fillId})`"
+                />
+                <path
+                  v-for="item in applicationDashboardAreaChart.series"
+                  :key="`line-${item.label}`"
+                  :d="item.linePath"
+                  fill="none"
+                  :stroke="item.stroke"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2.4"
+                />
+                <g
+                  v-for="item in applicationDashboardAreaChart.series"
+                  :key="`points-${item.label}`"
+                >
+                  <circle
+                    v-for="point in item.points"
+                    :key="`${item.label}-${point.label}`"
+                    :cx="point.x"
+                    :cy="point.y"
+                    r="2.8"
+                    :fill="item.stroke"
+                    class="stroke-background"
+                    stroke-width="2"
+                  />
+                </g>
+              </g>
+
+              <g>
+                <line
+                  :x1="applicationDashboardAreaChart.leftX"
+                  :x2="applicationDashboardAreaChart.rightX"
+                  :y1="applicationDashboardAreaChart.bottomY"
+                  :y2="applicationDashboardAreaChart.bottomY"
+                  class="stroke-border"
+                />
+                <text
+                  v-for="month in applicationDashboardAreaChart.monthPoints"
+                  :key="month.label"
+                  :x="month.x"
+                  :y="applicationDashboardAreaChart.bottomY + 26"
+                  text-anchor="middle"
+                  class="fill-muted-foreground text-[11px]"
+                >
+                  {{ month.label }}
+                </text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div v-if="false" class="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div class="rounded-xl border border-border bg-background p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-base font-semibold text-foreground">Arizalar dinamikasi</p>
+                <p class="text-sm text-muted-foreground">Oylar kesimida kelib tushgan arizalar</p>
+              </div>
+              <span class="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+                <TrendingUp class="h-4 w-4 text-primary" />
+                Yillik ko‘rinish
+              </span>
+            </div>
+            <div class="mt-6 flex h-56 items-end gap-2 overflow-hidden">
+              <div
+                v-for="item in applicationDashboardMonthlyTrend"
+                :key="item.label"
+                class="flex min-w-0 flex-1 flex-col items-center gap-2"
+              >
+                <div class="flex h-44 w-full items-end rounded-t-lg bg-muted/45 px-1">
+                  <div
+                    class="w-full rounded-t-md bg-primary/80 transition-all duration-300 ease-out"
+                    :style="{ height: `${item.percent}%` }"
+                  />
+                </div>
+                <div class="text-center">
+                  <p class="text-xs font-medium text-foreground">{{ item.value }}</p>
+                  <p class="text-[11px] text-muted-foreground">{{ item.label }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-border bg-background p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-base font-semibold text-foreground">Statuslar</p>
+                <p class="text-sm text-muted-foreground">Jami arizalarga nisbatan ulush</p>
+              </div>
+              <BarChart3 class="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div class="mt-5 space-y-4">
+              <div
+                v-for="item in applicationDashboardStatusSummary"
+                :key="item.label"
+                class="space-y-2"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', item.className)">
+                    {{ item.label }}
+                  </span>
+                  <span class="text-sm font-semibold text-foreground">{{ item.value }} / {{ item.percent }}%</span>
+                </div>
+                <div class="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+                    :style="{ width: `${item.percent}%` }"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            v-for="card in applicationDashboardDistributionCards"
+            :key="card.title"
+            class="rounded-xl border border-border bg-background p-4"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-base font-semibold text-foreground">{{ card.title }}</p>
+                <p class="text-sm text-muted-foreground">{{ card.description }}</p>
+              </div>
+              <component :is="card.icon" class="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div class="mt-5 space-y-3">
+              <div
+                v-for="item in card.items"
+                :key="item.label"
+                class="space-y-1.5"
+              >
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="truncate text-foreground">{{ item.label }}</span>
+                  <span class="flex shrink-0 items-center gap-1.5">
+                    <span class="font-semibold text-foreground">{{ item.value }}</span>
+                  </span>
+                </div>
+                <div class="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    :class="['h-full rounded-full', card.barClass]"
+                    :style="{ width: `${item.percent}%` }"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-border bg-background p-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p class="text-base font-semibold text-foreground">Hududlar bo'yicha statuslar</p>
+              <p class="text-sm text-muted-foreground">Har bir hududdagi arizalar statuslar bo'yicha taqsimlangan</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span
+                v-for="status in applicationReportStatuses"
+                :key="`dashboard-region-legend-${status}`"
+                class="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground"
+              >
+                <span :class="['h-2.5 w-2.5 rounded-full', applicationDashboardStatusBarClassMap[status]]" />
+                {{ status }}
+              </span>
+            </div>
+          </div>
+          <div class="mt-5 overflow-x-auto pb-2">
+            <div class="flex min-w-max items-end gap-4 pr-2">
+              <div
+                v-for="item in applicationDashboardRegionBars"
+                :key="item.region"
+                class="flex w-28 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-card p-3"
+              >
+                <p class="text-sm font-semibold leading-none text-foreground">{{ item.total }}</p>
+
+                <div class="flex h-56 w-full items-end rounded-xl bg-muted/50 px-3 py-2">
+                  <div
+                    class="flex w-full min-w-0 flex-col-reverse overflow-hidden rounded-lg bg-muted transition-[height] duration-300 ease-out"
+                    :style="{ height: `${item.percent}%` }"
+                    :title="`${item.region}: ${item.total}`"
+                  >
+                    <div
+                      v-for="segment in item.segments"
+                      v-show="segment.value > 0"
+                      :key="`${item.region}-${segment.status}`"
+                      :class="['w-full', segment.barClass]"
+                      :style="{ height: `${segment.percent}%` }"
+                      :title="`${segment.status}: ${segment.value} (${segment.percent}%)`"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex w-full justify-center gap-1">
+                  <span
+                    v-for="segment in item.segments"
+                    :key="`${item.region}-${segment.status}-value`"
+                    :class="cn('inline-flex min-w-6 justify-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium', segment.badgeClass)"
+                  >
+                    {{ segment.value }}
+                  </span>
+                </div>
+
+                <p class="h-10 w-full overflow-hidden text-center text-xs font-medium leading-5 text-muted-foreground">
+                  {{ item.region }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <template v-else-if="isCommissionCompositionPage">
       <div
         v-if="feedback"
         :class="[
@@ -5062,14 +6642,14 @@ onUnmounted(() => {
 
             <div class="flex flex-wrap items-center gap-2">
               <Button
-                class="h-10 gap-2"
+                class="order-3 h-10 gap-2"
                 @click="openCreateDialog"
               >
                 <Plus class="h-4 w-4" />
                 Yaratish
               </Button>
 
-              <div class="relative">
+              <div class="relative order-1">
                 <div
                   v-if="isFilterOpen"
                   class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
@@ -5231,6 +6811,7 @@ onUnmounted(() => {
                             inputmode="numeric"
                             maxlength="10"
                             placeholder="dd.mm.yyyy"
+                            @keydown="preventDateNonDigitKeydown"
                             @update:model-value="handleStartDateFilterChange"
                           />
                           <button
@@ -5334,6 +6915,7 @@ onUnmounted(() => {
                             inputmode="numeric"
                             maxlength="10"
                             placeholder="dd.mm.yyyy"
+                            @keydown="preventDateNonDigitKeydown"
                             @update:model-value="handleEndDateFilterChange"
                           />
                           <button
@@ -5460,7 +7042,7 @@ onUnmounted(() => {
 
               <Button
                 variant="outline"
-                class="h-10 gap-2"
+                class="order-2 h-10 gap-2"
                 :disabled="actionLoadingKey === 'commission-download'"
                 @click="downloadCommissions"
               >
@@ -6692,7 +8274,7 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <div class="relative">
+            <div class="relative order-1">
               <div
                 v-if="isAssessmentFilterOpen"
                 class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
@@ -6826,7 +8408,7 @@ onUnmounted(() => {
                     <span class="font-medium text-foreground">Boshlanish sanasi</span>
                     <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                       <div class="relative">
-                        <Input :model-value="draftAssessmentStartDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @update:model-value="handleAssessmentStartDateFilterChange" />
+                        <Input :model-value="draftAssessmentStartDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @keydown="preventDateNonDigitKeydown" @update:model-value="handleAssessmentStartDateFilterChange" />
                         <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground" @click="openAssessmentCalendar('start')">
                           <CalendarDays class="h-4 w-4" />
                         </button>
@@ -6857,7 +8439,7 @@ onUnmounted(() => {
                     <span class="font-medium text-foreground">Tugash sanasi</span>
                     <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                       <div class="relative">
-                        <Input :model-value="draftAssessmentEndDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @update:model-value="handleAssessmentEndDateFilterChange" />
+                        <Input :model-value="draftAssessmentEndDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @keydown="preventDateNonDigitKeydown" @update:model-value="handleAssessmentEndDateFilterChange" />
                         <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground" @click="openAssessmentCalendar('end')">
                           <CalendarDays class="h-4 w-4" />
                         </button>
@@ -6900,7 +8482,7 @@ onUnmounted(() => {
 
             <Button
               variant="outline"
-              class="h-10 gap-2"
+              class="order-2 h-10 gap-2"
               :disabled="actionLoadingKey === 'assessment-download'"
               @click="downloadAssessments"
             >
@@ -7575,7 +9157,7 @@ onUnmounted(() => {
 
           <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Button
-              class="h-10 w-full gap-2 sm:w-auto"
+              class="order-2 h-10 w-full gap-2 sm:w-auto"
               @click="openCreateServiceTypeDialog"
             >
               <Plus class="h-4 w-4" />
@@ -7583,7 +9165,7 @@ onUnmounted(() => {
             </Button>
             <Button
               variant="outline"
-              class="h-10 w-full gap-2 sm:w-auto"
+              class="order-1 h-10 w-full gap-2 sm:w-auto"
               @click="downloadServiceTypes"
             >
               <Download class="h-4 w-4" />
@@ -8413,7 +9995,7 @@ onUnmounted(() => {
 
           <div class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
             <Button
-              class="h-10 w-full gap-2 sm:w-auto"
+              class="order-2 h-10 w-full gap-2 sm:w-auto"
               @click="openCreateDiagnosisDialog"
             >
               <Plus class="h-4 w-4" />
@@ -8421,7 +10003,7 @@ onUnmounted(() => {
             </Button>
             <Button
               variant="outline"
-              class="h-10 w-full gap-2 sm:w-auto"
+              class="order-1 h-10 w-full gap-2 sm:w-auto"
               @click="downloadDiagnoses"
             >
               <Download class="h-4 w-4" />
@@ -9063,7 +10645,7 @@ onUnmounted(() => {
           <div class="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
-              class="h-10 gap-2"
+              class="order-2 h-10 gap-2"
               :disabled="actionLoadingKey === 'application-report-download'"
               @click="downloadApplicationReport"
             >
@@ -9075,7 +10657,7 @@ onUnmounted(() => {
               Yuklab olish
             </Button>
 
-            <div class="relative">
+            <div class="relative order-1">
             <div
               v-if="isApplicationReportFilterOpen"
               class="fixed inset-0 z-40 bg-background/40 xl:hidden"
@@ -9197,6 +10779,87 @@ onUnmounted(() => {
                   </div>
                 </div>
 
+                <div class="relative space-y-1.5">
+                  <p class="text-sm font-medium text-foreground">Hudud</p>
+                  <button
+                    type="button"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out',
+                      openApplicationReportFilterField === 'region'
+                        ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                        : 'border-input hover:border-ring',
+                    ]"
+                    @click="toggleApplicationReportFilterField('region')"
+                  >
+                    <span class="truncate">{{ applicationReportRegionFilterLabel }}</span>
+                    <ChevronDown
+                      :class="[
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                        openApplicationReportFilterField === 'region' ? 'rotate-180' : '',
+                      ]"
+                    />
+                  </button>
+                  <div
+                    v-if="openApplicationReportFilterField === 'region'"
+                    class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                  >
+                    <button
+                      v-for="region in applicationReportRegions"
+                      :key="`report-filter-region-${region}`"
+                      type="button"
+                      class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                      @click="toggleApplicationReportRegionFilter(region)"
+                    >
+                      <span>{{ region }}</span>
+                      <Check
+                        v-if="draftApplicationReportRegionFilter.includes(region)"
+                        class="h-4 w-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="relative space-y-1.5">
+                  <p class="text-sm font-medium text-foreground">Tuman (shahar)</p>
+                  <button
+                    type="button"
+                    :disabled="isApplicationReportDistrictFilterDisabled"
+                    :class="[
+                      'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60',
+                      openApplicationReportFilterField === 'district'
+                        ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
+                        : 'border-input hover:border-ring',
+                    ]"
+                    @click="toggleApplicationReportFilterField('district')"
+                  >
+                    <span class="truncate">{{ applicationReportDistrictFilterLabel }}</span>
+                    <ChevronDown
+                      :class="[
+                        'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
+                        openApplicationReportFilterField === 'district' ? 'rotate-180' : '',
+                      ]"
+                    />
+                  </button>
+                  <div
+                    v-if="openApplicationReportFilterField === 'district'"
+                    class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+                  >
+                    <button
+                      v-for="district in applicationReportDistrictFilterOptions"
+                      :key="`report-filter-district-${district}`"
+                      type="button"
+                      class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
+                      @click="toggleApplicationReportDistrictFilter(district)"
+                    >
+                      <span>{{ district }}</span>
+                      <Check
+                        v-if="draftApplicationReportDistrictFilter.includes(district)"
+                        class="h-4 w-4 text-primary"
+                      />
+                    </button>
+                  </div>
+                </div>
+
                 <div
                   v-for="group in applicationReportMetricFilterGroups"
                   :key="`report-filter-metric-${group.key}`"
@@ -9241,34 +10904,84 @@ onUnmounted(() => {
                   </div>
                 </div>
 
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label class="space-y-1.5">
-                    <span class="text-sm font-medium text-foreground">Boshlanish sanasi</span>
-                    <div class="relative">
-                      <Input
-                        :model-value="draftApplicationReportStartDateFilter"
-                        class="h-10 pr-10"
-                        inputmode="numeric"
-                        maxlength="10"
-                        placeholder="dd.mm.yyyy"
-                        @update:model-value="handleApplicationReportStartDateChange"
-                      />
-                      <CalendarDays class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                  </label>
+                <div
+                  v-for="dateFieldGroup in applicationReportDateFieldGroups"
+                  :key="`report-date-group-${dateFieldGroup[0]?.key}`"
+                  class="grid gap-3"
+                >
+                  <label
+                    v-for="dateField in dateFieldGroup"
+                    :key="`report-date-${dateField.key}`"
+                    class="space-y-1.5 sm:relative"
+                  >
+                    <span class="text-sm font-medium text-foreground">{{ dateField.label }}</span>
+                    <div class="relative space-y-2">
+                      <div class="relative">
+                        <Input
+                          :model-value="getApplicationReportDateFieldValue(dateField.key)"
+                          class="h-10 pr-10"
+                          inputmode="numeric"
+                          maxlength="10"
+                          placeholder="dd.mm.yyyy"
+                          @keydown="preventDateNonDigitKeydown"
+                          @update:model-value="handleApplicationReportDateFieldChange(dateField.key, $event)"
+                        />
+                        <button
+                          type="button"
+                          class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
+                          :aria-label="`${dateField.label}ni tanlash`"
+                          @click="openApplicationReportCalendar(dateField.key)"
+                        >
+                          <CalendarDays class="h-4 w-4" />
+                        </button>
+                      </div>
 
-                  <label class="space-y-1.5">
-                    <span class="text-sm font-medium text-foreground">Tugash sanasi</span>
-                    <div class="relative">
-                      <Input
-                        :model-value="draftApplicationReportEndDateFilter"
-                        class="h-10 pr-10"
-                        inputmode="numeric"
-                        maxlength="10"
-                        placeholder="dd.mm.yyyy"
-                        @update:model-value="handleApplicationReportEndDateChange"
-                      />
-                      <CalendarDays class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <div
+                        v-if="openApplicationReportCalendarField === dateField.key"
+                        class="rounded-lg border border-border bg-background p-3 shadow-sm sm:absolute sm:left-0 sm:right-0 sm:top-[calc(100%+0.5rem)] sm:z-30"
+                      >
+                        <div class="mb-3 flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Oldingi yil" @click="shiftApplicationReportCalendarYear(-1)">
+                              <ChevronsLeft class="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Oldingi oy" @click="shiftApplicationReportCalendarMonth(-1)">
+                              <ChevronLeft class="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p class="text-sm font-medium text-foreground">{{ applicationReportCalendarMonthLabel }}</p>
+                          <div class="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Keyingi oy" @click="shiftApplicationReportCalendarMonth(1)">
+                              <ChevronRight class="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" class="h-8 w-8 p-0" aria-label="Keyingi yil" @click="shiftApplicationReportCalendarYear(1)">
+                              <ChevronsRight class="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                          <span v-for="weekday in calendarWeekdays" :key="`report-${dateField.key}-${weekday}`" class="py-1">{{ weekday }}</span>
+                        </div>
+
+                        <div class="grid grid-cols-7 gap-1">
+                          <button
+                            v-for="day in applicationReportCalendarDays"
+                            :key="`report-${dateField.key}-${day.key}`"
+                            type="button"
+                            class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
+                            :class="day.isCurrentMonth
+                              ? isApplicationReportCalendarDateSelected(dateField.key, day.value)
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-foreground hover:bg-muted'
+                              : 'pointer-events-none opacity-0'"
+                            :disabled="!day.isCurrentMonth"
+                            @click="selectApplicationReportCalendarDate(dateField.key, day.value)"
+                          >
+                            {{ day.label }}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </label>
                 </div>
@@ -9392,10 +11105,10 @@ onUnmounted(() => {
                   >
                     <button
                       type="button"
-                      :disabled="row.isTotal || Boolean(selectedApplicationReportRegion)"
+                      :disabled="row.isTotal || Boolean(selectedApplicationReportRegion) || Boolean(appliedApplicationReportDistrictFilter.length)"
                       :class="[
                         'inline-flex items-center text-left transition-colors duration-200 ease-out',
-                        !row.isTotal && !selectedApplicationReportRegion
+                        !row.isTotal && !selectedApplicationReportRegion && !appliedApplicationReportDistrictFilter.length
                           ? 'cursor-pointer hover:text-primary focus-visible:outline-none focus-visible:text-primary'
                           : 'cursor-default disabled:opacity-100',
                       ]"

@@ -3883,14 +3883,14 @@ watch(serviceRecipientLookupResult, () => {
                 v-if="isIptkApplicationsListPage"
                 variant="outline"
                 size="icon"
-                class="h-10 w-10"
+                class="order-4 h-10 w-10"
                 aria-label="Umumiy flow"
                 @click="openIptkFlowDialog"
               >
                 <Info class="h-4 w-4" />
               </Button>
               <Button
-                class="h-10 gap-2"
+                class="order-3 h-10 gap-2"
                 @click="openCreateDialog"
               >
                 <Plus class="h-4 w-4" />
@@ -3898,7 +3898,7 @@ watch(serviceRecipientLookupResult, () => {
               </Button>
               <div
                 ref="filterAnchorRef"
-                class="relative"
+                class="relative order-1"
               >
                 <div
                   v-if="isFiltersOpen"
@@ -4394,7 +4394,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
               <Button
                 variant="outline"
-                class="h-10 gap-2"
+                class="order-2 h-10 gap-2"
                 :disabled="isExporting"
                 @click="downloadApplicationsAsExcel"
               >
