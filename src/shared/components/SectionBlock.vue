@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from '@/shared/i18n'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/shadcn/card'
 
 defineProps<{
@@ -7,6 +8,8 @@ defineProps<{
   class?: string
   contentClass?: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -16,13 +19,13 @@ defineProps<{
       class="pb-3"
     >
       <CardTitle v-if="title">
-        {{ title }}
+        {{ t(title) }}
       </CardTitle>
       <p
         v-if="description"
         class="text-sm text-muted-foreground"
       >
-        {{ description }}
+        {{ t(description) }}
       </p>
     </CardHeader>
     <CardContent :class="contentClass || 'space-y-4'">

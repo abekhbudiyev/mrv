@@ -8,28 +8,29 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger,
 } from 'reka-ui'
+import { useI18n } from '@/shared/i18n'
+import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/shadcn/button'
 
-const languages = [
-  "O'zbek",
-  'Ўзбек',
-  'Рус',
-  'English',
-]
-
-const selectedLanguage = ref(languages[0])
+const { languages, currentLanguage, locale, setLocale } = useI18n()
+const isOpen = ref(false)
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot v-model:open="isOpen">
     <DropdownMenuTrigger as-child>
       <Button
         variant="outline"
-        size="icon"
-        class="h-10 w-10"
+        :class="cn(
+          'h-10 gap-2 px-3 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2',
+          isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
+        )"
         aria-label="Til tanlash"
       >
         <Languages class="h-4 w-4" />
+        <span class="min-w-7 text-xs font-semibold uppercase">
+          {{ currentLanguage?.shortLabel ?? 'UZ' }}
+        </span>
       </Button>
     </DropdownMenuTrigger>
 
@@ -41,13 +42,16 @@ const selectedLanguage = ref(languages[0])
       >
         <DropdownMenuItem
           v-for="language in languages"
-          :key="language"
-          class="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 text-sm outline-none transition-colors duration-200 ease-out hover:bg-muted"
-          @select="selectedLanguage = language"
+          :key="language.code"
+          :class="[
+            'flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 text-sm outline-none transition-colors duration-200 ease-out hover:bg-muted',
+            locale === language.code ? 'bg-primary/10 text-foreground' : '',
+          ]"
+          @select="setLocale(language.code)"
         >
-          <span>{{ language }}</span>
+          <span>{{ language.label }}</span>
           <Check
-            v-if="selectedLanguage === language"
+            v-if="locale === language.code"
             class="h-4 w-4 text-primary"
           />
         </DropdownMenuItem>

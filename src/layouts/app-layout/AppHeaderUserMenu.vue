@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { LogOut, UserRound } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
@@ -12,10 +12,12 @@ import {
 } from 'reka-ui'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/shadcn/button'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const isOpen = ref(false)
 
 const userLabel = computed(() => authStore.currentUser?.fullName ?? 'Operator')
 const userRole = computed(() => authStore.currentUser?.role ?? 'Foydalanuvchi')
@@ -27,11 +29,14 @@ async function handleLogout() {
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot v-model:open="isOpen">
     <DropdownMenuTrigger as-child>
       <Button
         variant="outline"
-        class="justify-between gap-3 px-3"
+        :class="cn(
+          'justify-between gap-3 px-3 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2',
+          isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
+        )"
       >
         <div class="flex items-center gap-2">
           <div class="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">

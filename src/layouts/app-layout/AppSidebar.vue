@@ -8,6 +8,7 @@ import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
+import { useI18n } from '@/shared/i18n'
 import { cn } from '@/shared/lib/utils'
 
 defineProps<{
@@ -20,6 +21,7 @@ defineEmits<{
 
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 const modules = computed(() => appModules.filter((module) => (
   module.enabled && authStore.hasPermission(module.permission)
 )))
@@ -39,14 +41,14 @@ const brandHomeRoute = computed(() => {
 
 const currentModuleLabel = computed(() => {
   if (route.path === '/apps') {
-    return 'Modullar'
+    return t('Modullar')
   }
 
   if (typeof route.meta.moduleTitle === 'string') {
-    return route.meta.moduleTitle
+    return t(route.meta.moduleTitle)
   }
 
-  return String(route.meta.title ?? 'Modul')
+  return t(String(route.meta.title ?? 'Modul'))
 })
 
 const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
@@ -150,7 +152,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 ? 'border border-primary/35 bg-primary/12 text-foreground'
                 : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
             )"
-            :title="collapsed ? item.title : undefined"
+            :title="collapsed ? t(item.title) : undefined"
           >
             <component
               :is="item.icon"
@@ -160,7 +162,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               v-if="!collapsed"
               class="truncate"
             >
-              {{ item.title }}
+              {{ t(item.title) }}
             </span>
           </RouterLink>
 
@@ -172,7 +174,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'w-full px-3 py-2',
                 isItemActive(item) ? 'bg-primary/10 text-foreground' : 'text-sidebar-foreground',
               )"
-              :title="collapsed ? item.title : undefined"
+              :title="collapsed ? t(item.title) : undefined"
               @click="toggleSection(item.id)"
             >
               <component
@@ -183,7 +185,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 v-if="!collapsed"
                 class="truncate font-medium"
               >
-                {{ item.title }}
+                {{ t(item.title) }}
               </span>
               <ChevronDown
                 v-if="!collapsed"
@@ -217,7 +219,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                   )"
                 >
-                  <span class="truncate">{{ child.title }}</span>
+                  <span class="truncate">{{ t(child.title) }}</span>
                 </RouterLink>
               </div>
             </Transition>
@@ -233,7 +235,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
           v-if="!collapsed"
           class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
         >
-          Modullar
+          {{ t('Modullar') }}
         </p>
 
         <RouterLink
@@ -247,7 +249,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               ? 'border border-primary/35 bg-primary/12 text-foreground'
               : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
           )"
-          :title="collapsed ? module.title : undefined"
+          :title="collapsed ? t(module.title) : undefined"
         >
           <component
             :is="module.icon"
@@ -257,7 +259,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             v-if="!collapsed"
             class="truncate"
           >
-            {{ module.title }}
+            {{ t(module.title) }}
           </span>
         </RouterLink>
       </div>

@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import type { AppModule } from '@/features/apps/types'
+import { useI18n } from '@/shared/i18n'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 
 defineProps<{
   app: AppModule
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -21,10 +24,10 @@ defineProps<{
         </div>
         <div class="min-w-0 space-y-1">
           <h3 class="text-sm font-semibold text-foreground">
-            {{ app.title }}
+            {{ t(app.title) }}
           </h3>
           <p class="text-sm leading-6 text-muted-foreground">
-            {{ app.description }}
+            {{ t(app.description) }}
           </p>
         </div>
       </div>
@@ -35,7 +38,7 @@ defineProps<{
             variant="outline"
             class="w-full justify-center"
           >
-            Ochish
+            {{ t('Ochish') }}
           </Button>
         </RouterLink>
       </div>
