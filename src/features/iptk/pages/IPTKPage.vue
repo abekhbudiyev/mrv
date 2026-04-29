@@ -16,6 +16,7 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
+import { useI18n } from '@/shared/i18n'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
@@ -228,6 +229,8 @@ interface DiagnosisForm {
 const props = defineProps<{
   pageKey: string
 }>()
+
+const { t } = useI18n()
 
 const page = computed(() => getIPTKPage(props.pageKey))
 const isDashboardPage = computed(() => props.pageKey === 'dashboard')
@@ -5891,7 +5894,7 @@ onUnmounted(() => {
                 class="h-4 w-4 animate-spin"
               />
               <Download v-else class="h-4 w-4" />
-              Yuklab olish
+              {{ t('Yuklab olish') }}
             </Button>
 
             <div class="relative order-1">
@@ -5917,7 +5920,7 @@ onUnmounted(() => {
                   {{ applicationReportActiveFilterCount }}
                 </span>
                 <Filter v-else class="h-4 w-4" />
-                Filter
+                {{ t('Filter') }}
               </Button>
 
               <div
@@ -5926,7 +5929,7 @@ onUnmounted(() => {
               >
                 <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
                   <div class="flex items-center justify-between gap-3">
-                    <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                    <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                     <button
                       type="button"
                       class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground"
@@ -5937,7 +5940,7 @@ onUnmounted(() => {
                   </div>
 
                   <div class="relative space-y-1.5">
-                    <p class="text-sm font-medium text-foreground">Status</p>
+                    <p class="text-sm font-medium text-foreground">{{ t('Status') }}</p>
                     <button
                       type="button"
                       :class="[
@@ -6642,8 +6645,8 @@ onUnmounted(() => {
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 :model-value="searchInput"
-                class="pl-9"
-                placeholder="Qidirish"
+                          class="pl-9"
+                          :placeholder="t('Qidirish')"
                 @update:model-value="handleSearchInput(String($event ?? ''))"
               />
             </div>
@@ -6683,7 +6686,7 @@ onUnmounted(() => {
                     v-else
                     class="h-4 w-4"
                   />
-                  Filter
+                  {{ t('Filter') }}
                 </Button>
 
                 <div
@@ -6692,7 +6695,7 @@ onUnmounted(() => {
                 >
                   <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
                     <div class="flex items-center justify-between gap-2">
-                      <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                      <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -6704,7 +6707,7 @@ onUnmounted(() => {
                     </div>
 
                     <label class="space-y-2 text-sm xl:relative xl:space-y-0">
-                      <span class="font-medium text-foreground">Status</span>
+                      <span class="font-medium text-foreground">{{ t('Status') }}</span>
                       <div class="space-y-2 xl:mt-2 xl:space-y-0">
                         <button
                           type="button"
@@ -7076,7 +7079,7 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                   <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                  <span>Yuklanmoqda...</span>
+                  <span>{{ t('Yuklanmoqda...') }}</span>
                 </div>
               </div>
               <div
@@ -7208,7 +7211,7 @@ onUnmounted(() => {
 
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Rais o'rinbosari
+                          {{ t("Rais o'rinbosari") }}
                         </p>
                         <p class="mt-1 font-medium uppercase text-foreground">
                           {{ normalizeFullName(record.deputyChair) }}
@@ -7220,7 +7223,7 @@ onUnmounted(() => {
 
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Kotib
+                          {{ t('Kotib') }}
                         </p>
                         <p class="mt-1 font-medium uppercase text-foreground">
                           {{ normalizeFullName(record.secretary) }}
@@ -7232,7 +7235,7 @@ onUnmounted(() => {
 
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          A'zolar
+                          {{ t("A'zolar") }}
                         </p>
                         <p class="mt-1 font-medium text-foreground">
                           {{ record.members.length }} ta
@@ -7241,7 +7244,7 @@ onUnmounted(() => {
 
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Hudud
+                          {{ t('Hudud') }}
                         </p>
                         <p class="mt-1 font-medium text-foreground">
                           {{ record.region }}
@@ -7261,20 +7264,20 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                   <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                  <span>Yuklanmoqda...</span>
+                  <span>{{ t('Yuklanmoqda...') }}</span>
                 </div>
               </div>
               <table class="min-w-[1380px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
-                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Hujjat</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Rais</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Rais o'rinbosari</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Kotib</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">A'zolar</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Hudud</th>
-                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Rais') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Rais o'rinbosari") }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Kotib') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("A'zolar") }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hudud') }}</th>
+                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -7285,10 +7288,10 @@ onUnmounted(() => {
                     >
                       <div class="mx-auto flex max-w-md flex-col items-center gap-2">
                         <p class="text-sm font-medium text-foreground">
-                          Ma'lumot topilmadi
+                          {{ t("Ma'lumot topilmadi") }}
                         </p>
                         <p class="text-sm text-muted-foreground">
-                          Qidiruv yoki filter shartlariga mos yozuv topilmadi.
+                          {{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}
                         </p>
                         <Button
                           variant="outline"
@@ -7296,7 +7299,7 @@ onUnmounted(() => {
                           class="mt-2"
                           @click="resetSearchAndFilters"
                         >
-                          Tozalash
+                          {{ t('Tozalash') }}
                         </Button>
                       </div>
                     </td>
@@ -7331,7 +7334,7 @@ onUnmounted(() => {
                               @click="viewCommission(record)"
                             >
                               <Eye class="h-4 w-4 shrink-0" />
-                              <span>Ko'rish</span>
+                              <span>{{ t("Ko'rish") }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
@@ -7339,7 +7342,7 @@ onUnmounted(() => {
                               @click="editCommission(record)"
                             >
                               <Pencil class="h-4 w-4 shrink-0" />
-                              <span>Tahrirlash</span>
+                              <span>{{ t('Tahrirlash') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
@@ -7347,7 +7350,7 @@ onUnmounted(() => {
                               @click="requestSendCommission(record)"
                             >
                               <Check class="h-4 w-4 shrink-0" />
-                              <span>Yuborish</span>
+                              <span>{{ t('Yuborish') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               v-if="record.status === 'Yuborilgan'"
@@ -7355,7 +7358,7 @@ onUnmounted(() => {
                               @click="requestApproveCommission(record)"
                             >
                               <CheckCheck class="h-4 w-4 shrink-0" />
-                              <span>Tasdiqlash</span>
+                              <span>{{ t('Tasdiqlash') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               v-if="record.status === 'Yuborilgan'"
@@ -7363,7 +7366,7 @@ onUnmounted(() => {
                               @click="requestRejectCommission(record)"
                             >
                               <X class="h-4 w-4 shrink-0" />
-                              <span>Bekor qilish</span>
+                              <span>{{ t('Bekor qilish') }}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenuPortal>
@@ -7420,7 +7423,7 @@ onUnmounted(() => {
             <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
             <div class="flex items-center gap-2">
-              <span class="text-muted-foreground">Qatorlar soni</span>
+              <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
               <DropdownMenuRoot @update:open="setRowsPerPageOpen($event)">
                 <DropdownMenuTrigger as-child>
                   <Button
@@ -7454,7 +7457,7 @@ onUnmounted(() => {
             </div>
 
             <div class="flex items-center gap-2 text-sm">
-              <span class="text-muted-foreground">Sahifada:</span>
+              <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
               <span class="font-medium text-foreground">{{ paginationRange.start }}-{{ paginationRange.end }} / {{ totalRows }}</span>
             </div>
           </div>
@@ -7515,7 +7518,7 @@ onUnmounted(() => {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
                 <h2 class="text-xl font-semibold text-foreground">
-                  Komissiya tarkibi
+                  {{ t('Komissiyalar tarkibi') }}
                 </h2>
                 <span :class="cn('inline-flex rounded-full border px-3 py-1 text-xs font-semibold', statusClassMap[selectedViewRecord.status])">
                   {{ selectedViewRecord.status }}
@@ -7537,26 +7540,26 @@ onUnmounted(() => {
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
             <div class="grid gap-3 md:grid-cols-4">
               <div class="rounded-2xl border border-border bg-muted/20 p-4">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Sana</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Sana') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ formatDateDisplay(selectedViewRecord.createdAt) }}</p>
               </div>
               <div class="rounded-2xl border border-border bg-muted/20 p-4">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bosqich</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Bosqich') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ workflowStageLabels[selectedViewRecord.workflowStage] }}</p>
               </div>
               <div class="rounded-2xl border border-border bg-muted/20 p-4">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Yangilangan</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Yangilangan') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedViewRecord.updatedAt }}</p>
               </div>
               <div class="rounded-2xl border border-border bg-muted/20 p-4">
-                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">A'zolar soni</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t("A'zolar soni") }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedViewRecord.members.length }}</p>
               </div>
             </div>
 
             <div class="space-y-3">
               <h3 class="text-base font-semibold text-foreground">
-                Rahbariyat
+                {{ t('Rahbariyat') }}
               </h3>
               <div class="grid gap-3 lg:grid-cols-3">
                 <div
@@ -7602,7 +7605,7 @@ onUnmounted(() => {
 
             <div class="space-y-3">
               <h3 class="text-base font-semibold text-foreground">
-                Komissiya a'zolari
+              {{ t("Komissiya a'zolari") }}
               </h3>
               <div class="grid gap-3 md:grid-cols-2">
                 <div
@@ -8276,7 +8279,7 @@ onUnmounted(() => {
             <Input
               :model-value="assessmentSearchInput"
               class="pl-9"
-              placeholder="Qidirish"
+              :placeholder="t('Qidirish')"
               @update:model-value="handleAssessmentSearchInput(String($event ?? ''))"
             />
           </div>
@@ -8308,7 +8311,7 @@ onUnmounted(() => {
                   v-else
                   class="h-4 w-4"
                 />
-                Filter
+                {{ t('Filter') }}
               </Button>
 
               <div
@@ -8317,7 +8320,7 @@ onUnmounted(() => {
               >
                 <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
                   <div class="flex items-center justify-between gap-2">
-                    <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                    <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -8329,7 +8332,7 @@ onUnmounted(() => {
                   </div>
 
                   <label class="space-y-2 text-sm xl:relative xl:space-y-0">
-                    <span class="font-medium text-foreground">Status</span>
+                    <span class="font-medium text-foreground">{{ t('Status') }}</span>
                     <div class="space-y-2 xl:mt-2 xl:space-y-0">
                       <button
                         type="button"
@@ -8371,7 +8374,7 @@ onUnmounted(() => {
                   </label>
 
                   <label class="space-y-2 text-sm xl:relative xl:space-y-0">
-                    <span class="font-medium text-foreground">Hudud</span>
+                    <span class="font-medium text-foreground">{{ t('Hudud') }}</span>
                     <div class="space-y-2 xl:mt-2 xl:space-y-0">
                       <button
                         type="button"
@@ -8413,7 +8416,7 @@ onUnmounted(() => {
                   </label>
 
                   <label class="space-y-2 text-sm xl:relative xl:space-y-0">
-                    <span class="font-medium text-foreground">Boshlanish sanasi</span>
+                    <span class="font-medium text-foreground">{{ t('Boshlanish sanasi') }}</span>
                     <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                       <div class="relative">
                         <Input :model-value="draftAssessmentStartDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @keydown="preventDateNonDigitKeydown" @update:model-value="handleAssessmentStartDateFilterChange" />
@@ -8444,7 +8447,7 @@ onUnmounted(() => {
                   </label>
 
                   <label class="space-y-2 text-sm xl:relative xl:space-y-0">
-                    <span class="font-medium text-foreground">Tugash sanasi</span>
+                    <span class="font-medium text-foreground">{{ t('Tugash sanasi') }}</span>
                     <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                       <div class="relative">
                         <Input :model-value="draftAssessmentEndDateFilter" class="h-10 pr-10" inputmode="numeric" maxlength="10" placeholder="dd.mm.yyyy" @keydown="preventDateNonDigitKeydown" @update:model-value="handleAssessmentEndDateFilterChange" />
@@ -8477,11 +8480,11 @@ onUnmounted(() => {
                   <div class="flex items-center justify-end gap-3 border-t border-border pt-3">
                     <Button variant="outline" size="sm" class="gap-2" :disabled="isTableLoading || (!assessmentHasActiveFilters && !assessmentHasPendingFilterChanges)" @click="clearAssessmentFilters">
                       <LoaderCircle v-if="actionLoadingKey === 'assessment-filter-clear'" class="h-4 w-4 animate-spin" />
-                      Tozalash
+                      {{ t('Tozalash') }}
                     </Button>
                     <Button size="sm" class="gap-2" :disabled="isTableLoading || !assessmentHasPendingFilterChanges" @click="applyAssessmentFilters">
                       <LoaderCircle v-if="actionLoadingKey === 'assessment-filter-apply'" class="h-4 w-4 animate-spin" />
-                      Qo'llash
+                      {{ t("Qo'llash") }}
                     </Button>
                   </div>
                 </div>
@@ -8502,7 +8505,7 @@ onUnmounted(() => {
                 v-else
                 class="h-4 w-4"
               />
-              Yuklab olish
+              {{ t('Yuklab olish') }}
             </Button>
           </div>
         </div>
@@ -8516,7 +8519,7 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
                   <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                  <span>Yuklanmoqda...</span>
+                  <span>{{ t('Yuklanmoqda...') }}</span>
                 </div>
               </div>
 
@@ -8525,8 +8528,8 @@ onUnmounted(() => {
                 class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
               >
                 <div class="mx-auto flex max-w-md flex-col items-center gap-2">
-                  <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
-                  <p class="text-sm text-muted-foreground">Qidiruv yoki filter shartlariga mos yozuv topilmadi.</p>
+                  <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                  <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -8534,7 +8537,7 @@ onUnmounted(() => {
                     :disabled="isTableLoading || (!assessmentSearchQuery && !assessmentHasActiveFilters)"
                     @click="resetAssessmentSearchAndFilters"
                   >
-                    Tozalash
+                    {{ t('Tozalash') }}
                   </Button>
                 </div>
               </div>
@@ -8551,7 +8554,7 @@ onUnmounted(() => {
                   <CardContent class="space-y-4 p-4">
                     <div class="flex items-start justify-between gap-3">
                       <div class="min-w-0">
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hujjat</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Hujjat') }}</p>
                         <p class="mt-1 font-semibold text-foreground">{{ record.documentNumber }}</p>
                         <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
                       </div>
@@ -8580,23 +8583,23 @@ onUnmounted(() => {
                             >
                               <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewAssessment(record)">
                                 <Eye class="h-4 w-4 shrink-0" />
-                                <span>Ko'rish</span>
+                                <span>{{ t("Ko'rish") }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
                                 <Pencil class="h-4 w-4 shrink-0" />
-                                <span>Tahrirlash</span>
+                                <span>{{ t('Tahrirlash') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
                                 <Check class="h-4 w-4 shrink-0" />
-                                <span>Yuborish</span>
+                                <span>{{ t('Yuborish') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestCancelAssessment(record)">
                                 <X class="h-4 w-4 shrink-0" />
-                                <span>Bekor qilish</span>
+                                <span>{{ t('Bekor qilish') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestApproveAssessment(record)">
                                 <CheckCheck class="h-4 w-4 shrink-0" />
-                                <span>Tasdiqlash</span>
+                                <span>{{ t('Tasdiqlash') }}</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenuPortal>
@@ -8606,16 +8609,16 @@ onUnmounted(() => {
 
                     <div class="grid gap-3">
                       <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat oluvchi</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat oluvchi') }}</p>
                         <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
                         <p class="mt-1 text-sm text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
                       </div>
                       <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat turi</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
                         <p class="mt-1 text-sm text-foreground">{{ record.serviceType }}</p>
                       </div>
                       <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Natija</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Natija') }}</p>
                         <span
                           v-if="getAssessmentResultDisplay(record) !== '-'"
                           :class="cn('mt-1 inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(record))"
@@ -8625,7 +8628,7 @@ onUnmounted(() => {
                         <p v-else class="mt-1 text-sm text-muted-foreground">-</p>
                       </div>
                       <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Manzil</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
                         <p class="mt-1 font-medium text-foreground">{{ record.region }}</p>
                         <p class="mt-1 text-sm text-muted-foreground">{{ record.district }}</p>
                       </div>
@@ -8642,35 +8645,35 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                   <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                  <span>Yuklanmoqda...</span>
+                  <span>{{ t('Yuklanmoqda...') }}</span>
                 </div>
               </div>
 
               <table class="min-w-[1240px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
-                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Hujjat</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Natija</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
-                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Natija') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-if="paginatedAssessments.length === 0">
                     <td colspan="7" class="border-b border-border px-4 py-12 text-center">
                       <div class="mx-auto flex max-w-md flex-col items-center gap-2">
-                        <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
-                        <p class="text-sm text-muted-foreground">Qidiruv yoki filter shartlariga mos yozuv topilmadi.</p>
+                        <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                        <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
                         <Button
                           variant="outline"
                           size="sm"
                           :disabled="isTableLoading || (!assessmentSearchQuery && !assessmentHasActiveFilters)"
                           @click="resetAssessmentSearchAndFilters"
                         >
-                          Tozalash
+                          {{ t('Tozalash') }}
                         </Button>
                       </div>
                     </td>
@@ -8702,23 +8705,23 @@ onUnmounted(() => {
                           >
                             <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewAssessment(record)">
                               <Eye class="h-4 w-4 shrink-0" />
-                              <span>Ko'rish</span>
+                              <span>{{ t("Ko'rish") }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
                               <Pencil class="h-4 w-4 shrink-0" />
-                              <span>Tahrirlash</span>
+                              <span>{{ t('Tahrirlash') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
                               <Check class="h-4 w-4 shrink-0" />
-                              <span>Yuborish</span>
+                              <span>{{ t('Yuborish') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestCancelAssessment(record)">
                               <X class="h-4 w-4 shrink-0" />
-                              <span>Bekor qilish</span>
+                              <span>{{ t('Bekor qilish') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem v-if="record.status === 'Yuborilgan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestApproveAssessment(record)">
                               <CheckCheck class="h-4 w-4 shrink-0" />
-                              <span>Tasdiqlash</span>
+                              <span>{{ t('Tasdiqlash') }}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenuPortal>
@@ -8761,7 +8764,7 @@ onUnmounted(() => {
         <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
           <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
             <div class="flex items-center gap-2">
-              <span class="text-muted-foreground">Qatorlar soni</span>
+              <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
               <DropdownMenuRoot @update:open="setAssessmentRowsPerPageOpen($event)">
                 <DropdownMenuTrigger as-child>
                   <Button
@@ -8795,7 +8798,7 @@ onUnmounted(() => {
             </div>
 
             <div class="flex items-center gap-2 text-sm">
-              <span class="text-muted-foreground">Sahifada:</span>
+              <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
               <span class="font-medium text-foreground">{{ assessmentPaginationRange.start }}-{{ assessmentPaginationRange.end }} / {{ assessmentTotalRows }}</span>
             </div>
           </div>
@@ -8866,13 +8869,13 @@ onUnmounted(() => {
 
       <div class="flex-1 space-y-6 overflow-y-auto p-5">
         <div class="rounded-2xl border border-border bg-card p-4">
-          <p class="text-base font-semibold text-foreground">Xizmat oluvchi</p>
+          <p class="text-base font-semibold text-foreground">{{ t('Xizmat oluvchi') }}</p>
           <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
             <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
               <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
-                Rasm yo'q
+                {{ t("Rasm yo'q") }}
               </div>
-              <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
+              <span class="mt-3 text-sm text-muted-foreground">{{ t('Rasm') }}</span>
             </div>
             <div class="overflow-hidden rounded-2xl border border-border bg-background">
               <div
@@ -9013,7 +9016,7 @@ onUnmounted(() => {
         </p>
         <div class="flex items-center gap-2">
           <Button variant="outline" @click="closeAssessmentViewDialog">
-            {{ selectedAssessmentReadonly ? 'Yopish' : 'Bekor qilish' }}
+            {{ selectedAssessmentReadonly ? t('Yopish') : t('Bekor qilish') }}
           </Button>
           <Button v-if="!selectedAssessmentReadonly" :disabled="!isAssessmentComplete" @click="saveAssessmentFromDialog">
             Baholashni saqlash
@@ -9158,7 +9161,7 @@ onUnmounted(() => {
             <Input
               :model-value="serviceTypeSearchInput"
               class="pl-9"
-              placeholder="Qidirish"
+              :placeholder="t('Qidirish')"
               @update:model-value="handleServiceTypeSearchInput(String($event ?? ''))"
             />
           </div>
@@ -9169,7 +9172,7 @@ onUnmounted(() => {
               @click="openCreateServiceTypeDialog"
             >
               <Plus class="h-4 w-4" />
-              Yaratish
+              {{ t('Yaratish') }}
             </Button>
             <Button
               variant="outline"
@@ -9177,7 +9180,7 @@ onUnmounted(() => {
               @click="downloadServiceTypes"
             >
               <Download class="h-4 w-4" />
-              Yuklab olish
+              {{ t('Yuklab olish') }}
             </Button>
           </div>
         </div>
@@ -9190,20 +9193,20 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                <span>Yuklanmoqda...</span>
+                <span>{{ t('Yuklanmoqda...') }}</span>
               </div>
             </div>
             <table class="min-w-[980px] border-separate border-spacing-0 text-sm xl:min-w-full">
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Minimal yosh</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Maksimal yosh</th>
-                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Sana') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Qisqa nomi") }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("To'liq nomi") }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Minimal yosh') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Maksimal yosh') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -9213,8 +9216,8 @@ onUnmounted(() => {
                     class="border-b border-border px-4 py-12 text-center"
                   >
                     <div class="mx-auto flex max-w-md flex-col items-center gap-2">
-                      <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
-                      <p class="text-sm text-muted-foreground">Qidiruv shartlariga mos yozuv topilmadi.</p>
+                      <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                      <p class="text-sm text-muted-foreground">{{ t('Qidiruv shartlariga mos yozuv topilmadi.') }}</p>
                     </div>
                   </td>
                 </tr>
@@ -9248,21 +9251,21 @@ onUnmounted(() => {
                             @click="viewServiceType(record)"
                           >
                             <Eye class="h-4 w-4 shrink-0" />
-                            <span>Ko'rish</span>
+                            <span>{{ t("Ko'rish") }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                             @click="editServiceType(record)"
                           >
                             <Pencil class="h-4 w-4 shrink-0" />
-                            <span>Tahrirlash</span>
+                            <span>{{ t('Tahrirlash') }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
                             @click="requestDeleteServiceType(record)"
                           >
                             <Trash2 class="h-4 w-4 shrink-0" />
-                            <span>O'chirish</span>
+                            <span>{{ t("O'chirish") }}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
@@ -9303,7 +9306,7 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                <span>Yuklanmoqda...</span>
+                <span>{{ t('Yuklanmoqda...') }}</span>
               </div>
             </div>
             <Card
@@ -9359,20 +9362,20 @@ onUnmounted(() => {
                   </div>
                 </div>
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("Qisqa nomi") }}</p>
                   <p class="mt-1 font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                 </div>
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("To'liq nomi") }}</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Minimal yosh</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Minimal yosh') }}</p>
                     <p class="mt-1 text-sm font-medium text-foreground">{{ record.minAge }}</p>
                   </div>
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Maksimal yosh</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Maksimal yosh') }}</p>
                     <p class="mt-1 text-sm font-medium text-foreground">{{ record.maxAge ?? '-' }}</p>
                   </div>
                 </div>
@@ -9383,7 +9386,7 @@ onUnmounted(() => {
           <div class="flex flex-col gap-3 border-t border-border bg-card p-4 text-sm md:flex-row md:items-center md:justify-between">
             <div class="flex flex-wrap items-center gap-4">
               <div class="flex items-center gap-2">
-                <span class="text-muted-foreground">Qatorlar soni</span>
+                <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
                 <DropdownMenuRoot @update:open="setServiceTypeRowsPerPageOpen">
                   <DropdownMenuTrigger as-child>
                     <Button
@@ -9415,7 +9418,7 @@ onUnmounted(() => {
                 </DropdownMenuRoot>
               </div>
               <span class="text-muted-foreground">
-                Sahifada:
+                {{ t('Sahifada:') }}
                 <strong class="font-semibold text-foreground">
                   {{ serviceTypePaginationRange.start }}-{{ serviceTypePaginationRange.end }} / {{ serviceTypeTotalRows }}
                 </strong>
@@ -9689,7 +9692,7 @@ onUnmounted(() => {
             </section>
 
             <section class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Status</span>
+              <span class="text-sm font-medium text-foreground">{{ t('Status') }}</span>
               <div class="relative max-w-sm">
                 <button
                   type="button"
@@ -9742,7 +9745,7 @@ onUnmounted(() => {
                   variant="outline"
                   @click="resetServiceTypeForm"
                 >
-                  Tozalash
+                  {{ t('Tozalash') }}
                 </Button>
                 <Button
                   :disabled="!canSaveServiceType"
@@ -9996,7 +9999,7 @@ onUnmounted(() => {
             <Input
               :model-value="diagnosisSearchInput"
               class="pl-9"
-              placeholder="Qidirish"
+              :placeholder="t('Qidirish')"
               @update:model-value="handleDiagnosisSearchInput(String($event ?? ''))"
             />
           </div>
@@ -10007,7 +10010,7 @@ onUnmounted(() => {
               @click="openCreateDiagnosisDialog"
             >
               <Plus class="h-4 w-4" />
-              Yaratish
+              {{ t('Yaratish') }}
             </Button>
             <Button
               variant="outline"
@@ -10015,7 +10018,7 @@ onUnmounted(() => {
               @click="downloadDiagnoses"
             >
               <Download class="h-4 w-4" />
-              Yuklab olish
+              {{ t('Yuklab olish') }}
             </Button>
           </div>
         </div>
@@ -10028,20 +10031,20 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                <span>Yuklanmoqda...</span>
+                <span>{{ t('Yuklanmoqda...') }}</span>
               </div>
             </div>
             <table class="min-w-[1040px] border-separate border-spacing-0 text-sm xl:min-w-full">
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Sana</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Qisqa nomi</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">To'liq nomi</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Sana') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Qisqa nomi") }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("To'liq nomi") }}</th>
                   <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Minimal ball</th>
                   <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Maksimal ball</th>
-                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Status</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -10051,8 +10054,8 @@ onUnmounted(() => {
                     class="border-b border-border px-4 py-12 text-center"
                   >
                     <div class="mx-auto flex max-w-md flex-col items-center gap-2">
-                      <p class="text-sm font-medium text-foreground">Ma'lumot topilmadi</p>
-                      <p class="text-sm text-muted-foreground">Qidiruv shartlariga mos yozuv topilmadi.</p>
+                      <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                      <p class="text-sm text-muted-foreground">{{ t('Qidiruv shartlariga mos yozuv topilmadi.') }}</p>
                     </div>
                   </td>
                 </tr>
@@ -10083,15 +10086,15 @@ onUnmounted(() => {
                         >
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewDiagnosis(record)">
                             <Eye class="h-4 w-4 shrink-0" />
-                            <span>Ko'rish</span>
+                            <span>{{ t("Ko'rish") }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editDiagnosis(record)">
                             <Pencil class="h-4 w-4 shrink-0" />
-                            <span>Tahrirlash</span>
+                            <span>{{ t('Tahrirlash') }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestDeleteDiagnosis(record)">
                             <Trash2 class="h-4 w-4 shrink-0" />
-                            <span>O'chirish</span>
+                            <span>{{ t("O'chirish") }}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
@@ -10130,7 +10133,7 @@ onUnmounted(() => {
             >
               <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
                 <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                <span>Yuklanmoqda...</span>
+                <span>{{ t('Yuklanmoqda...') }}</span>
               </div>
             </div>
             <Card
@@ -10168,15 +10171,15 @@ onUnmounted(() => {
                         >
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewDiagnosis(record)">
                             <Eye class="h-4 w-4 shrink-0" />
-                            <span>Ko'rish</span>
+                            <span>{{ t("Ko'rish") }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editDiagnosis(record)">
                             <Pencil class="h-4 w-4 shrink-0" />
-                            <span>Tahrirlash</span>
+                            <span>{{ t('Tahrirlash') }}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted" @click="requestDeleteDiagnosis(record)">
                             <Trash2 class="h-4 w-4 shrink-0" />
-                            <span>O'chirish</span>
+                            <span>{{ t("O'chirish") }}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
@@ -10184,11 +10187,11 @@ onUnmounted(() => {
                   </div>
                 </div>
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Qisqa nomi</p>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("Qisqa nomi") }}</p>
                   <p class="mt-1 font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
                 </div>
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">To'liq nomi</p>
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("To'liq nomi") }}</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
                 <div v-if="isCategoryGroupsPage && isCategoryGroupRecord(record)" class="grid gap-3 sm:grid-cols-2">
@@ -10208,7 +10211,7 @@ onUnmounted(() => {
           <div class="flex flex-col gap-3 border-t border-border bg-card p-4 text-sm md:flex-row md:items-center md:justify-between">
             <div class="flex flex-wrap items-center gap-4">
               <div class="flex items-center gap-2">
-                <span class="text-muted-foreground">Qatorlar soni</span>
+                <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
                 <DropdownMenuRoot @update:open="setDiagnosisRowsPerPageOpen">
                   <DropdownMenuTrigger as-child>
                     <Button
@@ -10235,7 +10238,7 @@ onUnmounted(() => {
                 </DropdownMenuRoot>
               </div>
               <span class="text-muted-foreground">
-                Sahifada:
+                {{ t('Sahifada:') }}
                 <strong class="font-semibold text-foreground">{{ diagnosisPaginationRange.start }}-{{ diagnosisPaginationRange.end }} / {{ diagnosisTotalRows }}</strong>
               </span>
             </div>
@@ -10483,7 +10486,7 @@ onUnmounted(() => {
               </div>
 
               <div class="space-y-2">
-                <span class="text-sm font-medium text-foreground">Status</span>
+                <span class="text-sm font-medium text-foreground">{{ t('Status') }}</span>
                 <div class="relative">
                   <button
                     type="button"
@@ -10516,7 +10519,7 @@ onUnmounted(() => {
               <p v-if="diagnosisFormError" class="text-sm text-rose-600">{{ diagnosisFormError }}</p>
               <p v-else class="text-sm text-muted-foreground">Barcha ma'lumotlar to'ldirildi.</p>
               <div class="flex items-center gap-3">
-                <Button variant="outline" @click="resetDiagnosisForm">Tozalash</Button>
+                <Button variant="outline" @click="resetDiagnosisForm">{{ t('Tozalash') }}</Button>
                 <Button :disabled="!canSaveDiagnosis" @click="saveDiagnosis">Saqlash</Button>
               </div>
             </div>
@@ -10640,7 +10643,7 @@ onUnmounted(() => {
               @click="closeApplicationReportRegion"
             >
               <ChevronLeft class="h-4 w-4" />
-              Ortga
+              {{ t('Ortga') }}
             </Button>
             <span
               v-if="selectedApplicationReportRegion"
@@ -10662,7 +10665,7 @@ onUnmounted(() => {
                 class="h-4 w-4 animate-spin"
               />
               <Download v-else class="h-4 w-4" />
-              Yuklab olish
+              {{ t('Yuklab olish') }}
             </Button>
 
             <div class="relative order-1">
@@ -10688,7 +10691,7 @@ onUnmounted(() => {
                 {{ applicationReportActiveFilterCount }}
               </span>
               <Filter v-else class="h-4 w-4" />
-              Filter
+              {{ t('Filter') }}
             </Button>
 
             <div
@@ -10697,7 +10700,7 @@ onUnmounted(() => {
             >
               <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
                 <div class="flex items-center justify-between gap-3">
-                  <p class="text-sm font-semibold text-foreground">Filterlar</p>
+                  <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                   <button
                     type="button"
                     class="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground"
@@ -10708,7 +10711,7 @@ onUnmounted(() => {
                 </div>
 
                 <div class="relative space-y-1.5">
-                  <p class="text-sm font-medium text-foreground">Status</p>
+                  <p class="text-sm font-medium text-foreground">{{ t('Status') }}</p>
                   <button
                     type="button"
                     :class="[
@@ -10748,7 +10751,7 @@ onUnmounted(() => {
                 </div>
 
                 <div class="relative space-y-1.5">
-                  <p class="text-sm font-medium text-foreground">Bosqich</p>
+                  <p class="text-sm font-medium text-foreground">{{ t('Bosqich') }}</p>
                   <button
                     type="button"
                     :class="[
@@ -10788,7 +10791,7 @@ onUnmounted(() => {
                 </div>
 
                 <div class="relative space-y-1.5">
-                  <p class="text-sm font-medium text-foreground">Hudud</p>
+                  <p class="text-sm font-medium text-foreground">{{ t('Hudud') }}</p>
                   <button
                     type="button"
                     :class="[
@@ -10828,7 +10831,7 @@ onUnmounted(() => {
                 </div>
 
                 <div class="relative space-y-1.5">
-                  <p class="text-sm font-medium text-foreground">Tuman (shahar)</p>
+                  <p class="text-sm font-medium text-foreground">{{ t('Tuman (shahar)') }}</p>
                   <button
                     type="button"
                     :disabled="isApplicationReportDistrictFilterDisabled"
@@ -10873,7 +10876,7 @@ onUnmounted(() => {
                   :key="`report-filter-metric-${group.key}`"
                   class="relative space-y-1.5"
                 >
-                  <p class="text-sm font-medium text-foreground">{{ group.label }}</p>
+                  <p class="text-sm font-medium text-foreground">{{ t(group.label) }}</p>
                   <button
                     type="button"
                     :class="[
@@ -10922,7 +10925,7 @@ onUnmounted(() => {
                     :key="`report-date-${dateField.key}`"
                     class="space-y-1.5 sm:relative"
                   >
-                    <span class="text-sm font-medium text-foreground">{{ dateField.label }}</span>
+                    <span class="text-sm font-medium text-foreground">{{ t(dateField.label) }}</span>
                     <div class="relative space-y-2">
                       <div class="relative">
                         <Input
@@ -11003,7 +11006,7 @@ onUnmounted(() => {
                     @click="clearApplicationReportFilters"
                   >
                     <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-clear'" class="h-4 w-4 animate-spin" />
-                    Tozalash
+                    {{ t('Tozalash') }}
                   </Button>
                   <Button
                     size="sm"
@@ -11012,7 +11015,7 @@ onUnmounted(() => {
                     @click="applyApplicationReportFilters"
                   >
                     <LoaderCircle v-if="actionLoadingKey === 'application-report-filter-apply'" class="h-4 w-4 animate-spin" />
-                    Qo'llash
+                    {{ t("Qo'llash") }}
                   </Button>
                 </div>
               </div>
@@ -11037,25 +11040,25 @@ onUnmounted(() => {
                     rowspan="2"
                     class="sticky left-0 top-0 z-50 h-28 w-64 min-w-64 max-w-64 border-b border-r border-border bg-muted px-4 py-0 text-xs font-semibold uppercase tracking-wide"
                   >
-                    Hudud
+                    {{ t('Hudud') }}
                   </th>
                   <th
                     rowspan="2"
                     class="sticky top-0 z-40 h-28 min-w-24 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
                   >
-                    Jami
+                    {{ t('Jami') }}
                   </th>
                   <th
                     :colspan="applicationReportVisibleStatuses.length"
                     class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
                   >
-                    Status
+                    {{ t('Status') }}
                   </th>
                   <th
                     :colspan="applicationReportVisibleSteps.length"
                     class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
                   >
-                    Bosqich
+                    {{ t('Bosqich') }}
                   </th>
                   <th
                     v-for="group in applicationReportVisibleMetricGroups"
@@ -11063,7 +11066,7 @@ onUnmounted(() => {
                     :colspan="group.options.length"
                     class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0"
                   >
-                    {{ group.label }}
+                    {{ t(group.label) }}
                   </th>
                 </tr>
                 <tr>
@@ -11190,23 +11193,23 @@ onUnmounted(() => {
             >
               <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
-                  Tanlangan:
+                  {{ t('Tanlangan:') }}
                   <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.count }} ta</strong>
                 </span>
                 <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
-                  Jami:
+                  {{ t('Jami') }}:
                   <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.sum }}</strong>
                 </span>
                 <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
-                  Minimum:
+                  {{ t('Minimum') }}:
                   <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.min }}</strong>
                 </span>
                 <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
-                  Maksimum:
+                  {{ t('Maksimum') }}:
                   <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.max }}</strong>
                 </span>
                 <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
-                  O'rtacha:
+                  {{ t("O'rtacha") }}:
                   <strong class="font-semibold text-foreground">{{ applicationReportSelectionAnalytics.average.toFixed(1) }}</strong>
                 </span>
               </div>
@@ -11217,7 +11220,7 @@ onUnmounted(() => {
                 class="h-8 shrink-0"
                 @click="clearApplicationReportCellSelection"
               >
-                Tanlovni tozalash
+                {{ t('Tanlovni tozalash') }}
               </Button>
             </div>
 
@@ -11225,7 +11228,7 @@ onUnmounted(() => {
               v-else
               class="text-sm text-muted-foreground"
             >
-              Analitika uchun jadvaldagi raqamni bosing. Davom ettirish uchun Ctrl + click ishlating.
+              {{ t('Analitika uchun jadvaldagi raqamni bosing. Davom ettirish uchun Ctrl + click ishlating.') }}
             </p>
           </div>
         </div>

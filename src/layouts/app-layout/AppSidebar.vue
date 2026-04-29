@@ -21,7 +21,7 @@ defineEmits<{
 
 const route = useRoute()
 const authStore = useAuthStore()
-const { t } = useI18n()
+const { locale, t } = useI18n()
 const modules = computed(() => appModules.filter((module) => (
   module.enabled && authStore.hasPermission(module.permission)
 )))
@@ -62,6 +62,50 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
 
   return []
 })
+
+const sidebarRouteI18nKeys: Record<string, string> = {
+  '/apps/iptk': 'nav.dashboard',
+  '/apps/iptk/info/info-1': 'nav.serviceTypes',
+  '/apps/iptk/info/info-2': 'nav.diagnoses',
+  '/apps/iptk/info/info-3': 'nav.contraindications',
+  '/apps/iptk/info/info-4': 'nav.documents',
+  '/apps/iptk/info/info-5': 'nav.questionnaireTemplate',
+  '/apps/iptk/info/info-6': 'nav.categoryGroups',
+  '/apps/iptk/applications/list': 'nav.applications',
+  '/apps/iptk/applications/assessment': 'nav.assessment',
+  '/apps/iptk/applications/commissions': 'nav.commissions',
+  '/apps/iptk/reports/applications': 'nav.applicationsReport',
+  '/apps/muruvvat': 'nav.dashboard',
+  '/apps/muruvvat/info/info-1': 'nav.info1',
+  '/apps/muruvvat/info/info-2': 'nav.info2',
+  '/apps/muruvvat/info/info-3': 'nav.info3',
+  '/apps/muruvvat/applications/list': 'nav.applicationsList',
+  '/apps/muruvvat/applications/statements': 'nav.statements',
+  '/apps/muruvvat/applications/decisions': 'nav.decisions',
+  '/apps/muruvvat/homes/queues': 'nav.queues',
+  '/apps/muruvvat/homes/registered': 'nav.registered',
+  '/apps/muruvvat/homes/removed': 'nav.removed',
+  '/apps/muruvvat/reports/applications': 'nav.applicationsReport',
+  '/apps/muruvvat/reports/homes': 'nav.homesReport',
+}
+
+const sidebarGroupI18nKeys: Record<string, string> = {
+  applications: 'nav.applications',
+  dashboard: 'nav.dashboard',
+  homes: 'nav.homes',
+  info: 'nav.info',
+  reports: 'nav.reports',
+}
+
+function sidebarTitle(item: MuruvvatMenuItem) {
+  if (locale.value !== 'i18n') {
+    return t(item.title)
+  }
+
+  return (item.route ? sidebarRouteI18nKeys[item.route] : undefined)
+    ?? sidebarGroupI18nKeys[item.id]
+    ?? `nav.${item.id}`
+}
 
 function isActive(path: string) {
   return route.path === path
@@ -152,7 +196,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 ? 'border border-primary/35 bg-primary/12 text-foreground'
                 : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
             )"
-            :title="collapsed ? t(item.title) : undefined"
+            :title="collapsed ? sidebarTitle(item) : undefined"
           >
             <component
               :is="item.icon"
@@ -162,7 +206,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               v-if="!collapsed"
               class="truncate"
             >
-              {{ t(item.title) }}
+              {{ sidebarTitle(item) }}
             </span>
           </RouterLink>
 
@@ -174,7 +218,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'w-full px-3 py-2',
                 isItemActive(item) ? 'bg-primary/10 text-foreground' : 'text-sidebar-foreground',
               )"
-              :title="collapsed ? t(item.title) : undefined"
+              :title="collapsed ? sidebarTitle(item) : undefined"
               @click="toggleSection(item.id)"
             >
               <component
@@ -185,7 +229,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                 v-if="!collapsed"
                 class="truncate font-medium"
               >
-                {{ t(item.title) }}
+                {{ sidebarTitle(item) }}
               </span>
               <ChevronDown
                 v-if="!collapsed"
@@ -197,30 +241,32 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             </button>
 
             <Transition
-              enter-active-class="transition-all duration-300 ease-out"
-              enter-from-class="max-h-0 translate-y-[-2px] opacity-0"
-              enter-to-class="max-h-96 translate-y-0 opacity-100"
-              leave-active-class="transition-all duration-220 ease-out"
-              leave-from-class="max-h-96 translate-y-0 opacity-100"
-              leave-to-class="max-h-0 translate-y-[-2px] opacity-0"
+              enter-active-class="transition-[grid-template-rows,opacity,transform] duration-200 ease-out"
+              enter-from-class="grid-rows-[0fr] -translate-y-1 opacity-0"
+              enter-to-class="grid-rows-[1fr] translate-y-0 opacity-100"
+              leave-active-class="transition-[grid-template-rows,opacity,transform] duration-200 ease-out"
+              leave-from-class="grid-rows-[1fr] translate-y-0 opacity-100"
+              leave-to-class="grid-rows-[0fr] -translate-y-1 opacity-0"
             >
               <div
                 v-if="!collapsed && item.children?.length && openSections[item.id]"
-                class="ml-7 mt-1 space-y-1 overflow-hidden"
+                class="ml-7 mt-1 grid"
               >
-                <RouterLink
-                  v-for="child in item.children"
-                  :key="child.id"
-                  :to="child.route ?? '/apps'"
-                  :class="cn(
-                    'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-200 ease-out',
-                    isItemActive(child)
-                      ? 'border-l-2 border-primary bg-primary/10 text-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                  )"
-                >
-                  <span class="truncate">{{ t(child.title) }}</span>
-                </RouterLink>
+                <div class="min-h-0 space-y-1 overflow-hidden">
+                  <RouterLink
+                    v-for="child in item.children"
+                    :key="child.id"
+                    :to="child.route ?? '/apps'"
+                    :class="cn(
+                      'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-200 ease-out',
+                      isItemActive(child)
+                        ? 'border-l-2 border-primary bg-primary/10 text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    )"
+                  >
+                    <span class="truncate">{{ sidebarTitle(child) }}</span>
+                  </RouterLink>
+                </div>
               </div>
             </Transition>
           </div>

@@ -26,6 +26,7 @@ import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
+import { useI18n } from '@/shared/i18n'
 import applicantManImage from '@/assets/applicant-man.png'
 import applicantWomanImage from '@/assets/applicant-woman.png'
 
@@ -34,6 +35,7 @@ const props = defineProps<{
 }>()
 
 const route = useRoute()
+const { t } = useI18n()
 
 const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
@@ -3872,7 +3874,7 @@ watch(serviceRecipientLookupResult, () => {
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 :model-value="searchInput"
-                placeholder="Qidirish"
+                :placeholder="t('Qidirish')"
                 class="pl-9"
                 @update:model-value="handleSearchInput"
               />
@@ -3894,7 +3896,7 @@ watch(serviceRecipientLookupResult, () => {
                 @click="openCreateDialog"
               >
                 <Plus class="h-4 w-4" />
-                <span>Yaratish</span>
+                <span>{{ t('Yaratish') }}</span>
               </Button>
               <div
                 ref="filterAnchorRef"
@@ -3921,7 +3923,7 @@ watch(serviceRecipientLookupResult, () => {
                     v-else
                     class="h-4 w-4"
                   />
-                  <span>Filter</span>
+                  <span>{{ t('Filter') }}</span>
                 </Button>
 
                 <div
@@ -3934,7 +3936,7 @@ watch(serviceRecipientLookupResult, () => {
                   >
                     <div class="flex items-start justify-between gap-2">
                       <p class="text-sm font-semibold text-foreground">
-                        Filterlar
+                        {{ t('Filterlar') }}
                       </p>
 
                       <Button
@@ -3950,7 +3952,7 @@ watch(serviceRecipientLookupResult, () => {
 
                     <div class="flex flex-col gap-3">
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
-                        <span class="font-medium text-foreground">Status</span>
+                        <span class="font-medium text-foreground">{{ t('Status') }}</span>
                         <div class="space-y-2 lg:mt-2 lg:space-y-0">
                           <button
                             type="button"
@@ -4007,7 +4009,7 @@ watch(serviceRecipientLookupResult, () => {
                         v-if="isIptkApplicationsListPage"
                         class="space-y-2 text-sm lg:relative lg:space-y-0"
                       >
-                        <span class="font-medium text-foreground">Bosqich</span>
+                        <span class="font-medium text-foreground">{{ t('Bosqich') }}</span>
                         <div class="space-y-2 lg:mt-2 lg:space-y-0">
                           <button
                             type="button"
@@ -4061,7 +4063,7 @@ watch(serviceRecipientLookupResult, () => {
                       </label>
 
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
-                        <span class="font-medium text-foreground">Viloyat</span>
+                        <span class="font-medium text-foreground">{{ t('Viloyat') }}</span>
                         <div class="space-y-2 lg:mt-2 lg:space-y-0">
                           <button
                             type="button"
@@ -4115,7 +4117,7 @@ watch(serviceRecipientLookupResult, () => {
                       </label>
 
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
-                        <span class="font-medium text-foreground">Tuman yoki shahar</span>
+                        <span class="font-medium text-foreground">{{ t('Tuman yoki shahar') }}</span>
                         <div class="space-y-2 lg:mt-2 lg:space-y-0">
                           <button
                             type="button"
@@ -4170,7 +4172,7 @@ watch(serviceRecipientLookupResult, () => {
                       </label>
 
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
-                        <span class="font-medium text-foreground">Boshlanish sanasi</span>
+                        <span class="font-medium text-foreground">{{ t('Boshlanish sanasi') }}</span>
                         <div class="relative space-y-2 lg:mt-2 lg:space-y-0">
                           <div class="relative">
                             <Input
@@ -4271,7 +4273,7 @@ watch(serviceRecipientLookupResult, () => {
                       </label>
 
                       <label class="space-y-2 text-sm lg:relative lg:space-y-0">
-                        <span class="font-medium text-foreground">Tugash sanasi</span>
+                        <span class="font-medium text-foreground">{{ t('Tugash sanasi') }}</span>
                         <div class="relative space-y-2 lg:mt-2 lg:space-y-0">
                           <div class="relative">
                             <Input
@@ -4379,14 +4381,14 @@ watch(serviceRecipientLookupResult, () => {
                         :disabled="!hasActiveFilters && !hasPendingFilterChanges"
                         @click="clearFilters"
                       >
-                        Tozalash
+                        {{ t('Tozalash') }}
                       </Button>
                       <Button
                         size="sm"
                         :disabled="!hasPendingFilterChanges"
                         @click="applyFilters"
                       >
-                        Qo'llash
+                        {{ t("Qo'llash") }}
                       </Button>
                     </div>
                   </div>
@@ -4406,7 +4408,7 @@ watch(serviceRecipientLookupResult, () => {
                   v-else
                   class="h-4 w-4"
                 />
-                <span>Yuklab olish</span>
+                <span>{{ t('Yuklab olish') }}</span>
               </Button>
             </div>
           </div>
@@ -4420,7 +4422,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
                     <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                    <span>Yuklanmoqda...</span>
+                    <span>{{ t('Yuklanmoqda...') }}</span>
                   </div>
                 </div>
                 <div
@@ -4429,10 +4431,10 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="mx-auto flex max-w-md flex-col items-center gap-2">
                     <p class="text-sm font-medium text-foreground">
-                      Ma'lumot topilmadi
+                      {{ t("Ma'lumot topilmadi") }}
                     </p>
                     <p class="text-sm text-muted-foreground">
-                      Qidiruv yoki filter shartlariga mos yozuv topilmadi.
+                      {{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}
                     </p>
                     <Button
                       variant="outline"
@@ -4440,7 +4442,7 @@ watch(serviceRecipientLookupResult, () => {
                       class="mt-2"
                       @click="clearSearchAndFilters"
                     >
-                      Tozalash
+                      {{ t('Tozalash') }}
                     </Button>
                   </div>
                 </div>
@@ -4458,7 +4460,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Ariza
+                            {{ t('Ariza') }}
                           </p>
                           <p class="mt-1 font-semibold text-foreground">
                             {{ row.id }}
@@ -4503,14 +4505,14 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="openViewDialog(row)"
                                 >
                                   <Eye class="h-4 w-4 shrink-0" />
-                                  <span>Ko'rish</span>
+                                  <span>{{ t("Ko'rish") }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   v-if="canEditApplication(row)"
                                   class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 >
                                   <FilePenLine class="h-4 w-4 shrink-0" />
-                                  <span>Tahrirlash</span>
+                                  <span>{{ t('Tahrirlash') }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   v-if="requiresAssessmentBeforeIptk(row)"
@@ -4518,7 +4520,7 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="confirmStartAssessment(row)"
                                 >
                                   <CalendarDays class="h-4 w-4 shrink-0" />
-                                  <span>Baholashdan o'tkazish</span>
+                                  <span>{{ t("Baholashdan o'tkazish") }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   v-if="canSendDirectlyToIptk(row)"
@@ -4526,7 +4528,7 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="confirmSendToIptk(row)"
                                 >
                                   <Check class="h-4 w-4 shrink-0" />
-                                  <span>IPTKga yuborish</span>
+                                  <span>{{ t('IPTKga yuborish') }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   v-if="canApproveApplication(row)"
@@ -4534,7 +4536,7 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="confirmApprove(row)"
                                 >
                                   <Check class="h-4 w-4 shrink-0" />
-                                  <span>Tasdiqlash</span>
+                                  <span>{{ t('Tasdiqlash') }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   v-if="canRejectApplication(row)"
@@ -4542,7 +4544,7 @@ watch(serviceRecipientLookupResult, () => {
                                   @click="confirmReject(row)"
                                 >
                                   <X class="h-4 w-4 shrink-0" />
-                                  <span>Bekor qilish</span>
+                                  <span>{{ t('Bekor qilish') }}</span>
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenuPortal>
@@ -4553,7 +4555,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div class="grid gap-3 text-sm">
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Xizmat oluvchi
+                            {{ t('Xizmat oluvchi') }}
                           </p>
                           <p class="mt-1 font-medium uppercase text-foreground">
                             {{ normalizeFullName(row.fullName) }}
@@ -4565,7 +4567,7 @@ watch(serviceRecipientLookupResult, () => {
 
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Xizmat turi
+                            {{ t('Xizmat turi') }}
                           </p>
                           <p class="mt-1 font-medium text-foreground">
                             {{ getApplicationServiceTypeLabel(row) }}
@@ -4574,7 +4576,7 @@ watch(serviceRecipientLookupResult, () => {
 
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            Manzil
+                            {{ t('Manzil') }}
                           </p>
                           <p class="mt-1 font-medium text-foreground">
                             {{ row.region }}
@@ -4596,18 +4598,18 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
                     <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-                    <span>Yuklanmoqda...</span>
+                    <span>{{ t('Yuklanmoqda...') }}</span>
                   </div>
                 </div>
                 <table class="min-w-[1260px] border-separate border-spacing-0 text-sm xl:min-w-full">
                   <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                     <tr>
-                      <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Amallar</th>
-                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Ariza</th>
-                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat oluvchi</th>
-                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Xizmat turi</th>
-                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Manzil</th>
-                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ getApplicationStageColumnLabel() }}</th>
+                      <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Ariza') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t(getApplicationStageColumnLabel()) }}</th>
                     </tr>
                   </thead>
                 <tbody>
@@ -4618,10 +4620,10 @@ watch(serviceRecipientLookupResult, () => {
                     >
                       <div class="mx-auto flex max-w-md flex-col items-center gap-2">
                         <p class="text-sm font-medium text-foreground">
-                          Ma'lumot topilmadi
+                          {{ t("Ma'lumot topilmadi") }}
                         </p>
                         <p class="text-sm text-muted-foreground">
-                          Qidiruv yoki filter shartlariga mos yozuv topilmadi.
+                          {{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}
                         </p>
                         <Button
                           variant="outline"
@@ -4629,7 +4631,7 @@ watch(serviceRecipientLookupResult, () => {
                           class="mt-2"
                           @click="clearSearchAndFilters"
                         >
-                          Tozalash
+                          {{ t('Tozalash') }}
                         </Button>
                       </div>
                     </td>
@@ -4665,14 +4667,14 @@ watch(serviceRecipientLookupResult, () => {
                                 @click="openViewDialog(row)"
                               >
                                 <Eye class="h-4 w-4 shrink-0" />
-                                <span>Ko'rish</span>
+                                <span>{{ t("Ko'rish") }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canEditApplication(row)"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               >
                                 <FilePenLine class="h-4 w-4 shrink-0" />
-                                <span>Tahrirlash</span>
+                                <span>{{ t('Tahrirlash') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="requiresAssessmentBeforeIptk(row)"
@@ -4680,7 +4682,7 @@ watch(serviceRecipientLookupResult, () => {
                                 @click="confirmStartAssessment(row)"
                               >
                                 <CalendarDays class="h-4 w-4 shrink-0" />
-                                <span>Baholashdan o'tkazish</span>
+                                <span>{{ t("Baholashdan o'tkazish") }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canSendDirectlyToIptk(row)"
@@ -4688,7 +4690,7 @@ watch(serviceRecipientLookupResult, () => {
                                 @click="confirmSendToIptk(row)"
                               >
                                 <Check class="h-4 w-4 shrink-0" />
-                                <span>IPTKga yuborish</span>
+                                <span>{{ t('IPTKga yuborish') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canApproveApplication(row)"
@@ -4696,7 +4698,7 @@ watch(serviceRecipientLookupResult, () => {
                                 @click="confirmApprove(row)"
                               >
                                 <Check class="h-4 w-4 shrink-0" />
-                                <span>Tasdiqlash</span>
+                                <span>{{ t('Tasdiqlash') }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canRejectApplication(row)"
@@ -4704,7 +4706,7 @@ watch(serviceRecipientLookupResult, () => {
                                 @click="confirmReject(row)"
                               >
                                 <X class="h-4 w-4 shrink-0" />
-                                <span>Bekor qilish</span>
+                                <span>{{ t('Bekor qilish') }}</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenuPortal>
@@ -4760,7 +4762,7 @@ watch(serviceRecipientLookupResult, () => {
               >
                 <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
                   <div class="flex items-center gap-2">
-                    <span class="text-muted-foreground">Qatorlar soni</span>
+                    <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
                     <DropdownMenuRoot @update:open="setRowsPerPageOpen($event)">
                       <DropdownMenuTrigger as-child>
                         <Button
@@ -4795,7 +4797,7 @@ watch(serviceRecipientLookupResult, () => {
                   </div>
 
                   <div class="flex items-center gap-2">
-                    <span class="text-muted-foreground">Sahifada:</span>
+                    <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
                     <span class="font-medium text-foreground">{{ paginationSummary }}</span>
                   </div>
                 </div>
@@ -5413,12 +5415,12 @@ watch(serviceRecipientLookupResult, () => {
           </div>
 
           <p class="text-base font-semibold text-foreground">
-            Xizmat turini tanlash
+            {{ t('Xizmat turi') }}
           </p>
 
           <div class="rounded-xl border border-border/70 bg-card p-4">
             <label class="space-y-2 lg:relative">
-              <span class="text-sm font-medium text-foreground">Xizmat turi</span>
+              <span class="text-sm font-medium text-foreground">{{ t('Xizmat turi') }}</span>
               <button
                 type="button"
                 :class="[
