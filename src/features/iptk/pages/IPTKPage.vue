@@ -23,7 +23,15 @@ import { Input } from '@/shared/ui/shadcn/input'
 
 type CommissionStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
 type AssessmentStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
-type ProtocolStatus = 'Yangi' | 'Tahrirlangan' | 'Rejalashtirilgan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ProtocolStatus =
+  | 'Yangi'
+  | 'Tahrirlangan'
+  | 'Reja tasdiqlangan'
+  | 'Komissiyaga yuborilgan'
+  | 'Kelishish uchun yuborilgan'
+  | 'Tasdiqlash uchun yuborilgan'
+  | 'Bekor qilingan'
+  | 'Tasdiqlangan'
 type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
@@ -325,11 +333,13 @@ const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
 }
 const protocolStatusClassMap: Record<ProtocolStatus, string> = {
   Yangi: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300',
-  Tahrirlangan: 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/20 dark:text-indigo-300',
-  Rejalashtirilgan: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/20 dark:text-violet-300',
-  Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
-  Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+  Tahrirlangan: statusClassMap.Jarayonda,
+  'Reja tasdiqlangan': statusClassMap.Jarayonda,
+  'Komissiyaga yuborilgan': statusClassMap.Jarayonda,
+  'Kelishish uchun yuborilgan': statusClassMap.Jarayonda,
+  'Tasdiqlash uchun yuborilgan': statusClassMap.Jarayonda,
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
+  Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
 }
 
 const applicationReportStatuses: ApplicationReportStatus[] = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']
@@ -436,7 +446,16 @@ const applicationReportDistricts: Record<string, string[]> = {
 
 const assessmentStatusOptions: AssessmentStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
 const commissionStatusOptions: CommissionStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
-const protocolStatusOptions: ProtocolStatus[] = ['Yangi', 'Tahrirlangan', 'Rejalashtirilgan', 'Yuborilgan', 'Tasdiqlangan', 'Bekor qilingan']
+const protocolStatusOptions: ProtocolStatus[] = [
+  'Yangi',
+  'Tahrirlangan',
+  'Reja tasdiqlangan',
+  'Komissiyaga yuborilgan',
+  'Kelishish uchun yuborilgan',
+  'Tasdiqlash uchun yuborilgan',
+  'Bekor qilingan',
+  'Tasdiqlangan',
+]
 
 const workflowStageLabels: Record<CommissionWorkflowStage, string> = {
   Jarayonda: 'Jarayonda',
@@ -679,87 +698,6 @@ const assessments = ref<AssessmentRecord[]>([
   },
 ]) 
 
-const protocols = ref<ProtocolRecord[]>([
-  {
-    id: '5',
-    documentNumber: 'IPTK-BAYON-2026-005',
-    createdAt: '2026-04-22 10:25',
-    meetingDate: '22.04.2026',
-    region: 'Buxoro viloyati',
-    district: 'Buxoro shahri',
-    address: 'Buxoro shahri, Hududiy IPTK yig‘ilish xonasi',
-    acceptedApplications: 16,
-    totalApplications: 16,
-    status: 'Tasdiqlangan',
-    applications: [],
-  },
-  {
-    id: '6',
-    documentNumber: 'IPTK-BAYON-2026-006',
-    createdAt: '2026-04-23 16:40',
-    meetingDate: '23.04.2026',
-    region: 'Namangan viloyati',
-    district: 'Namangan shahri',
-    address: 'Namangan shahri, Inson markazi majlislar zali',
-    acceptedApplications: 7,
-    totalApplications: 10,
-    status: 'Bekor qilingan',
-    applications: [],
-  },
-  {
-    id: '1',
-    documentNumber: 'IPTK-BAYON-2026-001',
-    createdAt: '2026-04-14 10:00',
-    meetingDate: '14.04.2026',
-    region: "Qoraqalpog'iston Respublikasi",
-    district: 'Nukus shahri',
-    address: 'Nukus shahri, Markaziy yig‘ilish zali',
-    acceptedApplications: 18,
-    totalApplications: 20,
-    status: 'Yangi',
-    applications: [],
-  },
-  {
-    id: '2',
-    documentNumber: 'IPTK-BAYON-2026-002',
-    createdAt: '2026-04-16 11:30',
-    meetingDate: '16.04.2026',
-    region: 'Andijon viloyati',
-    district: 'Andijon shahri',
-    address: 'Andijon shahri, Inson markazi binosi',
-    acceptedApplications: 20,
-    totalApplications: 20,
-    status: 'Tahrirlangan',
-    applications: [],
-  },
-  {
-    id: '3',
-    documentNumber: 'IPTK-BAYON-2026-003',
-    createdAt: '2026-04-18 09:45',
-    meetingDate: '18.04.2026',
-    region: 'Samarqand viloyati',
-    district: 'Samarqand shahri',
-    address: 'Samarqand shahri, Hududiy boshqarma majlislar zali',
-    acceptedApplications: 24,
-    totalApplications: 24,
-    status: 'Rejalashtirilgan',
-    applications: [],
-  },
-  {
-    id: '4',
-    documentNumber: 'IPTK-BAYON-2026-004',
-    createdAt: '2026-04-20 15:10',
-    meetingDate: '20.04.2026',
-    region: 'Toshkent shahri',
-    district: 'Yunusobod tumani',
-    address: 'Yunusobod tumani, 4-mavze, 12-uy',
-    acceptedApplications: 9,
-    totalApplications: 12,
-    status: 'Yuborilgan',
-    applications: [],
-  },
-])
-
 const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
   {
     id: '1',
@@ -816,7 +754,164 @@ const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
     district: 'Nukus shahri',
     step: 'IPTK qabul qildi',
   },
+  {
+    id: '6',
+    documentNumber: 'ARZ-000013',
+    createdAt: '2026-04-17 09:40',
+    serviceRecipient: "YULDASHEV BEKZOD ILHOM O'G'LI",
+    serviceRecipientPinfl: '10000000001644',
+    serviceType: 'Huzur',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod tumani',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '7',
+    documentNumber: 'ARZ-000014',
+    createdAt: '2026-04-18 15:25',
+    serviceRecipient: "QODIROV JAMSHID SHUHRAT O'G'LI",
+    serviceRecipientPinfl: '10000000001781',
+    serviceType: 'Madad',
+    region: 'Buxoro viloyati',
+    district: 'Buxoro shahri',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '8',
+    documentNumber: 'ARZ-000015',
+    createdAt: '2026-04-19 10:50',
+    serviceRecipient: 'TURSUNOVA SHAHNOZA SHERZOD QIZI',
+    serviceRecipientPinfl: '10000000001918',
+    serviceType: "Ijtimoiy ta'til",
+    region: 'Namangan viloyati',
+    district: 'Namangan shahri',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '9',
+    documentNumber: 'ARZ-000016',
+    createdAt: '2026-04-20 13:30',
+    serviceRecipient: "KARIMOVA MOHIRA BAXTIYOR QIZI",
+    serviceRecipientPinfl: '10000000002055',
+    serviceType: 'Yangi kun',
+    region: 'Navoiy viloyati',
+    district: 'Navoiy shahri',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '10',
+    documentNumber: 'ARZ-000017',
+    createdAt: '2026-04-21 11:10',
+    serviceRecipient: "RASULOV DOSTON ELYOR O'G'LI",
+    serviceRecipientPinfl: '10000000002192',
+    serviceType: 'Uyda qarab turish',
+    region: 'Surxondaryo viloyati',
+    district: 'Termiz shahri',
+    step: 'IPTK qabul qildi',
+  },
 ]
+
+const getProtocolDemoApplications = (region: string, district: string) => {
+  const matched = protocolApplicationCandidates.filter((application) => (
+    application.region === region && application.district === district
+  ))
+
+  return matched.length > 0 ? matched : protocolApplicationCandidates.slice(0, 2)
+}
+
+const createDemoProtocol = (record: Omit<ProtocolRecord, 'acceptedApplications' | 'totalApplications' | 'applications'>): ProtocolRecord => {
+  const applications = getProtocolDemoApplications(record.region, record.district)
+
+  return {
+    ...record,
+    acceptedApplications: applications.length,
+    totalApplications: applications.length,
+    applications,
+  }
+}
+
+const protocols = ref<ProtocolRecord[]>([
+  createDemoProtocol({
+    id: '1',
+    documentNumber: 'IPTK-BAYON-2026-001',
+    createdAt: '2026-04-14 10:00',
+    meetingDate: '14.04.2026',
+    region: "Qoraqalpog'iston Respublikasi",
+    district: 'Nukus shahri',
+    address: 'Nukus shahri, Markaziy yig‘ilish zali',
+    status: 'Yangi',
+  }),
+  createDemoProtocol({
+    id: '2',
+    documentNumber: 'IPTK-BAYON-2026-002',
+    createdAt: '2026-04-16 11:30',
+    meetingDate: '16.04.2026',
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    address: 'Andijon shahri, Inson markazi binosi',
+    status: 'Tahrirlangan',
+  }),
+  createDemoProtocol({
+    id: '3',
+    documentNumber: 'IPTK-BAYON-2026-003',
+    createdAt: '2026-04-18 09:45',
+    meetingDate: '18.04.2026',
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    address: 'Samarqand shahri, Hududiy boshqarma majlislar zali',
+    status: 'Reja tasdiqlangan',
+  }),
+  createDemoProtocol({
+    id: '4',
+    documentNumber: 'IPTK-BAYON-2026-004',
+    createdAt: '2026-04-20 15:10',
+    meetingDate: '20.04.2026',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod tumani',
+    address: 'Yunusobod tumani, 4-mavze, 12-uy',
+    status: 'Komissiyaga yuborilgan',
+  }),
+  createDemoProtocol({
+    id: '5',
+    documentNumber: 'IPTK-BAYON-2026-005',
+    createdAt: '2026-04-22 10:25',
+    meetingDate: '22.04.2026',
+    region: 'Buxoro viloyati',
+    district: 'Buxoro shahri',
+    address: 'Buxoro shahri, Hududiy IPTK yig‘ilish xonasi',
+    status: 'Kelishish uchun yuborilgan',
+  }),
+  createDemoProtocol({
+    id: '6',
+    documentNumber: 'IPTK-BAYON-2026-006',
+    createdAt: '2026-04-23 16:40',
+    meetingDate: '23.04.2026',
+    region: 'Namangan viloyati',
+    district: 'Namangan shahri',
+    address: 'Namangan shahri, Inson markazi majlislar zali',
+    status: 'Tasdiqlash uchun yuborilgan',
+  }),
+  createDemoProtocol({
+    id: '7',
+    documentNumber: 'IPTK-BAYON-2026-007',
+    createdAt: '2026-04-24 13:20',
+    meetingDate: '24.04.2026',
+    region: 'Navoiy viloyati',
+    district: 'Navoiy shahri',
+    address: 'Navoiy shahri, IPTK yig‘ilish xonasi',
+    status: 'Bekor qilingan',
+  }),
+  createDemoProtocol({
+    id: '8',
+    documentNumber: 'IPTK-BAYON-2026-008',
+    createdAt: '2026-04-25 10:50',
+    meetingDate: '25.04.2026',
+    region: 'Surxondaryo viloyati',
+    district: 'Termiz shahri',
+    address: 'Termiz shahri, Hududiy boshqarma majlislar zali',
+    status: 'Tasdiqlangan',
+  }),
+])
 
 const serviceTypes = ref<ServiceTypeRecord[]>([
   {
@@ -1412,6 +1507,7 @@ const notificationRemaining = ref(NOTIFICATION_DURATION)
 const isTableLoading = ref(false)
 const actionLoadingKey = ref<string | null>(null)
 const isConfirmationLoading = ref(false)
+const dropdownSearchQueries = ref<Record<string, string>>({})
 const searchInput = ref('')
 const searchQuery = ref('')
 const assessmentSearchInput = ref('')
@@ -1422,10 +1518,10 @@ const isProtocolFilterOpen = ref(false)
 const openProtocolFilterField = ref<'status' | 'region' | null>(null)
 const openProtocolCalendarField = ref<'start' | 'end' | 'meeting' | null>(null)
 const protocolCalendarMonth = ref('')
-const draftProtocolStatusFilter = ref<'all' | ProtocolStatus>('all')
-const appliedProtocolStatusFilter = ref<'all' | ProtocolStatus>('all')
-const draftProtocolRegionFilter = ref<'all' | string>('all')
-const appliedProtocolRegionFilter = ref<'all' | string>('all')
+const draftProtocolStatusFilter = ref<ProtocolStatus[]>([])
+const appliedProtocolStatusFilter = ref<ProtocolStatus[]>([])
+const draftProtocolRegionFilter = ref<string[]>([])
+const appliedProtocolRegionFilter = ref<string[]>([])
 const draftProtocolStartDateFilter = ref('')
 const appliedProtocolStartDateFilter = ref('')
 const draftProtocolEndDateFilter = ref('')
@@ -1434,10 +1530,10 @@ const isAssessmentFilterOpen = ref(false)
 const openAssessmentFilterField = ref<'status' | 'region' | null>(null)
 const openAssessmentCalendarField = ref<'start' | 'end' | null>(null)
 const assessmentCalendarMonth = ref('')
-const draftAssessmentStatusFilter = ref<'all' | AssessmentStatus>('all')
-const appliedAssessmentStatusFilter = ref<'all' | AssessmentStatus>('all')
-const draftAssessmentRegionFilter = ref<'all' | string>('all')
-const appliedAssessmentRegionFilter = ref<'all' | string>('all')
+const draftAssessmentStatusFilter = ref<AssessmentStatus[]>([])
+const appliedAssessmentStatusFilter = ref<AssessmentStatus[]>([])
+const draftAssessmentRegionFilter = ref<string[]>([])
+const appliedAssessmentRegionFilter = ref<string[]>([])
 const draftAssessmentStartDateFilter = ref('')
 const appliedAssessmentStartDateFilter = ref('')
 const draftAssessmentEndDateFilter = ref('')
@@ -1467,10 +1563,10 @@ const appliedApplicationReportSnapshotDateFilter = ref(defaultApplicationReportS
 const draftApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
 const appliedApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
 const selectedApplicationReportCells = ref<Record<string, { label: string, value: number }>>({})
-const draftStatusFilter = ref<'all' | CommissionStatus>('all')
-const appliedStatusFilter = ref<'all' | CommissionStatus>('all')
-const draftRegionFilter = ref<'all' | string>('all')
-const appliedRegionFilter = ref<'all' | string>('all')
+const draftStatusFilter = ref<CommissionStatus[]>([])
+const appliedStatusFilter = ref<CommissionStatus[]>([])
+const draftRegionFilter = ref<string[]>([])
+const appliedRegionFilter = ref<string[]>([])
 const draftStartDateFilter = ref('')
 const appliedStartDateFilter = ref('')
 const draftEndDateFilter = ref('')
@@ -1486,6 +1582,8 @@ const protocolRowsPerPage = ref(20)
 const protocolCurrentPage = ref(1)
 const isProtocolRowsPerPageOpen = ref(false)
 const isProtocolDialogOpen = ref(false)
+const protocolDialogMode = ref<'create' | 'view' | 'edit'>('create')
+const editingProtocolId = ref<string | null>(null)
 const openProtocolFormField = ref<'region' | 'district' | null>(null)
 const protocolForm = ref({
   meetingDate: '',
@@ -2492,8 +2590,8 @@ const filteredCommissions = computed(() => {
       formatDateDisplay(record.createdAt),
     ].some((value) => value.toLowerCase().includes(query))
 
-    const matchesStatus = appliedStatusFilter.value === 'all' || record.status === appliedStatusFilter.value
-    const matchesRegion = appliedRegionFilter.value === 'all' || record.region === appliedRegionFilter.value
+    const matchesStatus = !appliedStatusFilter.value.length || appliedStatusFilter.value.includes(record.status)
+    const matchesRegion = !appliedRegionFilter.value.length || appliedRegionFilter.value.includes(record.region)
     const recordDate = parseRecordDate(record.createdAt)
     const startDate = parseDisplayDate(appliedStartDateFilter.value)
     const endDate = parseDisplayDate(appliedEndDateFilter.value)
@@ -2520,8 +2618,8 @@ const filteredAssessments = computed(() => {
       record.status,
     ].some((value) => value.toLowerCase().includes(query))
 
-    const matchesStatus = appliedAssessmentStatusFilter.value === 'all' || record.status === appliedAssessmentStatusFilter.value
-    const matchesRegion = appliedAssessmentRegionFilter.value === 'all' || record.region === appliedAssessmentRegionFilter.value
+    const matchesStatus = !appliedAssessmentStatusFilter.value.length || appliedAssessmentStatusFilter.value.includes(record.status)
+    const matchesRegion = !appliedAssessmentRegionFilter.value.length || appliedAssessmentRegionFilter.value.includes(record.region)
     const recordDate = parseRecordDate(record.createdAt)
     const startDate = parseDisplayDate(appliedAssessmentStartDateFilter.value)
     const endDate = parseDisplayDate(appliedAssessmentEndDateFilter.value)
@@ -2551,8 +2649,8 @@ const filteredProtocols = computed(() => {
       String(record.totalApplications),
       record.status,
     ].some((value) => value.toLowerCase().includes(query))
-    const matchesStatus = appliedProtocolStatusFilter.value === 'all' || record.status === appliedProtocolStatusFilter.value
-    const matchesRegion = appliedProtocolRegionFilter.value === 'all' || record.region === appliedProtocolRegionFilter.value
+    const matchesStatus = !appliedProtocolStatusFilter.value.length || appliedProtocolStatusFilter.value.includes(record.status)
+    const matchesRegion = !appliedProtocolRegionFilter.value.length || appliedProtocolRegionFilter.value.includes(record.region)
     const matchesStartDate = !startDate || !recordDate || recordDate >= startDate
     const matchesEndDate = !endDate || !recordDate || recordDate <= endDate
 
@@ -2598,43 +2696,104 @@ const protocolPaginationRange = computed(() => {
 const protocolCurrentPageSummary = computed(() => `${protocolCurrentPage.value}/${protocolTotalPages.value}`)
 const protocolActiveFilterCount = computed(() => {
   let count = 0
-  if (appliedProtocolStatusFilter.value !== 'all') count += 1
-  if (appliedProtocolRegionFilter.value !== 'all') count += 1
+  if (appliedProtocolStatusFilter.value.length) count += 1
+  if (appliedProtocolRegionFilter.value.length) count += 1
   if (appliedProtocolStartDateFilter.value) count += 1
   if (appliedProtocolEndDateFilter.value) count += 1
   return count
 })
 const protocolHasActiveFilters = computed(() => {
   return protocolSearchQuery.value
-    || appliedProtocolStatusFilter.value !== 'all'
-    || appliedProtocolRegionFilter.value !== 'all'
+    || appliedProtocolStatusFilter.value.length
+    || appliedProtocolRegionFilter.value.length
     || appliedProtocolStartDateFilter.value
     || appliedProtocolEndDateFilter.value
 })
 const protocolHasPendingFilterChanges = computed(() => (
-  draftProtocolStatusFilter.value !== appliedProtocolStatusFilter.value
-  || draftProtocolRegionFilter.value !== appliedProtocolRegionFilter.value
+  !areApplicationReportFiltersEqual(draftProtocolStatusFilter.value, appliedProtocolStatusFilter.value)
+  || !areApplicationReportFiltersEqual(draftProtocolRegionFilter.value, appliedProtocolRegionFilter.value)
   || draftProtocolStartDateFilter.value !== appliedProtocolStartDateFilter.value
   || draftProtocolEndDateFilter.value !== appliedProtocolEndDateFilter.value
 ))
+
+function normalizeDropdownSearch(value: string) {
+  return value
+    .toString()
+    .trim()
+    .toLocaleLowerCase('uz-Latn-UZ')
+}
+
+function getDropdownSearchValue(key: string) {
+  return dropdownSearchQueries.value[key] ?? ''
+}
+
+function setDropdownSearchValue(key: string, value: string) {
+  dropdownSearchQueries.value = {
+    ...dropdownSearchQueries.value,
+    [key]: value,
+  }
+}
+
+function filterDropdownOptions<T>(
+  options: readonly T[],
+  key: string,
+  getLabel: (option: T) => string = (option) => String(option),
+) {
+  const query = normalizeDropdownSearch(getDropdownSearchValue(key))
+  if (!query) return options
+
+  return options.filter((option) => normalizeDropdownSearch(getLabel(option)).includes(query))
+}
+
+function getDropdownMultiSelectLabel(values: readonly string[]) {
+  if (!values.length) return 'Barchasi'
+  if (values.length === 1) return values[0]
+  return `${values.length} ta tanlandi`
+}
+
+function toggleDropdownMultiSelectValue<T extends string>(selectedValues: T[], value: T) {
+  return selectedValues.includes(value)
+    ? selectedValues.filter((item) => item !== value)
+    : [...selectedValues, value]
+}
 const protocolStatusFilterLabel = computed(() => (
-  draftProtocolStatusFilter.value === 'all' ? 'Barchasi' : draftProtocolStatusFilter.value
+  getDropdownMultiSelectLabel(draftProtocolStatusFilter.value)
 ))
 const protocolRegionFilterLabel = computed(() => (
-  draftProtocolRegionFilter.value === 'all' ? 'Barchasi' : draftProtocolRegionFilter.value
+  getDropdownMultiSelectLabel(draftProtocolRegionFilter.value)
 ))
 const protocolStatusTabs = computed(() => [
   {
     label: 'Barchasi',
     value: 'all' as const,
     count: protocols.value.length,
-    className: 'border-border bg-muted/50 text-foreground',
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
   },
   ...protocolStatusOptions.map((status) => ({
     label: status,
     value: status,
     count: protocols.value.filter((record) => record.status === status).length,
-    className: protocolStatusClassMap[status],
+    dotClass: {
+      Yangi: 'bg-slate-500',
+      Tahrirlangan: 'bg-amber-500',
+      'Reja tasdiqlangan': 'bg-amber-500',
+      'Komissiyaga yuborilgan': 'bg-amber-500',
+      'Kelishish uchun yuborilgan': 'bg-amber-500',
+      'Tasdiqlash uchun yuborilgan': 'bg-amber-500',
+      'Bekor qilingan': 'bg-rose-500',
+      Tasdiqlangan: 'bg-emerald-500',
+    }[status],
+    badgeClass: {
+      Yangi: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+      Tahrirlangan: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      'Reja tasdiqlangan': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      'Komissiyaga yuborilgan': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      'Kelishish uchun yuborilgan': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      'Tasdiqlash uchun yuborilgan': 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      'Bekor qilingan': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+      Tasdiqlangan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+    }[status],
   })),
 ])
 const protocolFormDistrictOptions = computed(() => {
@@ -2654,32 +2813,49 @@ const canGenerateProtocol = computed(() => (
   && Boolean(protocolForm.value.district)
   && Boolean(protocolForm.value.address.trim())
 ))
-const canSaveProtocol = computed(() => canGenerateProtocol.value && protocolForm.value.applications.length > 0)
+const isProtocolReadonly = computed(() => protocolDialogMode.value === 'view')
+const selectedProtocolForDialog = computed(() => (
+  editingProtocolId.value ? protocols.value.find((record) => record.id === editingProtocolId.value) ?? null : null
+))
+const canSaveProtocol = computed(() => (
+  canGenerateProtocol.value
+  && (protocolDialogMode.value === 'edit' || protocolForm.value.applications.length > 0)
+))
+const protocolDialogTitle = computed(() => {
+  if (protocolDialogMode.value === 'view') return t('Bayonnomani ko‘rish')
+  if (protocolDialogMode.value === 'edit') return t('Bayonnomani tahrirlash')
+  return t('Bayonnoma yaratish')
+})
+const protocolDialogDescription = computed(() => {
+  if (protocolDialogMode.value === 'view') return selectedProtocolForDialog.value?.documentNumber ?? ''
+  if (protocolDialogMode.value === 'edit') return t("Yig'ilish ma'lumotlarini yangilang va arizalar ro'yxatini tekshiring.")
+  return t("Yig'ilish ma'lumotlarini kiriting va arizalar ro'yxatini shakllantiring.")
+})
 const assessmentActiveFilterCount = computed(() => {
   let count = 0
-  if (appliedAssessmentStatusFilter.value !== 'all') count += 1
-  if (appliedAssessmentRegionFilter.value !== 'all') count += 1
+  if (appliedAssessmentStatusFilter.value.length) count += 1
+  if (appliedAssessmentRegionFilter.value.length) count += 1
   if (appliedAssessmentStartDateFilter.value) count += 1
   if (appliedAssessmentEndDateFilter.value) count += 1
   return count
 })
 const assessmentHasActiveFilters = computed(() => {
-  return appliedAssessmentStatusFilter.value !== 'all'
-    || appliedAssessmentRegionFilter.value !== 'all'
+  return appliedAssessmentStatusFilter.value.length
+    || appliedAssessmentRegionFilter.value.length
     || Boolean(appliedAssessmentStartDateFilter.value)
     || Boolean(appliedAssessmentEndDateFilter.value)
 })
 const assessmentHasPendingFilterChanges = computed(() => {
-  return draftAssessmentStatusFilter.value !== appliedAssessmentStatusFilter.value
-    || draftAssessmentRegionFilter.value !== appliedAssessmentRegionFilter.value
+  return !areApplicationReportFiltersEqual(draftAssessmentStatusFilter.value, appliedAssessmentStatusFilter.value)
+    || !areApplicationReportFiltersEqual(draftAssessmentRegionFilter.value, appliedAssessmentRegionFilter.value)
     || draftAssessmentStartDateFilter.value !== appliedAssessmentStartDateFilter.value
     || draftAssessmentEndDateFilter.value !== appliedAssessmentEndDateFilter.value
 })
 const draftAssessmentStatusLabel = computed(() => (
-  draftAssessmentStatusFilter.value === 'all' ? 'Barchasi' : draftAssessmentStatusFilter.value
+  getDropdownMultiSelectLabel(draftAssessmentStatusFilter.value)
 ))
 const draftAssessmentRegionLabel = computed(() => (
-  draftAssessmentRegionFilter.value === 'all' ? 'Barchasi' : draftAssessmentRegionFilter.value
+  getDropdownMultiSelectLabel(draftAssessmentRegionFilter.value)
 ))
 const assessmentCalendarMonthLabel = computed(() => {
   const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
@@ -2786,8 +2962,8 @@ const selectedAssessmentServiceRecipientRows = computed(() => {
 const activeFilterCount = computed(() => {
   let count = 0
 
-  if (appliedStatusFilter.value !== 'all') count += 1
-  if (appliedRegionFilter.value !== 'all') count += 1
+  if (appliedStatusFilter.value.length) count += 1
+  if (appliedRegionFilter.value.length) count += 1
   if (appliedStartDateFilter.value) count += 1
   if (appliedEndDateFilter.value) count += 1
 
@@ -3705,22 +3881,22 @@ const applicationReportSelectionAnalytics = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-  return appliedStatusFilter.value !== 'all'
-    || appliedRegionFilter.value !== 'all'
+  return appliedStatusFilter.value.length
+    || appliedRegionFilter.value.length
     || Boolean(appliedStartDateFilter.value)
     || Boolean(appliedEndDateFilter.value)
 })
 const hasPendingFilterChanges = computed(() => {
-  return draftStatusFilter.value !== appliedStatusFilter.value
-    || draftRegionFilter.value !== appliedRegionFilter.value
+  return !areApplicationReportFiltersEqual(draftStatusFilter.value, appliedStatusFilter.value)
+    || !areApplicationReportFiltersEqual(draftRegionFilter.value, appliedRegionFilter.value)
     || draftStartDateFilter.value !== appliedStartDateFilter.value
     || draftEndDateFilter.value !== appliedEndDateFilter.value
 })
 const draftStatusLabel = computed(() => (
-  draftStatusFilter.value === 'all' ? 'Barchasi' : draftStatusFilter.value
+  getDropdownMultiSelectLabel(draftStatusFilter.value)
 ))
 const draftRegionLabel = computed(() => (
-  draftRegionFilter.value === 'all' ? 'Barchasi' : draftRegionFilter.value
+  getDropdownMultiSelectLabel(draftRegionFilter.value)
 ))
 const calendarMonthLabel = computed(() => {
   const monthValue = calendarMonth.value || getTodayIso().slice(0, 7)
@@ -4309,8 +4485,8 @@ function applyFilters() {
   openCalendarField.value = null
 
   runTableLoading(() => {
-    appliedStatusFilter.value = draftStatusFilter.value
-    appliedRegionFilter.value = draftRegionFilter.value
+    appliedStatusFilter.value = [...draftStatusFilter.value]
+    appliedRegionFilter.value = [...draftRegionFilter.value]
     appliedStartDateFilter.value = draftStartDateFilter.value
     appliedEndDateFilter.value = draftEndDateFilter.value
     currentPage.value = 1
@@ -4331,8 +4507,8 @@ function resetSearchAndFilters() {
   }
 
   searchInput.value = ''
-  draftStatusFilter.value = 'all'
-  draftRegionFilter.value = 'all'
+  draftStatusFilter.value = []
+  draftRegionFilter.value = []
   draftStartDateFilter.value = ''
   draftEndDateFilter.value = ''
   isFilterOpen.value = false
@@ -4341,8 +4517,8 @@ function resetSearchAndFilters() {
 
   runTableLoading(() => {
     searchQuery.value = ''
-    appliedStatusFilter.value = 'all'
-    appliedRegionFilter.value = 'all'
+    appliedStatusFilter.value = []
+    appliedRegionFilter.value = []
     appliedStartDateFilter.value = ''
     appliedEndDateFilter.value = ''
     currentPage.value = 1
@@ -4357,8 +4533,8 @@ function closeFilters() {
 
 function toggleFiltersFromMenu(nextOpen: boolean) {
   if (nextOpen) {
-    draftStatusFilter.value = appliedStatusFilter.value
-    draftRegionFilter.value = appliedRegionFilter.value
+    draftStatusFilter.value = [...appliedStatusFilter.value]
+    draftRegionFilter.value = [...appliedRegionFilter.value]
     draftStartDateFilter.value = appliedStartDateFilter.value
     draftEndDateFilter.value = appliedEndDateFilter.value
     openFilterField.value = null
@@ -4376,13 +4552,15 @@ function toggleFilterField(field: 'status' | 'region') {
 }
 
 function selectStatusFilter(value: 'all' | CommissionStatus) {
-  draftStatusFilter.value = value
-  openFilterField.value = null
+  draftStatusFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftStatusFilter.value, value)
 }
 
 function selectRegionFilter(value: 'all' | string) {
-  draftRegionFilter.value = value
-  openFilterField.value = null
+  draftRegionFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftRegionFilter.value, value)
 }
 
 function handleStartDateFilterChange(value: unknown) {
@@ -4641,8 +4819,8 @@ function applyProtocolFilters() {
   openProtocolFilterField.value = null
 
   runTableLoading(() => {
-    appliedProtocolStatusFilter.value = draftProtocolStatusFilter.value
-    appliedProtocolRegionFilter.value = draftProtocolRegionFilter.value
+    appliedProtocolStatusFilter.value = [...draftProtocolStatusFilter.value]
+    appliedProtocolRegionFilter.value = [...draftProtocolRegionFilter.value]
     appliedProtocolStartDateFilter.value = draftProtocolStartDateFilter.value
     appliedProtocolEndDateFilter.value = draftProtocolEndDateFilter.value
     protocolCurrentPage.value = 1
@@ -4653,16 +4831,16 @@ function applyProtocolFilters() {
 function resetProtocolSearchAndFilters() {
   protocolSearchInput.value = ''
   protocolSearchQuery.value = ''
-  draftProtocolStatusFilter.value = 'all'
-  draftProtocolRegionFilter.value = 'all'
+  draftProtocolStatusFilter.value = []
+  draftProtocolRegionFilter.value = []
   draftProtocolStartDateFilter.value = ''
   draftProtocolEndDateFilter.value = ''
   isProtocolFilterOpen.value = false
   openProtocolFilterField.value = null
 
   runTableLoading(() => {
-    appliedProtocolStatusFilter.value = 'all'
-    appliedProtocolRegionFilter.value = 'all'
+    appliedProtocolStatusFilter.value = []
+    appliedProtocolRegionFilter.value = []
     appliedProtocolStartDateFilter.value = ''
     appliedProtocolEndDateFilter.value = ''
     protocolCurrentPage.value = 1
@@ -4683,8 +4861,8 @@ function closeProtocolFilters() {
 
 function toggleProtocolFiltersFromMenu(nextOpen: boolean) {
   if (nextOpen) {
-    draftProtocolStatusFilter.value = appliedProtocolStatusFilter.value
-    draftProtocolRegionFilter.value = appliedProtocolRegionFilter.value
+    draftProtocolStatusFilter.value = [...appliedProtocolStatusFilter.value]
+    draftProtocolRegionFilter.value = [...appliedProtocolRegionFilter.value]
     draftProtocolStartDateFilter.value = appliedProtocolStartDateFilter.value
     draftProtocolEndDateFilter.value = appliedProtocolEndDateFilter.value
     openProtocolFilterField.value = null
@@ -4702,24 +4880,27 @@ function toggleProtocolFilterField(field: 'status' | 'region') {
 }
 
 function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
-  draftProtocolStatusFilter.value = value
-  openProtocolFilterField.value = null
+  draftProtocolStatusFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftProtocolStatusFilter.value, value)
 }
 
 function selectProtocolStatusTab(value: 'all' | ProtocolStatus) {
-  if (appliedProtocolStatusFilter.value === value) return
+  const nextStatuses = value === 'all' ? [] : [value]
+  if (areApplicationReportFiltersEqual(appliedProtocolStatusFilter.value, nextStatuses)) return
 
   closeProtocolFilters()
-  draftProtocolStatusFilter.value = value
+  draftProtocolStatusFilter.value = nextStatuses
   runTableLoading(() => {
-    appliedProtocolStatusFilter.value = value
+    appliedProtocolStatusFilter.value = nextStatuses
     protocolCurrentPage.value = 1
   })
 }
 
 function selectProtocolRegionFilter(value: 'all' | string) {
-  draftProtocolRegionFilter.value = value
-  openProtocolFilterField.value = null
+  draftProtocolRegionFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftProtocolRegionFilter.value, value)
 }
 
 function handleProtocolStartDateFilterChange(value: unknown) {
@@ -4753,6 +4934,7 @@ function handleProtocolEndDateFilterChange(value: unknown) {
 }
 
 function handleProtocolMeetingDateChange(value: unknown) {
+  if (isProtocolReadonly.value) return
   protocolForm.value.meetingDate = sanitizeDateFilterInput(String(value ?? ''))
   protocolForm.value.isGenerated = false
   protocolForm.value.applications = []
@@ -4765,6 +4947,7 @@ function getProtocolDateFieldValue(field: 'start' | 'end' | 'meeting') {
 }
 
 function openProtocolCalendar(field: 'start' | 'end' | 'meeting') {
+  if (field === 'meeting' && isProtocolReadonly.value) return
   openProtocolCalendarField.value = openProtocolCalendarField.value === field ? null : field
 
   if (!openProtocolCalendarField.value) {
@@ -4816,12 +4999,15 @@ function isProtocolCalendarDateSelected(value: string) {
 }
 
 function handleProtocolAddressChange(value: unknown) {
+  if (isProtocolReadonly.value) return
   protocolForm.value.address = String(value ?? '')
   protocolForm.value.isGenerated = false
   protocolForm.value.applications = []
 }
 
 function openCreateProtocolDialog() {
+  protocolDialogMode.value = 'create'
+  editingProtocolId.value = null
   protocolForm.value = {
     meetingDate: '',
     region: '',
@@ -4837,13 +5023,56 @@ function closeProtocolDialog() {
   openProtocolFormField.value = null
   openProtocolCalendarField.value = null
   isProtocolDialogOpen.value = false
+  protocolDialogMode.value = 'create'
+  editingProtocolId.value = null
+}
+
+function canEditProtocol(record: ProtocolRecord) {
+  return record.status === 'Yangi' || record.status === 'Tahrirlangan'
+}
+
+function fillProtocolForm(record: ProtocolRecord) {
+  protocolForm.value = {
+    meetingDate: record.meetingDate,
+    region: record.region,
+    district: record.district,
+    address: record.address,
+    applications: [...record.applications],
+    isGenerated: true,
+  }
+}
+
+function viewProtocol(record: ProtocolRecord) {
+  const stopLoading = startActionLoading(`protocol-view-${record.id}`)
+  openActionMenuId.value = null
+  stopLoading(() => {
+    protocolDialogMode.value = 'view'
+    editingProtocolId.value = record.id
+    fillProtocolForm(record)
+    isProtocolDialogOpen.value = true
+  })
+}
+
+function editProtocol(record: ProtocolRecord) {
+  if (!canEditProtocol(record)) return
+
+  const stopLoading = startActionLoading(`protocol-edit-${record.id}`)
+  openActionMenuId.value = null
+  stopLoading(() => {
+    protocolDialogMode.value = 'edit'
+    editingProtocolId.value = record.id
+    fillProtocolForm(record)
+    isProtocolDialogOpen.value = true
+  })
 }
 
 function toggleProtocolFormField(field: 'region' | 'district') {
+  if (isProtocolReadonly.value) return
   openProtocolFormField.value = openProtocolFormField.value === field ? null : field
 }
 
 function selectProtocolFormRegion(region: string) {
+  if (isProtocolReadonly.value) return
   protocolForm.value.region = region
   protocolForm.value.district = ''
   protocolForm.value.applications = []
@@ -4852,6 +5081,7 @@ function selectProtocolFormRegion(region: string) {
 }
 
 function selectProtocolFormDistrict(district: string) {
+  if (isProtocolReadonly.value) return
   protocolForm.value.district = district
   protocolForm.value.applications = []
   protocolForm.value.isGenerated = false
@@ -4859,6 +5089,7 @@ function selectProtocolFormDistrict(district: string) {
 }
 
 function resetProtocolForm() {
+  if (isProtocolReadonly.value) return
   protocolForm.value = {
     meetingDate: '',
     region: '',
@@ -4870,17 +5101,32 @@ function resetProtocolForm() {
 }
 
 function generateProtocolApplications() {
+  if (isProtocolReadonly.value) return
+
   if (!canGenerateProtocol.value) {
     pushFeedback('error', "Yig'ilish sanasi, hudud, tuman va manzilni to'ldiring.")
     return
   }
 
-  protocolForm.value.applications = [...generatedProtocolCandidates.value]
-  protocolForm.value.isGenerated = true
+  const stopLoading = startActionLoading('protocol-generate-applications')
+  stopLoading(() => {
+    protocolForm.value.applications = [...generatedProtocolCandidates.value]
+    protocolForm.value.isGenerated = true
 
-  if (!protocolForm.value.applications.length) {
-    pushFeedback('info', "Tanlangan hudud va tuman bo'yicha IPTK qabul qildi bosqichidagi arizalar topilmadi.")
-  }
+    if (!protocolForm.value.applications.length) {
+      pushFeedback('info', "Tanlangan hudud va tuman bo'yicha IPTK qabul qildi bosqichidagi arizalar topilmadi.")
+    }
+  })
+}
+
+function clearProtocolApplications() {
+  if (isProtocolReadonly.value) return
+
+  const stopLoading = startActionLoading('protocol-clear-applications')
+  stopLoading(() => {
+    protocolForm.value.applications = []
+    protocolForm.value.isGenerated = false
+  })
 }
 
 function nextProtocolDocumentNumber() {
@@ -4889,8 +5135,30 @@ function nextProtocolDocumentNumber() {
 }
 
 function saveProtocol() {
+  if (protocolDialogMode.value === 'view') return
+
   if (!canSaveProtocol.value) {
     pushFeedback('error', "Bayonnomani saqlash uchun avval arizalar ro'yxatini shakllantiring.")
+    return
+  }
+
+  if (protocolDialogMode.value === 'edit' && editingProtocolId.value) {
+    const target = protocols.value.find((record) => record.id === editingProtocolId.value)
+    if (!target) return
+
+    target.meetingDate = protocolForm.value.meetingDate
+    target.region = protocolForm.value.region
+    target.district = protocolForm.value.district
+    target.address = protocolForm.value.address.trim()
+    target.applications = [...protocolForm.value.applications]
+    if (protocolForm.value.applications.length > 0) {
+      target.acceptedApplications = protocolForm.value.applications.length
+      target.totalApplications = protocolForm.value.applications.length
+    }
+    target.status = 'Tahrirlangan'
+
+    closeProtocolDialog()
+    pushFeedback('success', `${target.documentNumber} raqamli bayonnoma tahrirlandi.`)
     return
   }
 
@@ -4925,8 +5193,8 @@ function applyAssessmentFilters() {
   openAssessmentCalendarField.value = null
 
   runTableLoading(() => {
-    appliedAssessmentStatusFilter.value = draftAssessmentStatusFilter.value
-    appliedAssessmentRegionFilter.value = draftAssessmentRegionFilter.value
+    appliedAssessmentStatusFilter.value = [...draftAssessmentStatusFilter.value]
+    appliedAssessmentRegionFilter.value = [...draftAssessmentRegionFilter.value]
     appliedAssessmentStartDateFilter.value = draftAssessmentStartDateFilter.value
     appliedAssessmentEndDateFilter.value = draftAssessmentEndDateFilter.value
     assessmentCurrentPage.value = 1
@@ -4937,8 +5205,8 @@ function applyAssessmentFilters() {
 function resetAssessmentSearchAndFilters() {
   assessmentSearchInput.value = ''
   assessmentSearchQuery.value = ''
-  draftAssessmentStatusFilter.value = 'all'
-  draftAssessmentRegionFilter.value = 'all'
+  draftAssessmentStatusFilter.value = []
+  draftAssessmentRegionFilter.value = []
   draftAssessmentStartDateFilter.value = ''
   draftAssessmentEndDateFilter.value = ''
   isAssessmentFilterOpen.value = false
@@ -4946,8 +5214,8 @@ function resetAssessmentSearchAndFilters() {
   openAssessmentCalendarField.value = null
 
   runTableLoading(() => {
-    appliedAssessmentStatusFilter.value = 'all'
-    appliedAssessmentRegionFilter.value = 'all'
+    appliedAssessmentStatusFilter.value = []
+    appliedAssessmentRegionFilter.value = []
     appliedAssessmentStartDateFilter.value = ''
     appliedAssessmentEndDateFilter.value = ''
     assessmentCurrentPage.value = 1
@@ -4968,8 +5236,8 @@ function closeAssessmentFilters() {
 
 function toggleAssessmentFiltersFromMenu(nextOpen: boolean) {
   if (nextOpen) {
-    draftAssessmentStatusFilter.value = appliedAssessmentStatusFilter.value
-    draftAssessmentRegionFilter.value = appliedAssessmentRegionFilter.value
+    draftAssessmentStatusFilter.value = [...appliedAssessmentStatusFilter.value]
+    draftAssessmentRegionFilter.value = [...appliedAssessmentRegionFilter.value]
     draftAssessmentStartDateFilter.value = appliedAssessmentStartDateFilter.value
     draftAssessmentEndDateFilter.value = appliedAssessmentEndDateFilter.value
     openAssessmentFilterField.value = null
@@ -4987,8 +5255,9 @@ function toggleAssessmentFilterField(field: 'status' | 'region') {
 }
 
 function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
-  draftAssessmentStatusFilter.value = value
-  openAssessmentFilterField.value = null
+  draftAssessmentStatusFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftAssessmentStatusFilter.value, value)
 }
 
 function formatAssessmentScore(score: number) {
@@ -5191,8 +5460,9 @@ function requestApproveAssessment(record: AssessmentRecord) {
 }
 
 function selectAssessmentRegionFilter(value: 'all' | string) {
-  draftAssessmentRegionFilter.value = value
-  openAssessmentFilterField.value = null
+  draftAssessmentRegionFilter.value = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(draftAssessmentRegionFilter.value, value)
 }
 
 function handleAssessmentStartDateFilterChange(value: unknown) {
@@ -6754,8 +7024,21 @@ onUnmounted(() => {
                       v-if="openApplicationReportFilterField === 'status'"
                       class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-background">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('report-filter-status')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('report-filter-status', String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button
-                        v-for="status in applicationReportStatuses"
+                        v-for="status in filterDropdownOptions(applicationReportStatuses, 'report-filter-status')"
                         :key="`dashboard-filter-status-${status}`"
                         type="button"
                         class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -6794,8 +7077,21 @@ onUnmounted(() => {
                       v-if="openApplicationReportFilterField === 'step'"
                       class="max-h-64 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-background">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('report-filter-step')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('report-filter-step', String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button
-                        v-for="step in applicationReportStepFilterOptions"
+                        v-for="step in filterDropdownOptions(applicationReportStepFilterOptions, 'report-filter-step')"
                         :key="`dashboard-filter-step-${step}`"
                         type="button"
                         class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -6834,8 +7130,21 @@ onUnmounted(() => {
                       v-if="openApplicationReportFilterField === 'region'"
                       class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-background">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('report-filter-region')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('report-filter-region', String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button
-                        v-for="region in applicationReportRegions"
+                        v-for="region in filterDropdownOptions(applicationReportRegions, 'report-filter-region')"
                         :key="`dashboard-filter-region-${region}`"
                         type="button"
                         class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -6875,8 +7184,21 @@ onUnmounted(() => {
                       v-if="openApplicationReportFilterField === 'district'"
                       class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-background">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('report-filter-district')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('report-filter-district', String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button
-                        v-for="district in applicationReportDistrictFilterOptions"
+                        v-for="district in filterDropdownOptions(applicationReportDistrictFilterOptions, 'report-filter-district')"
                         :key="`dashboard-filter-district-${district}`"
                         type="button"
                         class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -6919,8 +7241,21 @@ onUnmounted(() => {
                       v-if="openApplicationReportFilterField === group.key"
                       class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-background">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue(`report-filter-${group.key}`)"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue(`report-filter-${group.key}`, String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button
-                        v-for="option in group.options"
+                        v-for="option in filterDropdownOptions(group.options, `report-filter-${group.key}`)"
                         :key="`dashboard-filter-metric-${group.key}-${option}`"
                         type="button"
                         class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -7522,6 +7857,17 @@ onUnmounted(() => {
                           v-if="openFilterField === 'status'"
                           class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                         >
+                          <div class="relative mb-1">
+                            <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              :model-value="getDropdownSearchValue('commission-filter-status')"
+                              class="h-8 pl-8 text-xs"
+                              :placeholder="t('Qidirish')"
+                              @click.stop
+                              @keydown.stop
+                              @update:model-value="setDropdownSearchValue('commission-filter-status', String($event ?? ''))"
+                            />
+                          </div>
                           <button
                             type="button"
                             class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -7529,12 +7875,12 @@ onUnmounted(() => {
                           >
                             <span>Barchasi</span>
                             <Check
-                              v-if="draftStatusFilter === 'all'"
+                              v-if="draftStatusFilter.length === 0"
                               class="h-4 w-4 text-primary"
                             />
                           </button>
                           <button
-                            v-for="status in commissionStatusOptions"
+                            v-for="status in filterDropdownOptions(commissionStatusOptions, 'commission-filter-status')"
                             :key="status"
                             type="button"
                             class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -7542,7 +7888,7 @@ onUnmounted(() => {
                           >
                             <span>{{ status }}</span>
                             <Check
-                              v-if="draftStatusFilter === status"
+                              v-if="draftStatusFilter.includes(status)"
                               class="h-4 w-4 text-primary"
                             />
                           </button>
@@ -7575,6 +7921,19 @@ onUnmounted(() => {
                           v-if="openFilterField === 'region'"
                           class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                         >
+                          <div class="sticky top-0 z-10 mb-1 bg-background">
+                            <div class="relative">
+                              <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                              <Input
+                                :model-value="getDropdownSearchValue('commission-filter-region')"
+                                class="h-8 pl-8 text-xs"
+                                :placeholder="t('Qidirish')"
+                                @click.stop
+                                @keydown.stop
+                                @update:model-value="setDropdownSearchValue('commission-filter-region', String($event ?? ''))"
+                              />
+                            </div>
+                          </div>
                           <button
                             type="button"
                             class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -7582,12 +7941,12 @@ onUnmounted(() => {
                           >
                             <span>Barchasi</span>
                             <Check
-                              v-if="draftRegionFilter === 'all'"
+                              v-if="draftRegionFilter.length === 0"
                               class="h-4 w-4 text-primary"
                             />
                           </button>
                           <button
-                            v-for="region in regionOptions"
+                            v-for="region in filterDropdownOptions(regionOptions, 'commission-filter-region')"
                             :key="region"
                             type="button"
                             class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -7595,7 +7954,7 @@ onUnmounted(() => {
                           >
                             <span class="truncate">{{ region }}</span>
                             <Check
-                              v-if="draftRegionFilter === region"
+                              v-if="draftRegionFilter.includes(region)"
                               class="h-4 w-4 shrink-0 text-primary"
                             />
                           </button>
@@ -8301,7 +8660,11 @@ onUnmounted(() => {
 
       <div
         v-if="selectedViewRecord"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -8514,7 +8877,11 @@ onUnmounted(() => {
 
       <div
         v-if="isCreateDialogOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -8572,6 +8939,19 @@ onUnmounted(() => {
                   v-if="isFormRegionOpen"
                   class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-30 max-h-64 overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-popover">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('commission-form-region')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('commission-form-region', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -8584,7 +8964,7 @@ onUnmounted(() => {
                     />
                   </button>
                   <button
-                    v-for="region in regionOptions"
+                    v-for="region in filterDropdownOptions(regionOptions, 'commission-form-region')"
                     :key="region"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -9140,23 +9520,34 @@ onUnmounted(() => {
                         v-if="openAssessmentFilterField === 'status'"
                         class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                       >
+                        <div class="relative mb-1">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('assessment-filter-status')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('assessment-filter-status', String($event ?? ''))"
+                          />
+                        </div>
                         <button
                           type="button"
                           class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                           @click.stop.prevent="selectAssessmentStatusFilter('all')"
                         >
                           <span>Barchasi</span>
-                          <Check v-if="draftAssessmentStatusFilter === 'all'" class="h-4 w-4 text-primary" />
+                          <Check v-if="draftAssessmentStatusFilter.length === 0" class="h-4 w-4 text-primary" />
                         </button>
                         <button
-                          v-for="status in assessmentStatusOptions"
+                          v-for="status in filterDropdownOptions(assessmentStatusOptions, 'assessment-filter-status')"
                           :key="status"
                           type="button"
                           class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                           @click.stop.prevent="selectAssessmentStatusFilter(status)"
                         >
                           <span>{{ status }}</span>
-                          <Check v-if="draftAssessmentStatusFilter === status" class="h-4 w-4 text-primary" />
+                          <Check v-if="draftAssessmentStatusFilter.includes(status)" class="h-4 w-4 text-primary" />
                         </button>
                       </div>
                     </div>
@@ -9182,23 +9573,36 @@ onUnmounted(() => {
                         v-if="openAssessmentFilterField === 'region'"
                         class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                       >
+                        <div class="sticky top-0 z-10 mb-1 bg-background">
+                          <div class="relative">
+                            <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              :model-value="getDropdownSearchValue('assessment-filter-region')"
+                              class="h-8 pl-8 text-xs"
+                              :placeholder="t('Qidirish')"
+                              @click.stop
+                              @keydown.stop
+                              @update:model-value="setDropdownSearchValue('assessment-filter-region', String($event ?? ''))"
+                            />
+                          </div>
+                        </div>
                         <button
                           type="button"
                           class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                           @click.stop.prevent="selectAssessmentRegionFilter('all')"
                         >
                           <span>Barchasi</span>
-                          <Check v-if="draftAssessmentRegionFilter === 'all'" class="h-4 w-4 text-primary" />
+                          <Check v-if="draftAssessmentRegionFilter.length === 0" class="h-4 w-4 text-primary" />
                         </button>
                         <button
-                          v-for="region in regionOptions"
+                          v-for="region in filterDropdownOptions(regionOptions, 'assessment-filter-region')"
                           :key="region"
                           type="button"
                           class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
                           @click.stop.prevent="selectAssessmentRegionFilter(region)"
                         >
                           <span class="truncate">{{ region }}</span>
-                          <Check v-if="draftAssessmentRegionFilter === region" class="h-4 w-4 shrink-0 text-primary" />
+                          <Check v-if="draftAssessmentRegionFilter.includes(region)" class="h-4 w-4 shrink-0 text-primary" />
                         </button>
                       </div>
                     </div>
@@ -9640,7 +10044,11 @@ onUnmounted(() => {
 
   <div
     v-if="selectedAssessmentViewRecord"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.stop
+    @mousedown.stop
+    @touchmove.self.prevent
+    @wheel.self.prevent
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -9816,7 +10224,11 @@ onUnmounted(() => {
 
   <div
     v-if="false && selectedAssessmentViewRecord"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.stop
+    @mousedown.stop
+    @touchmove.self.prevent
+    @wheel.self.prevent
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -9998,19 +10410,30 @@ onUnmounted(() => {
                       v-if="openProtocolFilterField === 'status'"
                       class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-1 shadow-lg"
                     >
+                      <div class="relative mb-1">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('protocol-filter-status')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('protocol-filter-status', String($event ?? ''))"
+                        />
+                      </div>
                       <button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="selectProtocolStatusFilter('all')">
                         <span>Barchasi</span>
-                        <Check v-if="draftProtocolStatusFilter === 'all'" class="h-4 w-4 text-primary" />
+                        <Check v-if="draftProtocolStatusFilter.length === 0" class="h-4 w-4 text-primary" />
                       </button>
                       <button
-                        v-for="status in protocolStatusOptions"
+                        v-for="status in filterDropdownOptions(protocolStatusOptions, 'protocol-filter-status')"
                         :key="`protocol-filter-status-${status}`"
                         type="button"
                         class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
                         @click="selectProtocolStatusFilter(status)"
                       >
                         <span>{{ status }}</span>
-                        <Check v-if="draftProtocolStatusFilter === status" class="h-4 w-4 text-primary" />
+                        <Check v-if="draftProtocolStatusFilter.includes(status)" class="h-4 w-4 text-primary" />
                       </button>
                     </div>
                   </div>
@@ -10029,19 +10452,32 @@ onUnmounted(() => {
                       v-if="openProtocolFilterField === 'region'"
                       class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
                     >
+                      <div class="sticky top-0 z-10 mb-1 bg-popover">
+                        <div class="relative">
+                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            :model-value="getDropdownSearchValue('protocol-filter-region')"
+                            class="h-8 pl-8 text-xs"
+                            :placeholder="t('Qidirish')"
+                            @click.stop
+                            @keydown.stop
+                            @update:model-value="setDropdownSearchValue('protocol-filter-region', String($event ?? ''))"
+                          />
+                        </div>
+                      </div>
                       <button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="selectProtocolRegionFilter('all')">
                         <span>Barchasi</span>
-                        <Check v-if="draftProtocolRegionFilter === 'all'" class="h-4 w-4 text-primary" />
+                        <Check v-if="draftProtocolRegionFilter.length === 0" class="h-4 w-4 text-primary" />
                       </button>
                       <button
-                        v-for="region in regionOptions"
+                        v-for="region in filterDropdownOptions(regionOptions, 'protocol-filter-region')"
                         :key="`protocol-filter-region-${region}`"
                         type="button"
                         class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
                         @click="selectProtocolRegionFilter(region)"
                       >
                         <span>{{ region }}</span>
-                        <Check v-if="draftProtocolRegionFilter === region" class="h-4 w-4 text-primary" />
+                        <Check v-if="draftProtocolRegionFilter.includes(region)" class="h-4 w-4 text-primary" />
                       </button>
                     </div>
                   </div>
@@ -10155,26 +10591,33 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="-mt-1 overflow-x-auto pb-1">
-          <div class="flex min-w-max items-center gap-2">
+        <div class="-mt-1 overflow-x-auto">
+          <div class="inline-flex min-w-max items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
             <button
               v-for="tab in protocolStatusTabs"
               :key="`protocol-status-tab-${tab.value}`"
               type="button"
               :class="cn(
-                'inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                appliedProtocolStatusFilter === tab.value
-                  ? `${tab.className} ring-2 ring-ring/20`
-                  : 'border-border bg-background text-muted-foreground',
+                'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value))
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground',
               )"
               @click="selectProtocolStatusTab(tab.value)"
             >
-              <span>{{ tab.label }}</span>
+              <span
+                :class="cn(
+                  'h-2 w-2 shrink-0 rounded-full',
+                  tab.dotClass,
+                  (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value)) ? 'opacity-100' : 'opacity-55',
+                )"
+              />
+              <span class="whitespace-nowrap">{{ tab.label }}</span>
               <span
                 :class="cn(
                   'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
-                  appliedProtocolStatusFilter === tab.value
-                    ? 'bg-background/70 text-foreground'
+                  (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value))
+                    ? tab.badgeClass
                     : 'bg-muted text-muted-foreground',
                 )"
               >
@@ -10294,7 +10737,11 @@ onUnmounted(() => {
                           size="sm"
                           :class="openActionMenuId === `protocol-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                         >
-                          <Ellipsis class="h-4 w-4" />
+                          <LoaderCircle
+                            v-if="isActionButtonLoading(`protocol-view-${record.id}`, `protocol-edit-${record.id}`)"
+                            class="h-4 w-4 animate-spin"
+                          />
+                          <Ellipsis v-else class="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuPortal>
@@ -10305,9 +10752,17 @@ onUnmounted(() => {
                           :collision-padding="12"
                           class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
                         >
-                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewProtocol(record)">
                             <Eye class="h-4 w-4 shrink-0" />
                             <span>{{ t("Ko'rish") }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canEditProtocol(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="editProtocol(record)"
+                          >
+                            <Pencil class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Tahrirlash') }}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
@@ -10424,13 +10879,25 @@ onUnmounted(() => {
 
       <div
         v-if="isProtocolDialogOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 px-4 py-6 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div>
-              <h2 class="text-lg font-semibold text-foreground">{{ t('Bayonnoma yaratish') }}</h2>
-              <p class="mt-1 text-sm text-muted-foreground">{{ t("Yig'ilish ma'lumotlarini kiriting va arizalar ro'yxatini shakllantiring.") }}</p>
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="text-lg font-semibold text-foreground">{{ protocolDialogTitle }}</h2>
+                <span
+                  v-if="selectedProtocolForDialog"
+                  :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[selectedProtocolForDialog.status])"
+                >
+                  {{ selectedProtocolForDialog.status }}
+                </span>
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">{{ protocolDialogDescription }}</p>
             </div>
             <button
               type="button"
@@ -10449,13 +10916,14 @@ onUnmounted(() => {
                   <Input
                     :model-value="protocolForm.meetingDate"
                     class="h-10 pr-10"
+                    :disabled="isProtocolReadonly"
                     inputmode="numeric"
                     maxlength="10"
                     placeholder="dd.mm.yyyy"
                     @keydown="preventDateNonDigitKeydown"
                     @update:model-value="handleProtocolMeetingDateChange"
                   />
-                  <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="openProtocolCalendar('meeting')">
+                  <button type="button" :disabled="isProtocolReadonly" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50" @click="openProtocolCalendar('meeting')">
                     <CalendarDays class="h-4 w-4" />
                   </button>
                 </div>
@@ -10484,6 +10952,7 @@ onUnmounted(() => {
                 <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Hudud') }}</label>
                 <button
                   type="button"
+                  :disabled="isProtocolReadonly"
                   :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors', openProtocolFormField === 'region' && 'border-ring ring-2 ring-ring/20')"
                   @click="toggleProtocolFormField('region')"
                 >
@@ -10494,8 +10963,21 @@ onUnmounted(() => {
                   v-if="openProtocolFormField === 'region'"
                   class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-popover">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('protocol-form-region')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('protocol-form-region', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="region in regionOptions"
+                    v-for="region in filterDropdownOptions(regionOptions, 'protocol-form-region')"
                     :key="`protocol-form-region-${region}`"
                     type="button"
                     class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -10511,7 +10993,7 @@ onUnmounted(() => {
                 <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Tuman yoki shahar') }}</label>
                 <button
                   type="button"
-                  :disabled="!protocolForm.region"
+                  :disabled="isProtocolReadonly || !protocolForm.region"
                   :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60', openProtocolFormField === 'district' && 'border-ring ring-2 ring-ring/20')"
                   @click="protocolForm.region && toggleProtocolFormField('district')"
                 >
@@ -10522,8 +11004,21 @@ onUnmounted(() => {
                   v-if="openProtocolFormField === 'district'"
                   class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-popover">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('protocol-form-district')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('protocol-form-district', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="district in protocolFormDistrictOptions"
+                    v-for="district in filterDropdownOptions(protocolFormDistrictOptions, 'protocol-form-district')"
                     :key="`protocol-form-district-${district}`"
                     type="button"
                     class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -10540,6 +11035,7 @@ onUnmounted(() => {
                 <Input
                   :model-value="protocolForm.address"
                   class="h-10"
+                  :disabled="isProtocolReadonly"
                   :placeholder="t('Manzilni kiriting')"
                   @update:model-value="handleProtocolAddressChange"
                 />
@@ -10551,9 +11047,20 @@ onUnmounted(() => {
                 <p class="font-medium text-foreground">{{ t("IPTK qabul qildi bosqichidagi arizalar") }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">{{ t("Shakllantirish bosilganda tanlangan hudud va tuman bo'yicha ro'yxat yig'iladi.") }}</p>
               </div>
-              <Button class="gap-2" :disabled="!canGenerateProtocol" @click="generateProtocolApplications">
-                <FileCheck2 class="h-4 w-4" />
-                {{ t('Shakllantirish') }}
+              <Button
+                v-if="!isProtocolReadonly"
+                class="gap-2"
+                :variant="protocolForm.applications.length > 0 ? 'outline' : 'default'"
+                :disabled="!canGenerateProtocol || isActionButtonLoading('protocol-generate-applications', 'protocol-clear-applications')"
+                @click="protocolForm.applications.length > 0 ? clearProtocolApplications() : generateProtocolApplications()"
+              >
+                <LoaderCircle
+                  v-if="isActionButtonLoading('protocol-generate-applications', 'protocol-clear-applications')"
+                  class="h-4 w-4 animate-spin"
+                />
+                <X v-else-if="protocolForm.applications.length > 0" class="h-4 w-4" />
+                <FileCheck2 v-else class="h-4 w-4" />
+                {{ protocolForm.applications.length > 0 ? t('Tozalash') : t('Shakllantirish') }}
               </Button>
             </div>
 
@@ -10562,7 +11069,7 @@ onUnmounted(() => {
               class="mt-5 overflow-hidden rounded-xl border border-border"
             >
               <div v-if="protocolForm.applications.length === 0" class="p-6 text-center text-sm text-muted-foreground">
-                {{ t("Tanlangan shartlar bo'yicha ariza topilmadi.") }}
+                {{ isProtocolReadonly ? t("Ushbu demo bayonnomada arizalar ro'yxati saqlanmagan.") : t("Tanlangan shartlar bo'yicha ariza topilmadi.") }}
               </div>
               <table v-else class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left text-muted-foreground">
@@ -10599,11 +11106,11 @@ onUnmounted(() => {
           </div>
 
           <div class="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
-            <Button variant="outline" @click="resetProtocolForm">
-              {{ t('Tozalash') }}
+            <Button variant="outline" @click="isProtocolReadonly ? closeProtocolDialog() : resetProtocolForm()">
+              {{ isProtocolReadonly ? t('Yopish') : t('Tozalash') }}
             </Button>
-            <Button :disabled="!canSaveProtocol" @click="saveProtocol">
-              {{ t('Saqlash') }}
+            <Button v-if="!isProtocolReadonly" :disabled="!canSaveProtocol" @click="saveProtocol">
+              {{ protocolDialogMode === 'edit' ? t('Saqlash') : t('Saqlash') }}
             </Button>
           </div>
         </div>
@@ -10970,7 +11477,11 @@ onUnmounted(() => {
 
       <div
         v-if="isServiceTypeDialogOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -11084,8 +11595,21 @@ onUnmounted(() => {
                     v-if="isServiceTypeDiagnosesOpen"
                     class="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-popover">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('service-type-diagnoses')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('service-type-diagnoses', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="record in diagnoses"
+                      v-for="record in filterDropdownOptions(diagnoses, 'service-type-diagnoses', (item) => `${item.shortName.uzLatn} ${item.fullName.uzLatn}`)"
                       :key="record.id"
                       type="button"
                       class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -11128,8 +11652,21 @@ onUnmounted(() => {
                     v-if="isServiceTypeContraindicationsOpen"
                     class="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-popover">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('service-type-contraindications')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('service-type-contraindications', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="record in contraindications"
+                      v-for="record in filterDropdownOptions(contraindications, 'service-type-contraindications', (item) => `${item.shortName.uzLatn} ${item.fullName.uzLatn}`)"
                       :key="record.id"
                       type="button"
                       class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -11173,8 +11710,21 @@ onUnmounted(() => {
                   v-if="isServiceTypeDocumentsOpen"
                   class="absolute left-0 top-full z-50 mt-2 max-h-80 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-popover">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('service-type-documents')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('service-type-documents', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="record in documents"
+                    v-for="record in filterDropdownOptions(documents, 'service-type-documents', (item) => `${item.shortName.uzLatn} ${item.fullName.uzLatn}`)"
                     :key="record.id"
                     type="button"
                     class="flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -11208,8 +11758,19 @@ onUnmounted(() => {
                   v-if="isServiceTypeStatusOpen"
                   class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                 >
+                  <div class="relative mb-1">
+                    <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      :model-value="getDropdownSearchValue('service-type-status')"
+                      class="h-8 pl-8 text-xs"
+                      :placeholder="t('Qidirish')"
+                      @click.stop
+                      @keydown.stop
+                      @update:model-value="setDropdownSearchValue('service-type-status', String($event ?? ''))"
+                    />
+                  </div>
                   <button
-                    v-for="status in ['Faol', 'Nofaol'] as ServiceTypeStatus[]"
+                    v-for="status in filterDropdownOptions(['Faol', 'Nofaol'] as ServiceTypeStatus[], 'service-type-status')"
                     :key="status"
                     type="button"
                     class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -11260,7 +11821,11 @@ onUnmounted(() => {
 
       <div
         v-if="selectedServiceTypeRecord"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -11761,7 +12326,11 @@ onUnmounted(() => {
 
       <div
         v-if="isDiagnosisDialogOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -11968,8 +12537,19 @@ onUnmounted(() => {
                     v-if="isDiagnosisIcdOpen"
                     class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                   >
+                    <div class="relative mb-1">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('diagnosis-icd')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('diagnosis-icd', String($event ?? ''))"
+                      />
+                    </div>
                     <button
-                      v-for="code in icdCodeOptions"
+                      v-for="code in filterDropdownOptions(icdCodeOptions, 'diagnosis-icd')"
                       :key="code"
                       type="button"
                       class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -11997,8 +12577,19 @@ onUnmounted(() => {
                     <ChevronDown class="h-4 w-4 text-muted-foreground" />
                   </button>
                   <div v-if="isDiagnosisStatusOpen" class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
+                    <div class="relative mb-1">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('diagnosis-status')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('diagnosis-status', String($event ?? ''))"
+                      />
+                    </div>
                     <button
-                      v-for="status in ['Faol', 'Nofaol'] as ServiceTypeStatus[]"
+                      v-for="status in filterDropdownOptions(['Faol', 'Nofaol'] as ServiceTypeStatus[], 'diagnosis-status')"
                       :key="status"
                       type="button"
                       class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
@@ -12026,7 +12617,11 @@ onUnmounted(() => {
 
       <div
         v-if="selectedDiagnosisRecord"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -12230,8 +12825,21 @@ onUnmounted(() => {
                     v-if="openApplicationReportFilterField === 'status'"
                     class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-background">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('report-page-filter-status')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('report-page-filter-status', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="status in applicationReportStatuses"
+                      v-for="status in filterDropdownOptions(applicationReportStatuses, 'report-page-filter-status')"
                       :key="`report-filter-status-${status}`"
                       type="button"
                       class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -12270,8 +12878,21 @@ onUnmounted(() => {
                     v-if="openApplicationReportFilterField === 'step'"
                     class="max-h-64 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-background">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('report-page-filter-step')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('report-page-filter-step', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="step in applicationReportStepFilterOptions"
+                      v-for="step in filterDropdownOptions(applicationReportStepFilterOptions, 'report-page-filter-step')"
                       :key="`report-filter-step-${step}`"
                       type="button"
                       class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -12310,8 +12931,21 @@ onUnmounted(() => {
                     v-if="openApplicationReportFilterField === 'region'"
                     class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-background">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('report-page-filter-region')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('report-page-filter-region', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="region in applicationReportRegions"
+                      v-for="region in filterDropdownOptions(applicationReportRegions, 'report-page-filter-region')"
                       :key="`report-filter-region-${region}`"
                       type="button"
                       class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -12351,8 +12985,21 @@ onUnmounted(() => {
                     v-if="openApplicationReportFilterField === 'district'"
                     class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-background">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue('report-page-filter-district')"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue('report-page-filter-district', String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="district in applicationReportDistrictFilterOptions"
+                      v-for="district in filterDropdownOptions(applicationReportDistrictFilterOptions, 'report-page-filter-district')"
                       :key="`report-filter-district-${district}`"
                       type="button"
                       class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"
@@ -12395,8 +13042,21 @@ onUnmounted(() => {
                     v-if="openApplicationReportFilterField === group.key"
                     class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                   >
+                    <div class="sticky top-0 z-10 mb-1 bg-background">
+                      <div class="relative">
+                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          :model-value="getDropdownSearchValue(`report-page-filter-${group.key}`)"
+                          class="h-8 pl-8 text-xs"
+                          :placeholder="t('Qidirish')"
+                          @click.stop
+                          @keydown.stop
+                          @update:model-value="setDropdownSearchValue(`report-page-filter-${group.key}`, String($event ?? ''))"
+                        />
+                      </div>
+                    </div>
                     <button
-                      v-for="option in group.options"
+                      v-for="option in filterDropdownOptions(group.options, `report-page-filter-${group.key}`)"
                       :key="`report-filter-metric-${group.key}-${option}`"
                       type="button"
                       class="flex w-full items-center justify-between gap-2 rounded-sm px-2 py-2 text-left text-sm text-foreground outline-none transition-colors duration-200 ease-out hover:bg-muted"

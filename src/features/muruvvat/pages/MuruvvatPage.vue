@@ -846,6 +846,7 @@ const isTableLoading = ref(true)
 const isExporting = ref(false)
 const actionLoadingKey = ref<string | null>(null)
 const isConfirmationLoading = ref(false)
+const dropdownSearchQueries = ref<Record<string, string>>({})
 const pageNotification = ref<PageNotification | null>(null)
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const selectedViewRow = ref<ApplicationRow | null>(null)
@@ -1638,6 +1639,35 @@ function getMultiSelectLabel(values: string[], emptyLabel: string) {
   }
 
   return `${values.length} ta tanlangan`
+}
+
+function normalizeDropdownSearch(value: string) {
+  return value
+    .toString()
+    .trim()
+    .toLocaleLowerCase('uz-Latn-UZ')
+}
+
+function getDropdownSearchValue(key: string) {
+  return dropdownSearchQueries.value[key] ?? ''
+}
+
+function setDropdownSearchValue(key: string, value: string) {
+  dropdownSearchQueries.value = {
+    ...dropdownSearchQueries.value,
+    [key]: value,
+  }
+}
+
+function filterDropdownOptions<T>(
+  options: readonly T[],
+  key: string,
+  getLabel: (option: T) => string = (option) => String(option),
+) {
+  const query = normalizeDropdownSearch(getDropdownSearchValue(key))
+  if (!query) return options
+
+  return options.filter((option) => normalizeDropdownSearch(getLabel(option)).includes(query))
 }
 
 function toggleFilterValue<T extends string>(source: T[], value: T) {
@@ -3257,7 +3287,11 @@ watch(serviceRecipientLookupResult, () => {
 
       <div
         v-if="selectedViewRow && selectedViewDetail"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -3515,7 +3549,11 @@ watch(serviceRecipientLookupResult, () => {
 
       <div
         v-if="isIptkFlowDialogOpen"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+        class="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -4047,6 +4085,19 @@ watch(serviceRecipientLookupResult, () => {
                             v-if="openFilterField === 'status'"
                             class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
+                            <div class="mb-1">
+                              <div class="relative">
+                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  :model-value="getDropdownSearchValue('muruvvat-filter-status')"
+                                  class="h-8 pl-8 text-xs"
+                                  :placeholder="t('Qidirish')"
+                                  @click.stop
+                                  @keydown.stop
+                                  @update:model-value="setDropdownSearchValue('muruvvat-filter-status', String($event ?? ''))"
+                                />
+                              </div>
+                            </div>
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4059,7 +4110,7 @@ watch(serviceRecipientLookupResult, () => {
                               />
                             </button>
                             <button
-                              v-for="status in demoStatuses"
+                              v-for="status in filterDropdownOptions(demoStatuses, 'muruvvat-filter-status')"
                               :key="status"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4104,6 +4155,19 @@ watch(serviceRecipientLookupResult, () => {
                             v-if="openFilterField === 'step'"
                             class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
+                            <div class="sticky top-0 z-10 mb-1 bg-background">
+                              <div class="relative">
+                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  :model-value="getDropdownSearchValue('muruvvat-filter-step')"
+                                  class="h-8 pl-8 text-xs"
+                                  :placeholder="t('Qidirish')"
+                                  @click.stop
+                                  @keydown.stop
+                                  @update:model-value="setDropdownSearchValue('muruvvat-filter-step', String($event ?? ''))"
+                                />
+                              </div>
+                            </div>
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4116,7 +4180,7 @@ watch(serviceRecipientLookupResult, () => {
                               />
                             </button>
                             <button
-                              v-for="step in stepFilterOptions"
+                              v-for="step in filterDropdownOptions(stepFilterOptions, 'muruvvat-filter-step')"
                               :key="step"
                               type="button"
                               class="flex w-full items-center justify-between gap-3 rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4158,6 +4222,19 @@ watch(serviceRecipientLookupResult, () => {
                             v-if="openFilterField === 'region'"
                             class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
+                            <div class="sticky top-0 z-10 mb-1 bg-background">
+                              <div class="relative">
+                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  :model-value="getDropdownSearchValue('muruvvat-filter-region')"
+                                  class="h-8 pl-8 text-xs"
+                                  :placeholder="t('Qidirish')"
+                                  @click.stop
+                                  @keydown.stop
+                                  @update:model-value="setDropdownSearchValue('muruvvat-filter-region', String($event ?? ''))"
+                                />
+                              </div>
+                            </div>
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4170,7 +4247,7 @@ watch(serviceRecipientLookupResult, () => {
                               />
                             </button>
                             <button
-                              v-for="region in regionOptions"
+                              v-for="region in filterDropdownOptions(regionOptions, 'muruvvat-filter-region')"
                               :key="region"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4213,6 +4290,19 @@ watch(serviceRecipientLookupResult, () => {
                             v-if="openFilterField === 'district' && isDistrictFilterEnabled && districtOptions.length"
                             class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
+                            <div class="sticky top-0 z-10 mb-1 bg-background">
+                              <div class="relative">
+                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  :model-value="getDropdownSearchValue('muruvvat-filter-district')"
+                                  class="h-8 pl-8 text-xs"
+                                  :placeholder="t('Qidirish')"
+                                  @click.stop
+                                  @keydown.stop
+                                  @update:model-value="setDropdownSearchValue('muruvvat-filter-district', String($event ?? ''))"
+                                />
+                              </div>
+                            </div>
                             <button
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4225,7 +4315,7 @@ watch(serviceRecipientLookupResult, () => {
                               />
                             </button>
                             <button
-                              v-for="district in districtOptions"
+                              v-for="district in filterDropdownOptions(districtOptions, 'muruvvat-filter-district')"
                               :key="district"
                               type="button"
                               class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -4936,7 +5026,11 @@ watch(serviceRecipientLookupResult, () => {
 
   <div
     v-if="isCreateDialogOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.stop
+    @mousedown.stop
+    @touchmove.self.prevent
+    @wheel.self.prevent
   >
     <div class="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -5080,8 +5174,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'applicant-region'"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-applicant-region')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-applicant-region', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="region in applicantCustomResidenceRegionOptions"
+                    v-for="region in filterDropdownOptions(applicantCustomResidenceRegionOptions, 'muruvvat-applicant-region')"
                     :key="region"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5121,8 +5228,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'applicant-district' && applicantCustomResidenceRegion"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-applicant-district')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-applicant-district', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="district in applicantCustomResidenceDistrictOptions"
+                    v-for="district in filterDropdownOptions(applicantCustomResidenceDistrictOptions, 'muruvvat-applicant-district')"
                     :key="district"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5162,8 +5282,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'applicant-mfy' && applicantCustomResidenceDistrict"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-applicant-mfy')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-applicant-mfy', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="mfy in demoMahallas"
+                    v-for="mfy in filterDropdownOptions(demoMahallas, 'muruvvat-applicant-mfy')"
                     :key="mfy"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5337,8 +5470,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'recipient-region'"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-recipient-region')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-recipient-region', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="region in serviceRecipientCustomResidenceRegionOptions"
+                    v-for="region in filterDropdownOptions(serviceRecipientCustomResidenceRegionOptions, 'muruvvat-recipient-region')"
                     :key="region"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5378,8 +5524,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'recipient-district' && serviceRecipientCustomResidenceRegion"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-recipient-district')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-recipient-district', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="district in serviceRecipientCustomResidenceDistrictOptions"
+                    v-for="district in filterDropdownOptions(serviceRecipientCustomResidenceDistrictOptions, 'muruvvat-recipient-district')"
                     :key="district"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5419,8 +5578,21 @@ watch(serviceRecipientLookupResult, () => {
                   v-if="openCreateAddressField === 'recipient-mfy' && serviceRecipientCustomResidenceDistrict"
                   class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
                 >
+                  <div class="sticky top-0 z-10 mb-1 bg-background">
+                    <div class="relative">
+                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        :model-value="getDropdownSearchValue('muruvvat-recipient-mfy')"
+                        class="h-8 pl-8 text-xs"
+                        :placeholder="t('Qidirish')"
+                        @click.stop
+                        @keydown.stop
+                        @update:model-value="setDropdownSearchValue('muruvvat-recipient-mfy', String($event ?? ''))"
+                      />
+                    </div>
+                  </div>
                   <button
-                    v-for="mfy in demoMahallas"
+                    v-for="mfy in filterDropdownOptions(demoMahallas, 'muruvvat-recipient-mfy')"
                     :key="mfy"
                     type="button"
                     class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
@@ -5519,8 +5691,21 @@ watch(serviceRecipientLookupResult, () => {
                 v-if="openCreateAddressField === 'service-option'"
                 class="mt-2 max-h-72 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20 lg:mt-0"
               >
+                <div class="sticky top-0 z-10 mb-1 bg-background">
+                  <div class="relative">
+                    <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      :model-value="getDropdownSearchValue('muruvvat-service-option')"
+                      class="h-8 pl-8 text-xs"
+                      :placeholder="t('Qidirish')"
+                      @click.stop
+                      @keydown.stop
+                      @update:model-value="setDropdownSearchValue('muruvvat-service-option', String($event ?? ''))"
+                    />
+                  </div>
+                </div>
                 <button
-                  v-for="service in serviceEligibilityOptions"
+                  v-for="service in filterDropdownOptions(serviceEligibilityOptions, 'muruvvat-service-option', (item) => item.label)"
                   :key="service.id"
                   type="button"
                   :disabled="!service.eligible"
@@ -5681,7 +5866,11 @@ watch(serviceRecipientLookupResult, () => {
 
   <div
     v-if="selectedAssessmentCreateRow"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+    class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 px-4 py-6 dark:bg-black/60"
+    @click.stop
+    @mousedown.stop
+    @touchmove.self.prevent
+    @wheel.self.prevent
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
