@@ -70,6 +70,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: '',
   },
   {
+    key: 'applications-protocol',
+    title: 'Bayonnoma',
+    description: '',
+    route: '/apps/iptk/applications/protocol',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Bayonnoma'],
+    sectionTitle: 'Bayonnoma',
+    sectionDescription: '',
+  },
+  {
     key: 'commissions-composition',
     title: 'Komissiyalar tarkibi',
     description: '',
@@ -152,6 +161,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         id: 'applications-assessment',
         title: 'Baholash',
         route: '/apps/iptk/applications/assessment',
+        icon: NotebookText,
+      },
+      {
+        id: 'applications-protocol',
+        title: 'Bayonnoma',
+        route: '/apps/iptk/applications/protocol',
         icon: NotebookText,
       },
       {

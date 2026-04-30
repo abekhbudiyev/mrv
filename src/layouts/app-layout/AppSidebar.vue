@@ -73,6 +73,7 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/iptk/info/info-6': 'nav.categoryGroups',
   '/apps/iptk/applications/list': 'nav.applications',
   '/apps/iptk/applications/assessment': 'nav.assessment',
+  '/apps/iptk/applications/protocol': 'nav.protocol',
   '/apps/iptk/applications/commissions': 'nav.commissions',
   '/apps/iptk/reports/applications': 'nav.applicationsReport',
   '/apps/muruvvat': 'nav.dashboard',

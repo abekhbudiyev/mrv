@@ -13,6 +13,7 @@ const pageI18nKeysByRoute: Record<string, string> = {
   '/apps/iptk/info/info-6': 'page.categoryGroups',
   '/apps/iptk/applications/list': 'page.applications.list',
   '/apps/iptk/applications/assessment': 'page.assessment',
+  '/apps/iptk/applications/protocol': 'page.protocol',
   '/apps/iptk/applications/commissions': 'page.commissions',
   '/apps/iptk/reports/applications': 'page.applications.report',
   '/apps/muruvvat': 'nav.dashboard',

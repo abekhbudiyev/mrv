@@ -197,6 +197,21 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/iptk/applications/protocol',
+        name: 'iptk-applications-protocol',
+        component: IPTKPage,
+        props: {
+          pageKey: 'applications-protocol',
+        },
+        meta: {
+          title: 'Bayonnoma',
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Bayonnoma'],
+        },
+      },
+      {
         path: 'apps/iptk/reports/applications',
         name: 'iptk-applications-report',
         component: IPTKPage,

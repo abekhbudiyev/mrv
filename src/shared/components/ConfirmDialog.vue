@@ -30,7 +30,6 @@ const emit = defineEmits<{
   <div
     v-if="open"
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-    @click.self="!loading && emit('cancel')"
   >
     <div class="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl">
       <div class="flex items-start gap-3">

@@ -23,6 +23,7 @@ import { Input } from '@/shared/ui/shadcn/input'
 
 type CommissionStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
 type AssessmentStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type ProtocolStatus = 'Yangi' | 'Tahrirlangan' | 'Rejalashtirilgan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
@@ -59,6 +60,9 @@ type DocumentHistoryEntry = {
 }
 
 const NOTIFICATION_DURATION = 2600
+const filterOverlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
+const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const filterPanelContentClass = 'flex flex-col gap-3'
 
 interface CommissionMemberDraft {
   id: string
@@ -129,6 +133,32 @@ interface AssessmentRecord {
   region: string
   district: string
   status: AssessmentStatus
+}
+
+interface ProtocolRecord {
+  id: string
+  documentNumber: string
+  createdAt: string
+  meetingDate: string
+  region: string
+  district: string
+  address: string
+  acceptedApplications: number
+  totalApplications: number
+  status: ProtocolStatus
+  applications: ProtocolApplicationCandidate[]
+}
+
+interface ProtocolApplicationCandidate {
+  id: string
+  documentNumber: string
+  createdAt: string
+  serviceRecipient: string
+  serviceRecipientPinfl: string
+  serviceType: string
+  region: string
+  district: string
+  step: ApplicationReportStep
 }
 
 interface LocalizedValue {
@@ -236,6 +266,7 @@ const page = computed(() => getIPTKPage(props.pageKey))
 const isDashboardPage = computed(() => props.pageKey === 'dashboard')
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
 const isAssessmentPage = computed(() => props.pageKey === 'applications-assessment')
+const isProtocolPage = computed(() => props.pageKey === 'applications-protocol')
 const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
 const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
 const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
@@ -269,8 +300,33 @@ const regionOptions = [
   'Toshkent shahri',
 ] as const
 
+const protocolDistrictOptions: Record<string, string[]> = {
+  "Qoraqalpog'iston Respublikasi": ['Nukus shahri', 'Beruniy tumani'],
+  'Andijon viloyati': ['Andijon shahri', 'Asaka tumani'],
+  'Buxoro viloyati': ['Buxoro shahri', 'G‘ijduvon tumani'],
+  "Farg'ona viloyati": ["Qo'qon shahri", "Farg'ona shahri"],
+  'Jizzax viloyati': ['Jizzax shahri', 'Zomin tumani'],
+  'Namangan viloyati': ['Namangan shahri', 'Chortoq tumani'],
+  'Navoiy viloyati': ['Navoiy shahri', 'Karmana tumani'],
+  'Qashqadaryo viloyati': ['Qarshi shahri', 'Shahrisabz tumani'],
+  'Samarqand viloyati': ['Samarqand shahri', 'Urgut tumani'],
+  'Sirdaryo viloyati': ['Guliston shahri', 'Boyovut tumani'],
+  'Surxondaryo viloyati': ['Termiz shahri', 'Denov tumani'],
+  'Toshkent viloyati': ['Zangiota tumani', 'Chirchiq shahri'],
+  'Xorazm viloyati': ['Urganch shahri', 'Xiva tumani'],
+  'Toshkent shahri': ['Yunusobod tumani', 'Mirzo Ulug‘bek tumani'],
+}
+
 const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
+  Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
+  Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+  'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
+}
+const protocolStatusClassMap: Record<ProtocolStatus, string> = {
+  Yangi: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300',
+  Tahrirlangan: 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900/60 dark:bg-indigo-950/20 dark:text-indigo-300',
+  Rejalashtirilgan: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/60 dark:bg-violet-950/20 dark:text-violet-300',
   Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
@@ -380,6 +436,7 @@ const applicationReportDistricts: Record<string, string[]> = {
 
 const assessmentStatusOptions: AssessmentStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
 const commissionStatusOptions: CommissionStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const protocolStatusOptions: ProtocolStatus[] = ['Yangi', 'Tahrirlangan', 'Rejalashtirilgan', 'Yuborilgan', 'Tasdiqlangan', 'Bekor qilingan']
 
 const workflowStageLabels: Record<CommissionWorkflowStage, string> = {
   Jarayonda: 'Jarayonda',
@@ -621,6 +678,145 @@ const assessments = ref<AssessmentRecord[]>([
     status: 'Bekor qilingan',
   },
 ]) 
+
+const protocols = ref<ProtocolRecord[]>([
+  {
+    id: '5',
+    documentNumber: 'IPTK-BAYON-2026-005',
+    createdAt: '2026-04-22 10:25',
+    meetingDate: '22.04.2026',
+    region: 'Buxoro viloyati',
+    district: 'Buxoro shahri',
+    address: 'Buxoro shahri, Hududiy IPTK yig‘ilish xonasi',
+    acceptedApplications: 16,
+    totalApplications: 16,
+    status: 'Tasdiqlangan',
+    applications: [],
+  },
+  {
+    id: '6',
+    documentNumber: 'IPTK-BAYON-2026-006',
+    createdAt: '2026-04-23 16:40',
+    meetingDate: '23.04.2026',
+    region: 'Namangan viloyati',
+    district: 'Namangan shahri',
+    address: 'Namangan shahri, Inson markazi majlislar zali',
+    acceptedApplications: 7,
+    totalApplications: 10,
+    status: 'Bekor qilingan',
+    applications: [],
+  },
+  {
+    id: '1',
+    documentNumber: 'IPTK-BAYON-2026-001',
+    createdAt: '2026-04-14 10:00',
+    meetingDate: '14.04.2026',
+    region: "Qoraqalpog'iston Respublikasi",
+    district: 'Nukus shahri',
+    address: 'Nukus shahri, Markaziy yig‘ilish zali',
+    acceptedApplications: 18,
+    totalApplications: 20,
+    status: 'Yangi',
+    applications: [],
+  },
+  {
+    id: '2',
+    documentNumber: 'IPTK-BAYON-2026-002',
+    createdAt: '2026-04-16 11:30',
+    meetingDate: '16.04.2026',
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    address: 'Andijon shahri, Inson markazi binosi',
+    acceptedApplications: 20,
+    totalApplications: 20,
+    status: 'Tahrirlangan',
+    applications: [],
+  },
+  {
+    id: '3',
+    documentNumber: 'IPTK-BAYON-2026-003',
+    createdAt: '2026-04-18 09:45',
+    meetingDate: '18.04.2026',
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    address: 'Samarqand shahri, Hududiy boshqarma majlislar zali',
+    acceptedApplications: 24,
+    totalApplications: 24,
+    status: 'Rejalashtirilgan',
+    applications: [],
+  },
+  {
+    id: '4',
+    documentNumber: 'IPTK-BAYON-2026-004',
+    createdAt: '2026-04-20 15:10',
+    meetingDate: '20.04.2026',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod tumani',
+    address: 'Yunusobod tumani, 4-mavze, 12-uy',
+    acceptedApplications: 9,
+    totalApplications: 12,
+    status: 'Yuborilgan',
+    applications: [],
+  },
+])
+
+const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
+  {
+    id: '1',
+    documentNumber: 'ARZ-000008',
+    createdAt: '2026-04-12 09:30',
+    serviceRecipient: "ABDULLAYEVA MADINA ULUG'BEK QIZI",
+    serviceRecipientPinfl: '10000000000959',
+    serviceType: "Huzur",
+    region: 'Toshkent viloyati',
+    district: 'Zangiota tumani',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '2',
+    documentNumber: 'ARZ-000009',
+    createdAt: '2026-04-13 10:15',
+    serviceRecipient: "MAMATOV SANJAR DILSHOD O'G'LI",
+    serviceRecipientPinfl: '10000000001096',
+    serviceType: 'Madad',
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '3',
+    documentNumber: 'ARZ-000010',
+    createdAt: '2026-04-14 11:20',
+    serviceRecipient: 'NAZAROVA MAFTUNA OTABEK QIZI',
+    serviceRecipientPinfl: '10000000001233',
+    serviceType: "Ijtimoiy ta'til",
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '4',
+    documentNumber: 'ARZ-000011',
+    createdAt: '2026-04-15 12:10',
+    serviceRecipient: "ERGASHEV SHOHJAHON AKMAL O'G'LI",
+    serviceRecipientPinfl: '10000000001370',
+    serviceType: 'Uyda qarab turish',
+    region: "Farg'ona viloyati",
+    district: "Qo'qon shahri",
+    step: 'IPTK qabul qildi',
+  },
+  {
+    id: '5',
+    documentNumber: 'ARZ-000012',
+    createdAt: '2026-04-16 14:05',
+    serviceRecipient: 'SAIDOVA NILUFAR AKMAL QIZI',
+    serviceRecipientPinfl: '10000000001507',
+    serviceType: 'Yangi kun',
+    region: "Qoraqalpog'iston Respublikasi",
+    district: 'Nukus shahri',
+    step: 'IPTK qabul qildi',
+  },
+]
 
 const serviceTypes = ref<ServiceTypeRecord[]>([
   {
@@ -1220,6 +1416,20 @@ const searchInput = ref('')
 const searchQuery = ref('')
 const assessmentSearchInput = ref('')
 const assessmentSearchQuery = ref('')
+const protocolSearchInput = ref('')
+const protocolSearchQuery = ref('')
+const isProtocolFilterOpen = ref(false)
+const openProtocolFilterField = ref<'status' | 'region' | null>(null)
+const openProtocolCalendarField = ref<'start' | 'end' | 'meeting' | null>(null)
+const protocolCalendarMonth = ref('')
+const draftProtocolStatusFilter = ref<'all' | ProtocolStatus>('all')
+const appliedProtocolStatusFilter = ref<'all' | ProtocolStatus>('all')
+const draftProtocolRegionFilter = ref<'all' | string>('all')
+const appliedProtocolRegionFilter = ref<'all' | string>('all')
+const draftProtocolStartDateFilter = ref('')
+const appliedProtocolStartDateFilter = ref('')
+const draftProtocolEndDateFilter = ref('')
+const appliedProtocolEndDateFilter = ref('')
 const isAssessmentFilterOpen = ref(false)
 const openAssessmentFilterField = ref<'status' | 'region' | null>(null)
 const openAssessmentCalendarField = ref<'start' | 'end' | null>(null)
@@ -1272,6 +1482,19 @@ const isRowsPerPageOpen = ref(false)
 const assessmentRowsPerPage = ref(20)
 const assessmentCurrentPage = ref(1)
 const isAssessmentRowsPerPageOpen = ref(false)
+const protocolRowsPerPage = ref(20)
+const protocolCurrentPage = ref(1)
+const isProtocolRowsPerPageOpen = ref(false)
+const isProtocolDialogOpen = ref(false)
+const openProtocolFormField = ref<'region' | 'district' | null>(null)
+const protocolForm = ref({
+  meetingDate: '',
+  region: '',
+  district: '',
+  address: '',
+  applications: [] as ProtocolApplicationCandidate[],
+  isGenerated: false,
+})
 
 const formRegion = ref('')
 const chairSearch = ref<CommissionSearchState>(createSearchState())
@@ -1309,6 +1532,7 @@ const selectedDiagnosisRecord = ref<DiagnosisRecord | QuestionnaireTemplateRecor
 const diagnosisForm = ref<DiagnosisForm>(createDiagnosisForm())
 const isAnyDialogOpen = computed(() => (
   isCreateDialogOpen.value
+  || isProtocolDialogOpen.value
   || isServiceTypeDialogOpen.value
   || isDiagnosisDialogOpen.value
   || Boolean(selectedViewRecord.value)
@@ -1328,6 +1552,11 @@ let diagnosisSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 let actionLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let isHydratingEditForm = false
+let lockedBodyScrollY = 0
+let previousBodyOverflow = ''
+let previousBodyPosition = ''
+let previousBodyTop = ''
+let previousBodyWidth = ''
 
 const selectedViewLeadership = computed(() => {
   const record = selectedViewRecord.value
@@ -1731,6 +1960,19 @@ function preventDateNonDigitKeydown(event: KeyboardEvent) {
   }
 
   if (!/^\d$/.test(event.key)) {
+    event.preventDefault()
+    return
+  }
+
+  const input = event.target as HTMLInputElement | null
+  if (!input) {
+    return
+  }
+
+  const selectedLength = Math.max(0, (input.selectionEnd ?? 0) - (input.selectionStart ?? 0))
+  const digitCount = input.value.replace(/\D/g, '').length
+
+  if (digitCount - selectedLength >= 8) {
     event.preventDefault()
   }
 }
@@ -2290,6 +2532,34 @@ const filteredAssessments = computed(() => {
   })
 })
 
+const filteredProtocols = computed(() => {
+  const query = protocolSearchQuery.value.trim().toLowerCase()
+  const startDate = parseDisplayDate(appliedProtocolStartDateFilter.value)
+  const endDate = parseDisplayDate(appliedProtocolEndDateFilter.value)
+
+  return protocols.value.filter((record) => {
+    const recordDate = parseRecordDate(record.createdAt)
+    const matchesQuery = !query || [
+      record.documentNumber,
+      record.createdAt,
+      formatDateDisplay(record.createdAt),
+      record.meetingDate,
+      record.region,
+      record.district,
+      record.address,
+      String(record.acceptedApplications),
+      String(record.totalApplications),
+      record.status,
+    ].some((value) => value.toLowerCase().includes(query))
+    const matchesStatus = appliedProtocolStatusFilter.value === 'all' || record.status === appliedProtocolStatusFilter.value
+    const matchesRegion = appliedProtocolRegionFilter.value === 'all' || record.region === appliedProtocolRegionFilter.value
+    const matchesStartDate = !startDate || !recordDate || recordDate >= startDate
+    const matchesEndDate = !endDate || !recordDate || recordDate <= endDate
+
+    return matchesQuery && matchesStatus && matchesRegion && matchesStartDate && matchesEndDate
+  })
+})
+
 const totalRows = computed(() => filteredCommissions.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
 const paginatedCommissions = computed(() => {
@@ -2314,6 +2584,77 @@ const assessmentPaginationRange = computed(() => {
   return { start, end }
 })
 const assessmentCurrentPageSummary = computed(() => `${assessmentCurrentPage.value}/${assessmentTotalPages.value}`)
+const protocolTotalRows = computed(() => filteredProtocols.value.length)
+const protocolTotalPages = computed(() => Math.max(1, Math.ceil(protocolTotalRows.value / protocolRowsPerPage.value)))
+const paginatedProtocols = computed(() => {
+  const start = (protocolCurrentPage.value - 1) * protocolRowsPerPage.value
+  return filteredProtocols.value.slice(start, start + protocolRowsPerPage.value)
+})
+const protocolPaginationRange = computed(() => {
+  const start = protocolTotalRows.value === 0 ? 0 : (protocolCurrentPage.value - 1) * protocolRowsPerPage.value + 1
+  const end = Math.min(protocolCurrentPage.value * protocolRowsPerPage.value, protocolTotalRows.value)
+  return { start, end }
+})
+const protocolCurrentPageSummary = computed(() => `${protocolCurrentPage.value}/${protocolTotalPages.value}`)
+const protocolActiveFilterCount = computed(() => {
+  let count = 0
+  if (appliedProtocolStatusFilter.value !== 'all') count += 1
+  if (appliedProtocolRegionFilter.value !== 'all') count += 1
+  if (appliedProtocolStartDateFilter.value) count += 1
+  if (appliedProtocolEndDateFilter.value) count += 1
+  return count
+})
+const protocolHasActiveFilters = computed(() => {
+  return protocolSearchQuery.value
+    || appliedProtocolStatusFilter.value !== 'all'
+    || appliedProtocolRegionFilter.value !== 'all'
+    || appliedProtocolStartDateFilter.value
+    || appliedProtocolEndDateFilter.value
+})
+const protocolHasPendingFilterChanges = computed(() => (
+  draftProtocolStatusFilter.value !== appliedProtocolStatusFilter.value
+  || draftProtocolRegionFilter.value !== appliedProtocolRegionFilter.value
+  || draftProtocolStartDateFilter.value !== appliedProtocolStartDateFilter.value
+  || draftProtocolEndDateFilter.value !== appliedProtocolEndDateFilter.value
+))
+const protocolStatusFilterLabel = computed(() => (
+  draftProtocolStatusFilter.value === 'all' ? 'Barchasi' : draftProtocolStatusFilter.value
+))
+const protocolRegionFilterLabel = computed(() => (
+  draftProtocolRegionFilter.value === 'all' ? 'Barchasi' : draftProtocolRegionFilter.value
+))
+const protocolStatusTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: protocols.value.length,
+    className: 'border-border bg-muted/50 text-foreground',
+  },
+  ...protocolStatusOptions.map((status) => ({
+    label: status,
+    value: status,
+    count: protocols.value.filter((record) => record.status === status).length,
+    className: protocolStatusClassMap[status],
+  })),
+])
+const protocolFormDistrictOptions = computed(() => {
+  if (!protocolForm.value.region) return []
+  return protocolDistrictOptions[protocolForm.value.region] ?? []
+})
+const generatedProtocolCandidates = computed(() => protocolApplicationCandidates.filter((application) => {
+  const matchesStep = application.step === 'IPTK qabul qildi'
+  const matchesRegion = !protocolForm.value.region || application.region === protocolForm.value.region
+  const matchesDistrict = !protocolForm.value.district || application.district === protocolForm.value.district
+
+  return matchesStep && matchesRegion && matchesDistrict
+}))
+const canGenerateProtocol = computed(() => (
+  Boolean(protocolForm.value.meetingDate)
+  && Boolean(protocolForm.value.region)
+  && Boolean(protocolForm.value.district)
+  && Boolean(protocolForm.value.address.trim())
+))
+const canSaveProtocol = computed(() => canGenerateProtocol.value && protocolForm.value.applications.length > 0)
 const assessmentActiveFilterCount = computed(() => {
   let count = 0
   if (appliedAssessmentStatusFilter.value !== 'all') count += 1
@@ -3437,6 +3778,62 @@ const calendarDays = computed(() => {
   return days
 })
 
+const protocolCalendarMonthLabel = computed(() => {
+  const monthValue = protocolCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [year, month] = monthValue.split('-')
+
+  if (!year || !month) {
+    return ''
+  }
+
+  return `${monthNames[Number(month) - 1] ?? month} ${year}`
+})
+const protocolCalendarDays = computed(() => {
+  const monthValue = protocolCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return []
+  }
+
+  const year = Number(yearString)
+  const monthIndex = Number(monthString) - 1
+  const firstDay = new Date(year, monthIndex, 1)
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7
+  const days: Array<{ key: string, label: string, value: string, isCurrentMonth: boolean }> = []
+
+  for (let index = 0; index < leadingEmptyDays; index += 1) {
+    days.push({
+      key: `protocol-empty-start-${index}`,
+      label: '',
+      value: '',
+      isCurrentMonth: false,
+    })
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const dayValue = String(day).padStart(2, '0')
+    days.push({
+      key: `protocol-${yearString}-${monthString}-${dayValue}`,
+      label: String(day),
+      value: `${dayValue}.${monthString}.${yearString}`,
+      isCurrentMonth: true,
+    })
+  }
+
+  while (days.length % 7 !== 0) {
+    days.push({
+      key: `protocol-empty-end-${days.length}`,
+      label: '',
+      value: '',
+      isCurrentMonth: false,
+    })
+  }
+
+  return days
+})
+
 const applicationReportCalendarMonthLabel = computed(() => {
   const monthValue = applicationReportCalendarMonth.value || getTodayIso().slice(0, 7)
   const [year, month] = monthValue.split('-')
@@ -4203,6 +4600,324 @@ function setAssessmentRowsPerPage(nextValue: number) {
   })
 }
 
+function handleProtocolSearchInput(value: string) {
+  protocolSearchInput.value = value
+
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+
+  searchDebounceTimer = setTimeout(() => {
+    runTableLoading(() => {
+      protocolSearchQuery.value = protocolSearchInput.value
+      protocolCurrentPage.value = 1
+    })
+    searchDebounceTimer = null
+  }, 1000)
+}
+
+function goToProtocolPage(page: number) {
+  if (page < 1 || page > protocolTotalPages.value || page === protocolCurrentPage.value) return
+
+  runTableLoading(() => {
+    protocolCurrentPage.value = page
+  })
+}
+
+function setProtocolRowsPerPageOpen(nextOpen: boolean) {
+  isProtocolRowsPerPageOpen.value = nextOpen
+}
+
+function setProtocolRowsPerPage(nextValue: number) {
+  runTableLoading(() => {
+    protocolRowsPerPage.value = nextValue
+    protocolCurrentPage.value = 1
+  })
+}
+
+function applyProtocolFilters() {
+  const stopLoading = startActionLoading('protocol-filter-apply')
+  isProtocolFilterOpen.value = false
+  openProtocolFilterField.value = null
+
+  runTableLoading(() => {
+    appliedProtocolStatusFilter.value = draftProtocolStatusFilter.value
+    appliedProtocolRegionFilter.value = draftProtocolRegionFilter.value
+    appliedProtocolStartDateFilter.value = draftProtocolStartDateFilter.value
+    appliedProtocolEndDateFilter.value = draftProtocolEndDateFilter.value
+    protocolCurrentPage.value = 1
+    stopLoading()
+  })
+}
+
+function resetProtocolSearchAndFilters() {
+  protocolSearchInput.value = ''
+  protocolSearchQuery.value = ''
+  draftProtocolStatusFilter.value = 'all'
+  draftProtocolRegionFilter.value = 'all'
+  draftProtocolStartDateFilter.value = ''
+  draftProtocolEndDateFilter.value = ''
+  isProtocolFilterOpen.value = false
+  openProtocolFilterField.value = null
+
+  runTableLoading(() => {
+    appliedProtocolStatusFilter.value = 'all'
+    appliedProtocolRegionFilter.value = 'all'
+    appliedProtocolStartDateFilter.value = ''
+    appliedProtocolEndDateFilter.value = ''
+    protocolCurrentPage.value = 1
+  })
+}
+
+function clearProtocolFilters() {
+  const stopLoading = startActionLoading('protocol-filter-clear')
+  resetProtocolSearchAndFilters()
+  stopLoading()
+}
+
+function closeProtocolFilters() {
+  isProtocolFilterOpen.value = false
+  openProtocolFilterField.value = null
+  openProtocolCalendarField.value = null
+}
+
+function toggleProtocolFiltersFromMenu(nextOpen: boolean) {
+  if (nextOpen) {
+    draftProtocolStatusFilter.value = appliedProtocolStatusFilter.value
+    draftProtocolRegionFilter.value = appliedProtocolRegionFilter.value
+    draftProtocolStartDateFilter.value = appliedProtocolStartDateFilter.value
+    draftProtocolEndDateFilter.value = appliedProtocolEndDateFilter.value
+    openProtocolFilterField.value = null
+    openProtocolCalendarField.value = null
+  } else {
+    openProtocolFilterField.value = null
+    openProtocolCalendarField.value = null
+  }
+
+  isProtocolFilterOpen.value = nextOpen
+}
+
+function toggleProtocolFilterField(field: 'status' | 'region') {
+  openProtocolFilterField.value = openProtocolFilterField.value === field ? null : field
+}
+
+function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
+  draftProtocolStatusFilter.value = value
+  openProtocolFilterField.value = null
+}
+
+function selectProtocolStatusTab(value: 'all' | ProtocolStatus) {
+  if (appliedProtocolStatusFilter.value === value) return
+
+  closeProtocolFilters()
+  draftProtocolStatusFilter.value = value
+  runTableLoading(() => {
+    appliedProtocolStatusFilter.value = value
+    protocolCurrentPage.value = 1
+  })
+}
+
+function selectProtocolRegionFilter(value: 'all' | string) {
+  draftProtocolRegionFilter.value = value
+  openProtocolFilterField.value = null
+}
+
+function handleProtocolStartDateFilterChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftProtocolStartDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftProtocolEndDateFilter.value.length === 10
+    && parseDisplayDate(draftProtocolEndDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(draftProtocolEndDateFilter.value)! < parseDisplayDate(normalizedValue)!
+  ) {
+    draftProtocolEndDateFilter.value = normalizedValue
+  }
+}
+
+function handleProtocolEndDateFilterChange(value: unknown) {
+  const normalizedValue = sanitizeDateFilterInput(String(value ?? ''))
+  draftProtocolEndDateFilter.value = normalizedValue
+
+  if (
+    normalizedValue.length === 10
+    && draftProtocolStartDateFilter.value.length === 10
+    && parseDisplayDate(draftProtocolStartDateFilter.value)
+    && parseDisplayDate(normalizedValue)
+    && parseDisplayDate(draftProtocolStartDateFilter.value)! > parseDisplayDate(normalizedValue)!
+  ) {
+    draftProtocolStartDateFilter.value = normalizedValue
+  }
+}
+
+function handleProtocolMeetingDateChange(value: unknown) {
+  protocolForm.value.meetingDate = sanitizeDateFilterInput(String(value ?? ''))
+  protocolForm.value.isGenerated = false
+  protocolForm.value.applications = []
+}
+
+function getProtocolDateFieldValue(field: 'start' | 'end' | 'meeting') {
+  if (field === 'start') return draftProtocolStartDateFilter.value
+  if (field === 'end') return draftProtocolEndDateFilter.value
+  return protocolForm.value.meetingDate
+}
+
+function openProtocolCalendar(field: 'start' | 'end' | 'meeting') {
+  openProtocolCalendarField.value = openProtocolCalendarField.value === field ? null : field
+
+  if (!openProtocolCalendarField.value) {
+    return
+  }
+
+  protocolCalendarMonth.value = calendarMonthFromDisplayDate(getProtocolDateFieldValue(field))
+}
+
+function shiftProtocolCalendarMonth(direction: -1 | 1) {
+  const monthValue = protocolCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString), Number(monthString) - 1 + direction, 1)
+  protocolCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function shiftProtocolCalendarYear(direction: -1 | 1) {
+  const monthValue = protocolCalendarMonth.value || getTodayIso().slice(0, 7)
+  const [yearString, monthString] = monthValue.split('-')
+
+  if (!yearString || !monthString) {
+    return
+  }
+
+  const date = new Date(Number(yearString) + direction, Number(monthString) - 1, 1)
+  protocolCalendarMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function selectProtocolCalendarDate(field: 'start' | 'end' | 'meeting', value: string) {
+  if (field === 'start') {
+    handleProtocolStartDateFilterChange(value)
+  } else if (field === 'end') {
+    handleProtocolEndDateFilterChange(value)
+  } else {
+    handleProtocolMeetingDateChange(value)
+  }
+
+  openProtocolCalendarField.value = null
+}
+
+function isProtocolCalendarDateSelected(value: string) {
+  if (!openProtocolCalendarField.value) return false
+  return getProtocolDateFieldValue(openProtocolCalendarField.value) === value
+}
+
+function handleProtocolAddressChange(value: unknown) {
+  protocolForm.value.address = String(value ?? '')
+  protocolForm.value.isGenerated = false
+  protocolForm.value.applications = []
+}
+
+function openCreateProtocolDialog() {
+  protocolForm.value = {
+    meetingDate: '',
+    region: '',
+    district: '',
+    address: '',
+    applications: [],
+    isGenerated: false,
+  }
+  isProtocolDialogOpen.value = true
+}
+
+function closeProtocolDialog() {
+  openProtocolFormField.value = null
+  openProtocolCalendarField.value = null
+  isProtocolDialogOpen.value = false
+}
+
+function toggleProtocolFormField(field: 'region' | 'district') {
+  openProtocolFormField.value = openProtocolFormField.value === field ? null : field
+}
+
+function selectProtocolFormRegion(region: string) {
+  protocolForm.value.region = region
+  protocolForm.value.district = ''
+  protocolForm.value.applications = []
+  protocolForm.value.isGenerated = false
+  openProtocolFormField.value = null
+}
+
+function selectProtocolFormDistrict(district: string) {
+  protocolForm.value.district = district
+  protocolForm.value.applications = []
+  protocolForm.value.isGenerated = false
+  openProtocolFormField.value = null
+}
+
+function resetProtocolForm() {
+  protocolForm.value = {
+    meetingDate: '',
+    region: '',
+    district: '',
+    address: '',
+    applications: [],
+    isGenerated: false,
+  }
+}
+
+function generateProtocolApplications() {
+  if (!canGenerateProtocol.value) {
+    pushFeedback('error', "Yig'ilish sanasi, hudud, tuman va manzilni to'ldiring.")
+    return
+  }
+
+  protocolForm.value.applications = [...generatedProtocolCandidates.value]
+  protocolForm.value.isGenerated = true
+
+  if (!protocolForm.value.applications.length) {
+    pushFeedback('info', "Tanlangan hudud va tuman bo'yicha IPTK qabul qildi bosqichidagi arizalar topilmadi.")
+  }
+}
+
+function nextProtocolDocumentNumber() {
+  const nextNumber = protocols.value.length + 1
+  return `IPTK-BAYON-2026-${String(nextNumber).padStart(3, '0')}`
+}
+
+function saveProtocol() {
+  if (!canSaveProtocol.value) {
+    pushFeedback('error', "Bayonnomani saqlash uchun avval arizalar ro'yxatini shakllantiring.")
+    return
+  }
+
+  const documentNumber = nextProtocolDocumentNumber()
+
+  protocols.value = [
+    {
+      id: crypto.randomUUID(),
+      documentNumber,
+      createdAt: nowLabel(),
+      meetingDate: protocolForm.value.meetingDate,
+      region: protocolForm.value.region,
+      district: protocolForm.value.district,
+      address: protocolForm.value.address.trim(),
+      acceptedApplications: protocolForm.value.applications.length,
+      totalApplications: protocolForm.value.applications.length,
+      status: 'Yangi',
+      applications: [...protocolForm.value.applications],
+    },
+    ...protocols.value,
+  ]
+
+  protocolCurrentPage.value = 1
+  closeProtocolDialog()
+  pushFeedback('success', `${documentNumber} raqamli bayonnoma yaratildi.`)
+}
+
 function applyAssessmentFilters() {
   const stopLoading = startActionLoading('assessment-filter-apply')
   isAssessmentFilterOpen.value = false
@@ -4651,6 +5366,40 @@ async function downloadCommissions() {
     })
   } finally {
     if (!downloadScheduled && actionLoadingKey.value === 'commission-download') {
+      stopLoading()
+    }
+  }
+}
+
+async function downloadProtocols() {
+  const stopLoading = startActionLoading('protocol-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+
+    const exportRows = filteredProtocols.value.map((record) => ({
+      ID: record.documentNumber,
+      Sana: formatDateDisplay(record.createdAt),
+      "Yig'ilish sanasi": record.meetingDate,
+      Hudud: record.region,
+      Tuman: record.district,
+      Manzil: record.address,
+      'Qabul qilingan arizalar': record.acceptedApplications,
+      'Jami arizalar': record.totalApplications,
+      Status: record.status,
+    }))
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Bayonnoma')
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, 'iptk-bayonnoma.xlsx')
+      pushFeedback('success', 'Bayonnoma roâ€˜yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'protocol-download') {
       stopLoading()
     }
   }
@@ -5696,6 +6445,7 @@ function clearApplicationReportFilters() {
 function closeTransientUi() {
   closeFilters()
   closeAssessmentFilters()
+  closeProtocolFilters()
   closeApplicationReportFilters()
   clearApplicationReportCellSelection()
   openActionMenuId.value = null
@@ -5703,6 +6453,7 @@ function closeTransientUi() {
   openDiagnosisActionMenuId.value = null
   isRowsPerPageOpen.value = false
   isAssessmentRowsPerPageOpen.value = false
+  isProtocolRowsPerPageOpen.value = false
   isServiceTypeRowsPerPageOpen.value = false
   isDiagnosisRowsPerPageOpen.value = false
   isFormRegionOpen.value = false
@@ -5714,6 +6465,8 @@ function closeTransientUi() {
   isDiagnosisStatusOpen.value = false
   isDiagnosisIcdOpen.value = false
   isDiagnosisTranslationsOpen.value = false
+  openProtocolFormField.value = null
+  openProtocolCalendarField.value = null
 }
 
 function closeTopLayer() {
@@ -5747,6 +6500,11 @@ function closeTopLayer() {
     return
   }
 
+  if (isProtocolDialogOpen.value) {
+    closeProtocolDialog()
+    return
+  }
+
   if (isServiceTypeDialogOpen.value) {
     closeServiceTypeDialog()
     return
@@ -5765,6 +6523,34 @@ function handleGlobalKeydown(event: KeyboardEvent) {
 
   event.preventDefault()
   closeTopLayer()
+}
+
+function lockBodyScroll() {
+  if (document.body.style.position === 'fixed') return
+
+  lockedBodyScrollY = window.scrollY
+  previousBodyOverflow = document.body.style.overflow
+  previousBodyPosition = document.body.style.position
+  previousBodyTop = document.body.style.top
+  previousBodyWidth = document.body.style.width
+
+  document.body.style.overflow = 'hidden'
+  document.body.style.position = 'fixed'
+  document.body.style.top = `-${lockedBodyScrollY}px`
+  document.body.style.width = '100%'
+}
+
+function unlockBodyScroll() {
+  if (document.body.style.position !== 'fixed') {
+    document.body.style.overflow = previousBodyOverflow
+    return
+  }
+
+  document.body.style.overflow = previousBodyOverflow
+  document.body.style.position = previousBodyPosition
+  document.body.style.top = previousBodyTop
+  document.body.style.width = previousBodyWidth
+  window.scrollTo(0, lockedBodyScrollY)
 }
 
 async function downloadDiagnoses() {
@@ -5837,7 +6623,12 @@ watch(() => props.pageKey, () => {
 }, { immediate: true })
 
 watch(isAnyDialogOpen, (isOpen) => {
-  document.body.style.overflow = isOpen ? 'hidden' : ''
+  if (isOpen) {
+    lockBodyScroll()
+    return
+  }
+
+  unlockBodyScroll()
 }, { immediate: true })
 
 onMounted(() => {
@@ -5847,7 +6638,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
   clearNotificationTimers()
-  document.body.style.overflow = ''
+  unlockBodyScroll()
 
   if (searchDebounceTimer) {
     clearTimeout(searchDebounceTimer)
@@ -5900,7 +6691,7 @@ onUnmounted(() => {
             <div class="relative order-1">
               <div
                 v-if="isApplicationReportFilterOpen"
-                class="fixed inset-0 z-40 bg-background/40 xl:hidden"
+                :class="filterOverlayClass"
                 @click="closeApplicationReportFilters"
               />
 
@@ -5925,9 +6716,9 @@ onUnmounted(() => {
 
               <div
                 v-if="isApplicationReportFilterOpen"
-                class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none xl:absolute xl:right-0 xl:left-auto xl:top-[calc(100%+0.4rem)] xl:w-[21rem] xl:origin-top-right"
+                :class="filterPanelClass"
               >
-                <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
+                <div :class="filterPanelContentClass">
                   <div class="flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                     <button
@@ -6663,7 +7454,7 @@ onUnmounted(() => {
               <div class="relative order-1">
                 <div
                   v-if="isFilterOpen"
-                  class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
+                  :class="filterOverlayClass"
                   @click="closeFilters"
                 />
 
@@ -6691,9 +7482,9 @@ onUnmounted(() => {
 
                 <div
                   v-if="isFilterOpen"
-                  class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:-translate-x-6 xl:origin-top-right"
+                  :class="filterPanelClass"
                 >
-                  <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
+                  <div :class="filterPanelContentClass">
                     <div class="flex items-center justify-between gap-2">
                       <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                       <Button
@@ -7511,7 +8302,6 @@ onUnmounted(() => {
       <div
         v-if="selectedViewRecord"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeViewDialog"
       >
         <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -7725,7 +8515,6 @@ onUnmounted(() => {
       <div
         v-if="isCreateDialogOpen"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeCreateDialog"
       >
         <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -8288,7 +9077,7 @@ onUnmounted(() => {
             <div class="relative order-1">
               <div
                 v-if="isAssessmentFilterOpen"
-                class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm xl:hidden"
+                :class="filterOverlayClass"
                 @click="closeAssessmentFilters"
               />
 
@@ -8316,9 +9105,9 @@ onUnmounted(() => {
 
               <div
                 v-if="isAssessmentFilterOpen"
-                class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:origin-top-right"
+                :class="filterPanelClass"
               >
-                <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5 xl:max-h-[min(28rem,calc(100vh-10rem))]">
+                <div :class="filterPanelContentClass">
                   <div class="flex items-center justify-between gap-2">
                     <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                     <Button
@@ -8852,7 +9641,6 @@ onUnmounted(() => {
   <div
     v-if="selectedAssessmentViewRecord"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
-    @click.self="closeAssessmentViewDialog"
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -9029,7 +9817,6 @@ onUnmounted(() => {
   <div
     v-if="false && selectedAssessmentViewRecord"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
-    @click.self="closeAssessmentViewDialog"
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
@@ -9108,6 +9895,719 @@ onUnmounted(() => {
         @cancel="closeConfirmation"
         @confirm="confirmPendingAction"
       />
+    </template>
+
+    <template v-else-if="isProtocolPage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div
+          class="absolute left-0 top-0 h-1"
+          :class="[
+            feedback.type === 'success' && 'bg-emerald-500',
+            feedback.type === 'error' && 'bg-rose-500',
+            feedback.type === 'info' && 'bg-sky-500',
+          ]"
+          :style="{ width: `${notificationProgress}%` }"
+        />
+        <span
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedback.title }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="protocolSearchInput"
+              class="pl-9"
+              :placeholder="t('Qidirish')"
+              @update:model-value="handleProtocolSearchInput(String($event ?? ''))"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="relative">
+              <div
+                v-if="isProtocolFilterOpen"
+                :class="filterOverlayClass"
+                @click="closeProtocolFilters"
+              />
+
+              <Button
+                variant="outline"
+                :class="cn('h-10 gap-2', isProtocolFilterOpen && 'border-ring bg-accent/40 ring-2 ring-ring/20')"
+                @click="toggleProtocolFiltersFromMenu(!isProtocolFilterOpen)"
+              >
+                <span v-if="protocolActiveFilterCount" class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
+                  {{ protocolActiveFilterCount }}
+                </span>
+                <Filter v-else class="h-4 w-4" />
+                {{ t('Filter') }}
+              </Button>
+
+              <div
+                v-if="isProtocolFilterOpen"
+                :class="filterPanelClass"
+              >
+                <div :class="filterPanelContentClass">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                  <p class="font-semibold text-foreground">{{ t('Filterlar') }}</p>
+                  <button type="button" class="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="closeProtocolFilters">
+                    <X class="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  <div class="relative">
+                    <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Status') }}</label>
+                    <button
+                      type="button"
+                      :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors', openProtocolFilterField === 'status' && 'border-ring ring-2 ring-ring/20')"
+                      @click="toggleProtocolFilterField('status')"
+                    >
+                      <span class="truncate">{{ protocolStatusFilterLabel }}</span>
+                      <ChevronDown :class="cn('h-4 w-4 text-muted-foreground transition-transform', openProtocolFilterField === 'status' && 'rotate-180')" />
+                    </button>
+                    <div
+                      v-if="openProtocolFilterField === 'status'"
+                      class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-1 shadow-lg"
+                    >
+                      <button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="selectProtocolStatusFilter('all')">
+                        <span>Barchasi</span>
+                        <Check v-if="draftProtocolStatusFilter === 'all'" class="h-4 w-4 text-primary" />
+                      </button>
+                      <button
+                        v-for="status in protocolStatusOptions"
+                        :key="`protocol-filter-status-${status}`"
+                        type="button"
+                        class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                        @click="selectProtocolStatusFilter(status)"
+                      >
+                        <span>{{ status }}</span>
+                        <Check v-if="draftProtocolStatusFilter === status" class="h-4 w-4 text-primary" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Hudud') }}</label>
+                    <button
+                      type="button"
+                      :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors', openProtocolFilterField === 'region' && 'border-ring ring-2 ring-ring/20')"
+                      @click="toggleProtocolFilterField('region')"
+                    >
+                      <span class="truncate">{{ protocolRegionFilterLabel }}</span>
+                      <ChevronDown :class="cn('h-4 w-4 text-muted-foreground transition-transform', openProtocolFilterField === 'region' && 'rotate-180')" />
+                    </button>
+                    <div
+                      v-if="openProtocolFilterField === 'region'"
+                      class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
+                    >
+                      <button type="button" class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted" @click="selectProtocolRegionFilter('all')">
+                        <span>Barchasi</span>
+                        <Check v-if="draftProtocolRegionFilter === 'all'" class="h-4 w-4 text-primary" />
+                      </button>
+                      <button
+                        v-for="region in regionOptions"
+                        :key="`protocol-filter-region-${region}`"
+                        type="button"
+                        class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                        @click="selectProtocolRegionFilter(region)"
+                      >
+                        <span>{{ region }}</span>
+                        <Check v-if="draftProtocolRegionFilter === region" class="h-4 w-4 text-primary" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Boshlanish sanasi') }}</label>
+                    <div class="relative">
+                      <Input
+                        :model-value="draftProtocolStartDateFilter"
+                        class="h-10 pr-10"
+                        inputmode="numeric"
+                        maxlength="10"
+                        placeholder="dd.mm.yyyy"
+                        @keydown="preventDateNonDigitKeydown"
+                        @update:model-value="handleProtocolStartDateFilterChange"
+                      />
+                      <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="openProtocolCalendar('start')">
+                        <CalendarDays class="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div v-if="openProtocolCalendarField === 'start'" class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-3 shadow-lg">
+                      <div class="mb-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(-1)"><ChevronsLeft class="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(-1)"><ChevronLeft class="h-4 w-4" /></Button>
+                        </div>
+                        <p class="text-sm font-medium text-foreground">{{ protocolCalendarMonthLabel }}</p>
+                        <div class="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(1)"><ChevronRight class="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(1)"><ChevronsRight class="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                      <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                        <span v-for="weekday in calendarWeekdays" :key="`protocol-start-${weekday}`" class="py-1">{{ weekday }}</span>
+                      </div>
+                      <div class="grid grid-cols-7 gap-1">
+                        <button v-for="day in protocolCalendarDays" :key="`protocol-start-${day.key}`" type="button" class="flex h-8 items-center justify-center rounded-md text-sm transition-colors" :class="day.isCurrentMonth ? isProtocolCalendarDateSelected(day.value) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted' : 'pointer-events-none opacity-0'" :disabled="!day.isCurrentMonth" @click="selectProtocolCalendarDate('start', day.value)">{{ day.label }}</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="relative">
+                    <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Tugash sanasi') }}</label>
+                    <div class="relative">
+                      <Input
+                        :model-value="draftProtocolEndDateFilter"
+                        class="h-10 pr-10"
+                        inputmode="numeric"
+                        maxlength="10"
+                        placeholder="dd.mm.yyyy"
+                        @keydown="preventDateNonDigitKeydown"
+                        @update:model-value="handleProtocolEndDateFilterChange"
+                      />
+                      <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="openProtocolCalendar('end')">
+                        <CalendarDays class="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div v-if="openProtocolCalendarField === 'end'" class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-3 shadow-lg">
+                      <div class="mb-3 flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(-1)"><ChevronsLeft class="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(-1)"><ChevronLeft class="h-4 w-4" /></Button>
+                        </div>
+                        <p class="text-sm font-medium text-foreground">{{ protocolCalendarMonthLabel }}</p>
+                        <div class="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(1)"><ChevronRight class="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(1)"><ChevronsRight class="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                      <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                        <span v-for="weekday in calendarWeekdays" :key="`protocol-end-${weekday}`" class="py-1">{{ weekday }}</span>
+                      </div>
+                      <div class="grid grid-cols-7 gap-1">
+                        <button v-for="day in protocolCalendarDays" :key="`protocol-end-${day.key}`" type="button" class="flex h-8 items-center justify-center rounded-md text-sm transition-colors" :class="day.isCurrentMonth ? isProtocolCalendarDateSelected(day.value) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted' : 'pointer-events-none opacity-0'" :disabled="!day.isCurrentMonth" @click="selectProtocolCalendarDate('end', day.value)">{{ day.label }}</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 flex justify-end gap-2 border-t border-border pt-4">
+                  <Button variant="outline" size="sm" :disabled="!protocolHasActiveFilters && !protocolHasPendingFilterChanges" @click="clearProtocolFilters">
+                    {{ t('Tozalash') }}
+                  </Button>
+                  <Button size="sm" :disabled="!protocolHasPendingFilterChanges" @click="applyProtocolFilters">
+                    {{ t("Qo'llash") }}
+                  </Button>
+                </div>
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'protocol-download'"
+              @click="downloadProtocols"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'protocol-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download
+                v-else
+                class="h-4 w-4"
+              />
+              {{ t('Yuklab olish') }}
+            </Button>
+            <Button class="h-10 gap-2" @click="openCreateProtocolDialog">
+              <Plus class="h-4 w-4" />
+              {{ t('Yaratish') }}
+            </Button>
+          </div>
+        </div>
+
+        <div class="-mt-1 overflow-x-auto pb-1">
+          <div class="flex min-w-max items-center gap-2">
+            <button
+              v-for="tab in protocolStatusTabs"
+              :key="`protocol-status-tab-${tab.value}`"
+              type="button"
+              :class="cn(
+                'inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                appliedProtocolStatusFilter === tab.value
+                  ? `${tab.className} ring-2 ring-ring/20`
+                  : 'border-border bg-background text-muted-foreground',
+              )"
+              @click="selectProtocolStatusTab(tab.value)"
+            >
+              <span>{{ tab.label }}</span>
+              <span
+                :class="cn(
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  appliedProtocolStatusFilter === tab.value
+                    ? 'bg-background/70 text-foreground'
+                    : 'bg-muted text-muted-foreground',
+                )"
+              >
+                {{ tab.count }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+          <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <div v-if="paginatedProtocols.length === 0" class="flex min-h-80 items-center justify-center p-6 text-center">
+              <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  :disabled="isTableLoading || !protocolHasActiveFilters"
+                  @click="resetProtocolSearchAndFilters"
+                >
+                  {{ t('Tozalash') }}
+                </Button>
+              </div>
+            </div>
+
+            <div v-else class="grid gap-3 p-3 sm:grid-cols-2">
+              <Card
+                v-for="record in paginatedProtocols"
+                :key="record.id"
+                class="overflow-hidden border-border bg-card"
+              >
+                <CardContent class="space-y-4 p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                      <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                    </div>
+                    <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
+                      {{ record.status }}
+                    </span>
+                  </div>
+                  <div class="grid gap-3 text-sm">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Arizalar') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.acceptedApplications }} / {{ record.totalApplications }}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <table class="min-w-[1040px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Arizalar') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedProtocols.length === 0">
+                  <td colspan="5" class="border-b border-border px-4 py-12 text-center">
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                      <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="isTableLoading || !protocolHasActiveFilters"
+                        @click="resetProtocolSearchAndFilters"
+                      >
+                        {{ t('Tozalash') }}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedProtocols"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(`protocol-${record.id}`, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === `protocol-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>{{ t("Ko'rish") }}</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.region }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.acceptedApplications }} / {{ record.totalApplications }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ t('Qabul qilingan arizalar') }} / {{ t('Jami arizalar') }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
+                <DropdownMenuRoot @update:open="setProtocolRowsPerPageOpen($event)">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isProtocolRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    >
+                      <span>{{ protocolRowsPerPage }}</span>
+                      <ChevronRight class="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @select.prevent="setProtocolRowsPerPage(option)"
+                      >
+                        <span :class="option === protocolRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                          {{ option }}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
+                <span class="font-medium text-foreground">{{ protocolPaginationRange.start }}-{{ protocolPaginationRange.end }} / {{ protocolTotalRows }}</span>
+              </div>
+            </div>
+
+            <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || protocolCurrentPage === 1"
+                @click="goToProtocolPage(1)"
+              >
+                <ChevronsLeft class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || protocolCurrentPage === 1"
+                @click="goToProtocolPage(protocolCurrentPage - 1)"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </Button>
+              <span class="min-w-14 text-center text-sm font-semibold text-foreground">
+                {{ protocolCurrentPageSummary }}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || protocolCurrentPage === protocolTotalPages"
+                @click="goToProtocolPage(protocolCurrentPage + 1)"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || protocolCurrentPage === protocolTotalPages"
+                @click="goToProtocolPage(protocolTotalPages)"
+              >
+                <ChevronsRight class="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="isProtocolDialogOpen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
+      >
+        <div class="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl">
+          <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+            <div>
+              <h2 class="text-lg font-semibold text-foreground">{{ t('Bayonnoma yaratish') }}</h2>
+              <p class="mt-1 text-sm text-muted-foreground">{{ t("Yig'ilish ma'lumotlarini kiriting va arizalar ro'yxatini shakllantiring.") }}</p>
+            </div>
+            <button
+              type="button"
+              class="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              @click="closeProtocolDialog"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="relative">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t("Yig'ilish sanasi") }}</label>
+                <div class="relative">
+                  <Input
+                    :model-value="protocolForm.meetingDate"
+                    class="h-10 pr-10"
+                    inputmode="numeric"
+                    maxlength="10"
+                    placeholder="dd.mm.yyyy"
+                    @keydown="preventDateNonDigitKeydown"
+                    @update:model-value="handleProtocolMeetingDateChange"
+                  />
+                  <button type="button" class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="openProtocolCalendar('meeting')">
+                    <CalendarDays class="h-4 w-4" />
+                  </button>
+                </div>
+                <div v-if="openProtocolCalendarField === 'meeting'" class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-3 shadow-lg">
+                  <div class="mb-3 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(-1)"><ChevronsLeft class="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(-1)"><ChevronLeft class="h-4 w-4" /></Button>
+                    </div>
+                    <p class="text-sm font-medium text-foreground">{{ protocolCalendarMonthLabel }}</p>
+                    <div class="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarMonth(1)"><ChevronRight class="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="shiftProtocolCalendarYear(1)"><ChevronsRight class="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div class="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
+                    <span v-for="weekday in calendarWeekdays" :key="`protocol-meeting-${weekday}`" class="py-1">{{ weekday }}</span>
+                  </div>
+                  <div class="grid grid-cols-7 gap-1">
+                    <button v-for="day in protocolCalendarDays" :key="`protocol-meeting-${day.key}`" type="button" class="flex h-8 items-center justify-center rounded-md text-sm transition-colors" :class="day.isCurrentMonth ? isProtocolCalendarDateSelected(day.value) ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted' : 'pointer-events-none opacity-0'" :disabled="!day.isCurrentMonth" @click="selectProtocolCalendarDate('meeting', day.value)">{{ day.label }}</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="relative">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Hudud') }}</label>
+                <button
+                  type="button"
+                  :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors', openProtocolFormField === 'region' && 'border-ring ring-2 ring-ring/20')"
+                  @click="toggleProtocolFormField('region')"
+                >
+                  <span class="truncate">{{ protocolForm.region || t('Hududni tanlang') }}</span>
+                  <ChevronDown :class="cn('h-4 w-4 text-muted-foreground transition-transform', openProtocolFormField === 'region' && 'rotate-180')" />
+                </button>
+                <div
+                  v-if="openProtocolFormField === 'region'"
+                  class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
+                >
+                  <button
+                    v-for="region in regionOptions"
+                    :key="`protocol-form-region-${region}`"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    @click="selectProtocolFormRegion(region)"
+                  >
+                    <span>{{ region }}</span>
+                    <Check v-if="protocolForm.region === region" class="h-4 w-4 text-primary" />
+                  </button>
+                </div>
+              </div>
+
+              <div class="relative">
+                <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Tuman yoki shahar') }}</label>
+                <button
+                  type="button"
+                  :disabled="!protocolForm.region"
+                  :class="cn('flex h-10 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60', openProtocolFormField === 'district' && 'border-ring ring-2 ring-ring/20')"
+                  @click="protocolForm.region && toggleProtocolFormField('district')"
+                >
+                  <span class="truncate">{{ protocolForm.district || (protocolForm.region ? t('Tumanni tanlang') : t('Avval hududni tanlang')) }}</span>
+                  <ChevronDown :class="cn('h-4 w-4 text-muted-foreground transition-transform', openProtocolFormField === 'district' && 'rotate-180')" />
+                </button>
+                <div
+                  v-if="openProtocolFormField === 'district'"
+                  class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg"
+                >
+                  <button
+                    v-for="district in protocolFormDistrictOptions"
+                    :key="`protocol-form-district-${district}`"
+                    type="button"
+                    class="flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted"
+                    @click="selectProtocolFormDistrict(district)"
+                  >
+                    <span>{{ district }}</span>
+                    <Check v-if="protocolForm.district === district" class="h-4 w-4 text-primary" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="mb-1.5 block text-sm font-medium text-foreground">{{ t('Manzil') }}</label>
+                <Input
+                  :model-value="protocolForm.address"
+                  class="h-10"
+                  :placeholder="t('Manzilni kiriting')"
+                  @update:model-value="handleProtocolAddressChange"
+                />
+              </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-4">
+              <div>
+                <p class="font-medium text-foreground">{{ t("IPTK qabul qildi bosqichidagi arizalar") }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ t("Shakllantirish bosilganda tanlangan hudud va tuman bo'yicha ro'yxat yig'iladi.") }}</p>
+              </div>
+              <Button class="gap-2" :disabled="!canGenerateProtocol" @click="generateProtocolApplications">
+                <FileCheck2 class="h-4 w-4" />
+                {{ t('Shakllantirish') }}
+              </Button>
+            </div>
+
+            <div
+              v-if="protocolForm.isGenerated"
+              class="mt-5 overflow-hidden rounded-xl border border-border"
+            >
+              <div v-if="protocolForm.applications.length === 0" class="p-6 text-center text-sm text-muted-foreground">
+                {{ t("Tanlangan shartlar bo'yicha ariza topilmadi.") }}
+              </div>
+              <table v-else class="min-w-full text-sm">
+                <thead class="bg-muted/40 text-left text-muted-foreground">
+                  <tr>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Ariza') }}</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
+                    <th class="px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="application in protocolForm.applications"
+                    :key="application.id"
+                    class="border-t border-border"
+                  >
+                    <td class="px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">{{ application.documentNumber }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(application.createdAt) }}</p>
+                    </td>
+                    <td class="px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">{{ application.serviceRecipient }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ application.serviceRecipientPinfl }}</p>
+                    </td>
+                    <td class="px-4 py-3 align-top text-foreground">{{ application.serviceType }}</td>
+                    <td class="px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">{{ application.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ application.district }}</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+            <Button variant="outline" @click="resetProtocolForm">
+              {{ t('Tozalash') }}
+            </Button>
+            <Button :disabled="!canSaveProtocol" @click="saveProtocol">
+              {{ t('Saqlash') }}
+            </Button>
+          </div>
+        </div>
+      </div>
     </template>
 
     <template v-else-if="isServiceTypesPage">
@@ -9471,7 +10971,6 @@ onUnmounted(() => {
       <div
         v-if="isServiceTypeDialogOpen"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeServiceTypeDialog"
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -9762,7 +11261,6 @@ onUnmounted(() => {
       <div
         v-if="selectedServiceTypeRecord"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeServiceTypeViewDialog"
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -10264,7 +11762,6 @@ onUnmounted(() => {
       <div
         v-if="isDiagnosisDialogOpen"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeDiagnosisDialog"
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -10530,7 +12027,6 @@ onUnmounted(() => {
       <div
         v-if="selectedDiagnosisRecord"
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeDiagnosisViewDialog"
       >
         <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
@@ -10671,7 +12167,7 @@ onUnmounted(() => {
             <div class="relative order-1">
             <div
               v-if="isApplicationReportFilterOpen"
-              class="fixed inset-0 z-40 bg-background/40 xl:hidden"
+              :class="filterOverlayClass"
               @click="closeApplicationReportFilters"
             />
 
@@ -10696,9 +12192,9 @@ onUnmounted(() => {
 
             <div
               v-if="isApplicationReportFilterOpen"
-              class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none xl:absolute xl:right-0 xl:left-auto xl:top-[calc(100%+0.4rem)] xl:w-[21rem] xl:origin-top-right"
+              :class="filterPanelClass"
             >
-              <div class="flex flex-col gap-3 overflow-y-auto p-4 xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5">
+              <div :class="filterPanelContentClass">
                 <div class="flex items-center justify-between gap-3">
                   <p class="text-sm font-semibold text-foreground">{{ t('Filterlar') }}</p>
                   <button

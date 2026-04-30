@@ -39,6 +39,7 @@ const translationKeys: Record<string, string> = {
   'Asosiy ko‘rsatkichlar': 'page.dashboard.metrics',
   'Asosiy koâ€˜rsatkichlar': 'page.dashboard.metrics',
   'Baholash': 'page.assessment',
+  'Bayonnoma': 'page.protocol',
   "Baholashdan o'tkazish": 'action.assess',
   'Bekor qilish': 'action.cancel',
   'Boshlanish sanasi': 'filter.startDate',
@@ -93,6 +94,7 @@ const translationKeys: Record<string, string> = {
   'Qidiruv yoki filter shartlariga mos yozuv topilmadi.': 'common.noSearchFilterResults',
   'Qidiruv shartlariga mos yozuv topilmadi.': 'common.noSearchResults',
   "Qisqa nomi": 'common.shortName',
+  'Qabul qilingan arizalar': 'common.acceptedApplications',
   "Qo'llash": 'action.apply',
   "Ro'yxatga olinganlar": 'page.registered',
   'Ro‘yxatga olinganlar': 'page.registered',
@@ -129,6 +131,7 @@ const translationKeys: Record<string, string> = {
   'Yuklab olish': 'action.download',
   'Yuklanmoqda...': 'common.loading',
   'Jami': 'common.total',
+  'Jami arizalar': 'common.totalApplications',
   'Jins': 'common.gender',
   'Rais': 'common.chair',
   "Rais o'rinbosari": 'common.deputyChair',
@@ -230,6 +233,11 @@ const translations: Record<string, TranslationMap> = {
     en: 'Actions',
     ru: 'Действия',
     i18n: 'common.actions',
+  },
+  'common.acceptedApplications': {
+    en: 'Accepted applications',
+    ru: 'Принятые заявления',
+    i18n: 'common.acceptedApplications',
   },
   'common.application': {
     en: 'Application',
@@ -441,6 +449,11 @@ const translations: Record<string, TranslationMap> = {
     ru: 'Итого',
     i18n: 'common.total',
   },
+  'common.totalApplications': {
+    en: 'Total applications',
+    ru: 'Всего заявлений',
+    i18n: 'common.totalApplications',
+  },
   'common.updated': {
     en: 'Updated',
     ru: 'Обновлено',
@@ -551,6 +564,11 @@ const translations: Record<string, TranslationMap> = {
     ru: 'Отчеты',
     i18n: 'nav.reports',
   },
+  'nav.protocol': {
+    en: 'Protocol',
+    ru: 'ÐŸÑ€Ð¾Ñ‚Ð¾ÐºÐ¾Ð»',
+    i18n: 'nav.protocol',
+  },
   'page.applications.list': {
     en: 'Applications list',
     ru: 'Список заявлений',
@@ -565,6 +583,11 @@ const translations: Record<string, TranslationMap> = {
     en: 'Assessment',
     ru: 'Оценка',
     i18n: 'page.assessment',
+  },
+  'page.protocol': {
+    en: 'Protocol',
+    ru: 'ÐŸÑ€Ð¾Ñ‚Ð¾ÐºÐ¾Ð»',
+    i18n: 'page.protocol',
   },
   'page.categoryGroups': {
     en: 'Category groups',

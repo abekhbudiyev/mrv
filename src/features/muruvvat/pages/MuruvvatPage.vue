@@ -39,6 +39,9 @@ const { t } = useI18n()
 
 const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
+const filterOverlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
+const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const filterPanelContentClass = 'flex flex-col gap-3'
 
 type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ApplicationStep =
@@ -903,6 +906,11 @@ let notificationAnimationFrame: number | null = null
 let notificationCountdownStart = NOTIFICATION_DURATION
 let notificationStartedAt = 0
 let iptkFlowBadgeMeasureFrame: number | null = null
+let lockedBodyScrollY = 0
+let previousBodyOverflow = ''
+let previousBodyPosition = ''
+let previousBodyTop = ''
+let previousBodyWidth = ''
 
 const selectedIptkFlowStep = computed(() => {
   return iptkFlowSteps.find((step) => step.id === selectedIptkFlowStepId.value) ?? iptkFlowSteps[0]
@@ -1772,6 +1780,37 @@ function formatFilterDateForInput(value: string) {
   }
 
   return `${day}.${month}.${year}`
+}
+
+function preventDateNonDigitKeydown(event: KeyboardEvent) {
+  const allowedKeys = [
+    'Backspace',
+    'Delete',
+    'Tab',
+    'ArrowLeft',
+    'ArrowRight',
+    'Home',
+    'End',
+  ]
+
+  if (allowedKeys.includes(event.key) || event.ctrlKey || event.metaKey) {
+    return
+  }
+
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault()
+    return
+  }
+
+  const input = event.target as HTMLInputElement | null
+  const currentDigits = input?.value.replace(/\D/g, '') ?? ''
+  const selectionStart = input?.selectionStart ?? currentDigits.length
+  const selectionEnd = input?.selectionEnd ?? selectionStart
+  const selectedDigits = input?.value.slice(selectionStart, selectionEnd).replace(/\D/g, '').length ?? 0
+
+  if (currentDigits.length - selectedDigits >= 8) {
+    event.preventDefault()
+  }
 }
 
 function openCalendar(field: 'start' | 'end') {
@@ -3080,6 +3119,34 @@ function isActionButtonLoading(...keys: string[]) {
   return Boolean(actionLoadingKey.value && keys.includes(actionLoadingKey.value))
 }
 
+function lockBodyScroll() {
+  if (document.body.style.position === 'fixed') return
+
+  lockedBodyScrollY = window.scrollY
+  previousBodyOverflow = document.body.style.overflow
+  previousBodyPosition = document.body.style.position
+  previousBodyTop = document.body.style.top
+  previousBodyWidth = document.body.style.width
+
+  document.body.style.overflow = 'hidden'
+  document.body.style.position = 'fixed'
+  document.body.style.top = `-${lockedBodyScrollY}px`
+  document.body.style.width = '100%'
+}
+
+function unlockBodyScroll() {
+  if (document.body.style.position !== 'fixed') {
+    document.body.style.overflow = previousBodyOverflow
+    return
+  }
+
+  document.body.style.overflow = previousBodyOverflow
+  document.body.style.position = previousBodyPosition
+  document.body.style.top = previousBodyTop
+  document.body.style.width = previousBodyWidth
+  window.scrollTo(0, lockedBodyScrollY)
+}
+
 onMounted(() => {
   ;(window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick = (nodeId: string) => {
     selectIptkFlowStep(nodeId)
@@ -3097,7 +3164,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   delete (window as Window & { handleIptkFlowNodeClick?: (nodeId: string) => void }).handleIptkFlowNodeClick
-  document.body.style.overflow = ''
+  unlockBodyScroll()
 
   if (loadingTimer) {
     clearTimeout(loadingTimer)
@@ -3140,7 +3207,12 @@ watch(() => props.pageKey, () => {
 })
 
 watch(isAnyDialogOpen, (isOpen) => {
-  document.body.style.overflow = isOpen ? 'hidden' : ''
+  if (isOpen) {
+    lockBodyScroll()
+    return
+  }
+
+  unlockBodyScroll()
 }, { immediate: true })
 
 watch(isIptkFlowDialogOpen, async (nextOpen) => {
@@ -3186,7 +3258,6 @@ watch(serviceRecipientLookupResult, () => {
       <div
         v-if="selectedViewRow && selectedViewDetail"
         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeViewDialog"
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -3445,7 +3516,6 @@ watch(serviceRecipientLookupResult, () => {
       <div
         v-if="isIptkFlowDialogOpen"
         class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-        @click.self="closeIptkFlowDialog"
       >
         <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -3904,7 +3974,7 @@ watch(serviceRecipientLookupResult, () => {
               >
                 <div
                   v-if="isFiltersOpen"
-                  class="fixed inset-0 z-40 bg-background/40 backdrop-blur-sm lg:hidden"
+                  :class="filterOverlayClass"
                   @click="closeFilters"
                 />
 
@@ -3928,10 +3998,10 @@ watch(serviceRecipientLookupResult, () => {
 
                 <div
                   v-if="isFiltersOpen"
-                  class="fixed inset-x-3 top-24 z-50 overflow-hidden rounded-xl border border-border bg-popover p-0 text-popover-foreground shadow-xl outline-none max-xl:max-h-[calc(100vh-7rem)] xl:absolute xl:right-0 xl:top-[calc(100%+0.4rem)] xl:w-[17.5rem] xl:-translate-x-6 xl:origin-top-right"
+                  :class="filterPanelClass"
                 >
                   <div
-                    class="flex flex-col gap-3 overflow-y-auto p-4 xl:gap-3 xl:p-3.5"
+                    :class="filterPanelContentClass"
                     :style="filterPanelBodyStyle"
                   >
                     <div class="flex items-start justify-between gap-2">
@@ -3951,9 +4021,9 @@ watch(serviceRecipientLookupResult, () => {
                     </div>
 
                     <div class="flex flex-col gap-3">
-                      <label class="space-y-2 text-sm lg:relative lg:space-y-0">
+                      <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                         <span class="font-medium text-foreground">{{ t('Status') }}</span>
-                        <div class="space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="space-y-2 xl:mt-2 xl:space-y-0">
                           <button
                             type="button"
                             :class="[
@@ -3975,7 +4045,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openFilterField === 'status'"
-                            class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <button
                               type="button"
@@ -4007,10 +4077,10 @@ watch(serviceRecipientLookupResult, () => {
 
                       <label
                         v-if="isIptkApplicationsListPage"
-                        class="space-y-2 text-sm lg:relative lg:space-y-0"
+                        class="space-y-2 text-sm xl:relative xl:space-y-0"
                       >
                         <span class="font-medium text-foreground">{{ t('Bosqich') }}</span>
-                        <div class="space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="space-y-2 xl:mt-2 xl:space-y-0">
                           <button
                             type="button"
                             :class="[
@@ -4032,7 +4102,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openFilterField === 'step'"
-                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <button
                               type="button"
@@ -4062,9 +4132,9 @@ watch(serviceRecipientLookupResult, () => {
                         </div>
                       </label>
 
-                      <label class="space-y-2 text-sm lg:relative lg:space-y-0">
+                      <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                         <span class="font-medium text-foreground">{{ t('Viloyat') }}</span>
-                        <div class="space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="space-y-2 xl:mt-2 xl:space-y-0">
                           <button
                             type="button"
                             :class="[
@@ -4086,7 +4156,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openFilterField === 'region'"
-                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <button
                               type="button"
@@ -4116,9 +4186,9 @@ watch(serviceRecipientLookupResult, () => {
                         </div>
                       </label>
 
-                      <label class="space-y-2 text-sm lg:relative lg:space-y-0">
+                      <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                         <span class="font-medium text-foreground">{{ t('Tuman yoki shahar') }}</span>
-                        <div class="space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="space-y-2 xl:mt-2 xl:space-y-0">
                           <button
                             type="button"
                             :class="[
@@ -4141,7 +4211,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openFilterField === 'district' && isDistrictFilterEnabled && districtOptions.length"
-                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="max-h-56 overflow-auto rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <button
                               type="button"
@@ -4171,14 +4241,17 @@ watch(serviceRecipientLookupResult, () => {
                         </div>
                       </label>
 
-                      <label class="space-y-2 text-sm lg:relative lg:space-y-0">
+                      <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                         <span class="font-medium text-foreground">{{ t('Boshlanish sanasi') }}</span>
-                        <div class="relative space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                           <div class="relative">
                             <Input
                               class="h-10 pr-10"
+                              inputmode="numeric"
+                              maxlength="10"
                               placeholder="dd.mm.yyyy"
                               :model-value="formatFilterDateForInput(draftStartDateFilter)"
+                              @keydown="preventDateNonDigitKeydown"
                               @update:model-value="handleStartDateFilterChange"
                             />
                             <button
@@ -4193,7 +4266,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openCalendarField === 'start'"
-                            class="rounded-lg border border-border bg-background p-3 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="rounded-lg border border-border bg-background p-3 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <div class="mb-3 flex items-center justify-between gap-2">
                               <div class="flex items-center gap-1">
@@ -4272,14 +4345,17 @@ watch(serviceRecipientLookupResult, () => {
                         </div>
                       </label>
 
-                      <label class="space-y-2 text-sm lg:relative lg:space-y-0">
+                      <label class="space-y-2 text-sm xl:relative xl:space-y-0">
                         <span class="font-medium text-foreground">{{ t('Tugash sanasi') }}</span>
-                        <div class="relative space-y-2 lg:mt-2 lg:space-y-0">
+                        <div class="relative space-y-2 xl:mt-2 xl:space-y-0">
                           <div class="relative">
                             <Input
                               class="h-10 pr-10"
+                              inputmode="numeric"
+                              maxlength="10"
                               placeholder="dd.mm.yyyy"
                               :model-value="formatFilterDateForInput(draftEndDateFilter)"
+                              @keydown="preventDateNonDigitKeydown"
                               @update:model-value="handleEndDateFilterChange"
                             />
                             <button
@@ -4294,7 +4370,7 @@ watch(serviceRecipientLookupResult, () => {
 
                           <div
                             v-if="openCalendarField === 'end'"
-                            class="rounded-lg border border-border bg-background p-3 shadow-sm lg:absolute lg:left-0 lg:right-0 lg:top-[calc(100%+0.5rem)] lg:z-20"
+                            class="rounded-lg border border-border bg-background p-3 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                           >
                             <div class="mb-3 flex items-center justify-between gap-2">
                               <div class="flex items-center gap-1">
@@ -4861,7 +4937,6 @@ watch(serviceRecipientLookupResult, () => {
   <div
     v-if="isCreateDialogOpen"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
-    @click.self="closeCreateDialog"
   >
     <div class="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
@@ -5607,7 +5682,6 @@ watch(serviceRecipientLookupResult, () => {
   <div
     v-if="selectedAssessmentCreateRow"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4 py-6 dark:bg-black/60"
-    @click.self="closeAssessmentCreateDialog"
   >
     <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
