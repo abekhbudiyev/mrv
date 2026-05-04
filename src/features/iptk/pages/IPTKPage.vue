@@ -5210,6 +5210,33 @@ function saveProtocol() {
   pushFeedback('success', `${documentNumber} raqamli bayonnoma yaratildi.`)
 }
 
+function requestSaveProtocol() {
+  if (protocolDialogMode.value === 'view') return
+
+  if (!canSaveProtocol.value) {
+    pushFeedback('error', "Bayonnomani saqlash uchun avval arizalar ro'yxatini shakllantiring.")
+    return
+  }
+
+  const documentId = protocolDialogMode.value === 'edit' && selectedProtocolForDialog.value
+    ? selectedProtocolForDialog.value.documentNumber
+    : nextProtocolDocumentNumber()
+  const actionName = protocolDialogMode.value === 'edit' ? 'tahrirlash' : 'yaratish'
+  const titleStem = protocolDialogMode.value === 'edit' ? 'tahrirlansin' : 'yaratilsin'
+  const copy = {
+    title: `Bayonnoma ${titleStem}?`,
+    description: `${documentId} raqamli bayonnoma bo'yicha ${actionName} amalini bajarishni tasdiqlang.`,
+  }
+
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Tasdiqlash',
+    action: saveProtocol,
+  })
+}
+
 function updateProtocolStatus(recordId: string, status: ProtocolStatus, actionTitle: string, actionName: string) {
   const target = protocols.value.find((record) => record.id === recordId)
   if (!target) return
@@ -5688,6 +5715,11 @@ async function downloadAssessments() {
 
 function setActionMenuOpen(recordId: string, nextOpen: boolean) {
   openActionMenuId.value = nextOpen ? recordId : (openActionMenuId.value === recordId ? null : openActionMenuId.value)
+}
+
+function runProtocolConfirmationAction(action: () => void) {
+  openActionMenuId.value = null
+  nextTick(action)
 }
 
 function runTableLoading(update: () => void) {
@@ -10691,7 +10723,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="-mt-1 overflow-x-auto">
+        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
           <div class="inline-flex min-w-max items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
             <button
               v-for="tab in protocolStatusTabs"
@@ -10766,9 +10798,96 @@ onUnmounted(() => {
                       <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
                       <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
                     </div>
-                    <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
-                      {{ record.status }}
-                    </span>
+                    <div class="flex shrink-0 items-center gap-2">
+                      <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
+                        {{ record.status }}
+                      </span>
+                      <DropdownMenuRoot @update:open="setActionMenuOpen(`protocol-${record.id}`, $event)">
+                        <DropdownMenuTrigger as-child>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            :class="openActionMenuId === `protocol-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                          >
+                            <LoaderCircle
+                              v-if="isActionButtonLoading(`protocol-view-${record.id}`, `protocol-edit-${record.id}`)"
+                              class="h-4 w-4 animate-spin"
+                            />
+                            <Ellipsis v-else class="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuContent
+                            side="left"
+                            align="start"
+                            :side-offset="6"
+                            :collision-padding="12"
+                            class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                          >
+                            <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewProtocol(record)">
+                              <Eye class="h-4 w-4 shrink-0" />
+                              <span>{{ t("Ko'rish") }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canEditProtocol(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="editProtocol(record)"
+                            >
+                              <Pencil class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Tahrirlash') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canApproveProtocolPlan(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestApproveProtocolPlan(record))"
+                            >
+                              <BadgeCheck class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Rejani tasdiqlash') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canSendProtocolToCommission(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestSendProtocolToCommission(record))"
+                            >
+                              <Check class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Komissiyaga yuborish') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canSendProtocolToAgreement(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestSendProtocolToAgreement(record))"
+                            >
+                              <Check class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Kelishish uchun yuborish') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canSendProtocolToApproval(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestSendProtocolToApproval(record))"
+                            >
+                              <Check class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Tasdiqlash uchun yuborish') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canApproveProtocol(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestApproveProtocol(record))"
+                            >
+                              <BadgeCheck class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Tasdiqlash') }}</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              v-if="canCancelProtocol(record)"
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                              @click="runProtocolConfirmationAction(() => requestCancelProtocol(record))"
+                            >
+                              <X class="h-4 w-4 shrink-0" />
+                              <span>{{ t('Bekor qilish') }}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuRoot>
+                    </div>
                   </div>
                   <div class="grid gap-3 text-sm">
                     <div>
@@ -10867,7 +10986,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canApproveProtocolPlan(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @click="requestApproveProtocolPlan(record)"
+                            @click="runProtocolConfirmationAction(() => requestApproveProtocolPlan(record))"
                           >
                             <BadgeCheck class="h-4 w-4 shrink-0" />
                             <span>{{ t('Rejani tasdiqlash') }}</span>
@@ -10875,7 +10994,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canSendProtocolToCommission(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @click="requestSendProtocolToCommission(record)"
+                            @click="runProtocolConfirmationAction(() => requestSendProtocolToCommission(record))"
                           >
                             <Check class="h-4 w-4 shrink-0" />
                             <span>{{ t('Komissiyaga yuborish') }}</span>
@@ -10883,7 +11002,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canSendProtocolToAgreement(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @click="requestSendProtocolToAgreement(record)"
+                            @click="runProtocolConfirmationAction(() => requestSendProtocolToAgreement(record))"
                           >
                             <Check class="h-4 w-4 shrink-0" />
                             <span>{{ t('Kelishish uchun yuborish') }}</span>
@@ -10891,7 +11010,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canSendProtocolToApproval(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @click="requestSendProtocolToApproval(record)"
+                            @click="runProtocolConfirmationAction(() => requestSendProtocolToApproval(record))"
                           >
                             <Check class="h-4 w-4 shrink-0" />
                             <span>{{ t('Tasdiqlash uchun yuborish') }}</span>
@@ -10899,7 +11018,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canApproveProtocol(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @click="requestApproveProtocol(record)"
+                            @click="runProtocolConfirmationAction(() => requestApproveProtocol(record))"
                           >
                             <BadgeCheck class="h-4 w-4 shrink-0" />
                             <span>{{ t('Tasdiqlash') }}</span>
@@ -10907,7 +11026,7 @@ onUnmounted(() => {
                           <DropdownMenuItem
                             v-if="canCancelProtocol(record)"
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
-                            @click="requestCancelProtocol(record)"
+                            @click="runProtocolConfirmationAction(() => requestCancelProtocol(record))"
                           >
                             <X class="h-4 w-4 shrink-0" />
                             <span>{{ t('Bekor qilish') }}</span>
@@ -11257,7 +11376,7 @@ onUnmounted(() => {
             <Button variant="outline" @click="isProtocolReadonly ? closeProtocolDialog() : resetProtocolForm()">
               {{ isProtocolReadonly ? t('Yopish') : t('Tozalash') }}
             </Button>
-            <Button v-if="!isProtocolReadonly" :disabled="!canSaveProtocol" @click="saveProtocol">
+            <Button v-if="!isProtocolReadonly" :disabled="!canSaveProtocol" @click="requestSaveProtocol">
               {{ protocolDialogMode === 'edit' ? t('Saqlash') : t('Saqlash') }}
             </Button>
           </div>

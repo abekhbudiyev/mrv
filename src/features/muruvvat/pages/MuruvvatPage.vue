@@ -437,123 +437,143 @@ const serviceRequirements = {
 const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'A',
-    title: 'So‘rovnoma tasdiqlandi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Arizachi sўrovnomani tasdiqlaydi va hujjatlar bir ish kuni ichida axborot moduli orqali “Inson” markaziga tushadi.',
-    responsible: 'Arizachi / YAIDXP / “Inson” markazi / DXM / ijtimoiy xodim',
-    duration: '1 ish kuni ichida “Inson” markaziga tushadi',
-    legalBasis: '16-, 19-, 21-bandlar',
-    outcomes: ['Ariza va ilovalar axborot moduliga kelib tushadi', 'Tanlangan xizmat turi bo‘yicha keyingi tekshiruv boshlanadi'],
+    title: 'So‘rovnoma yaratildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Arizachi yoki mas’ul xodim 2-ilova shaklidagi so‘rovnomani elektron tarzda to‘ldiradi, xizmat turini tanlaydi, 3-ilovaga mos hujjatlarni biriktiradi va tasdiqlaydi.',
+    responsible: 'Arizachi / YAIDXP / “Ijtimoiy karta” / “Inson” markazi / DXM / ijtimoiy xodim',
+    duration: 'Tasdiqlangandan so‘ng shu kunning o‘zida “Inson” markaziga tushadi',
+    legalBasis: '4-bob 1-§; 2- va 3-ilovalar',
+    outcomes: ['So‘rovnoma axborot modulida shakllanadi', 'Xizmat turi tanlanadi', 'Arizachining shaxsga doir ma’lumotlarga roziligi qayd etiladi'],
   },
   {
     id: 'C',
-    title: '“Inson” markazi tekshiruvi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: '“Inson” markazi bir ish kuni ichida hujjatlarni o‘rganadi va rad etish asoslari bor-yo‘qligini aniqlaydi.',
+    title: 'Dastlabki tekshiruv',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: '“Inson” markazi bir ish kuni ichida hujjatlarni, tanlangan xizmatga mos tashxis va toifani, rad etish asoslari bor yoki yo‘qligini tekshiradi.',
     responsible: '“Inson” markazi',
     duration: '1 ish kuni',
-    legalBasis: '22-band 1-a, 2-a, 3-a; 23-band',
-    outcomes: ['Rad etish asoslari aniqlansa ariza rad etiladi', 'Rad etish asosi bo‘lmasa xizmat turiga qarab keyingi bosqichga o‘tadi'],
+    legalBasis: '4-bob 1-§; 4-ilova; rad etish asoslari',
+    outcomes: ['Moslik tasdiqlansa funksionallik baholashi tekshiriladi', 'Rad etish asosi bo‘lsa so‘rovnoma bekor qilinadi', 'Arizachi SMS yoki elektron kabinet orqali xabardor qilinadi'],
   },
   {
     id: 'F',
-    title: 'Baholash va xulosa kiritish',
-    services: ['Huzur', 'Madad'],
-    description: 'Ishchi guruh besh ish kuni ichida parvarishga muhtojlik darajasi va yashash sharoitini baholaydi hamda natijani axborot moduliga kiritadi.',
-    responsible: '“Inson” markazi ishchi guruhi, oilaviy shifokor, FYO‘B organi raisi',
+    title: 'Funksionallik baholandi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi.',
+    responsible: '“Inson” markazi',
     duration: '5 ish kuni',
-    legalBasis: '22-band 1-b va 2-b',
-    outcomes: ['Baholash natijasi axborot moduliga kiritiladi', 'Huzur yoki Madad bo‘yicha keyingi qaror shakllanadi'],
+    legalBasis: '4-bob 1-§; WHODAS 2.0 baholashi',
+    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'Madad va G‘amxo‘rlik bo‘yicha qo‘shimcha baholash bosqichiga o‘tiladi'],
   },
   {
     id: 'H',
-    title: 'Tezkor yoki rejali guruh',
-    services: ['Huzur'],
-    description: 'Huzur xizmati bo‘yicha baholashdan so‘ng shaxs tezkor yoki rejali guruhga ajratiladi.',
-    responsible: '“Inson” markazi',
-    duration: 'Baholash yakunlangandan so‘ng darhol',
-    legalBasis: '22-band 1-v, 1-d',
-    outcomes: ['Tezkor guruh bo‘lsa qo‘shimcha hujjatlar talab qilinadi', 'Rejali guruh bo‘lsa to‘g‘ridan IPTKga yuboriladi'],
+    title: 'Parvarish baholandi',
+    services: ['Madad', 'G‘amxo‘rlik'],
+    description: 'Madad va G‘amxo‘rlik bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
+    responsible: '“Inson” markazi xodimi, oilaviy shifokor, FYO‘B organi raisi',
+    duration: '5 ish kuni',
+    legalBasis: '4-bob 1-§; VMQ-123 reglamenti; Barthel va Lawton shkalalari',
+    outcomes: ['Madad bo‘yicha 62 ballgacha bo‘lsa IPTKga yuboriladi', '62 balldan yuqori bo‘lsa so‘rovnoma bekor qilinadi', 'G‘amxo‘rlik bo‘yicha navbat yoki navbatsiz toifa aniqlanadi'],
   },
   {
     id: 'I',
-    title: 'Qo‘shimcha hujjatlar yig‘ish',
-    services: ['Huzur (faqat tezkor guruh)'],
-    description: 'Tezkor guruhga tushgan shaxslar uchun 3-ilovadagi qo‘shimcha hujjatlar besh ish kuni ichida arizachidan olinadi.',
+    title: 'Qo‘shimcha hujjatlar yig‘ildi',
+    services: ['G‘amxo‘rlik (navbatsiz toifa)'],
+    description: 'G‘amxo‘rlik markaziga navbatsiz joylashtiriladigan shaxslar uchun 3-ilovaga muvofiq qo‘shimcha hujjatlar arizachidan talab qilib olinadi.',
     responsible: 'Arizachi / “Inson” markazi',
     duration: '5 ish kuni',
-    legalBasis: '22-band 1-v',
-    outcomes: ['Qo‘shimcha hujjatlar to‘planadi', 'Hujjatlar to‘liq bo‘lsa IPTKga yuboriladi'],
+    legalBasis: '4-bob 1-§; 3-ilova',
+    outcomes: ['Qo‘shimcha hujjatlar axborot moduliga biriktiriladi', 'Hujjatlar shakllangach IPTKga yuboriladi'],
   },
   {
     id: 'J',
     title: 'IPTKga yuborildi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Ma’lumot va hujjatlar bir ish kuni ichida axborot moduli orqali IPTKga yuboriladi, arizachiga SMS va YAIDXP orqali xabar beriladi.',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Ma’lumotlar, hujjatlar va funksionallik baholash natijalari axborot moduli orqali IPTKga yuboriladi, arizachi SMS, YAIDXP yoki “Ijtimoiy karta” orqali xabardor qilinadi.',
     responsible: '“Inson” markazi',
     duration: '1 ish kuni',
-    legalBasis: '22-band 1-g, 2-v, 3-b',
+    legalBasis: '4-bob 1-§',
     outcomes: ['IPTK kotibi ko‘rib chiqishi uchun ish shakllanadi', 'Arizachi yuborilganligi haqida xabardor qilinadi'],
   },
   {
     id: 'L',
-    title: 'IPTK kotibi tekshiruvi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'IPTK kotibi besh ish kuni ichida hujjatlarning to‘liqligi va to‘g‘ri rasmiylashtirilganligini tekshiradi.',
+    title: 'IPTK kotibi tekshirdi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'IPTK kotibi besh ish kuni ichida ma’lumot va hujjatlarning to‘liqligi hamda to‘g‘ri rasmiylashtirilganligini o‘rganadi.',
     responsible: 'IPTK kotibi',
     duration: '5 ish kuni',
-    legalBasis: '25-band',
-    outcomes: ['Kamchilik bo‘lmasa yig‘ilishga kiritiladi', 'Kamchilik bo‘lsa “Inson” markaziga qaytariladi'],
+    legalBasis: '4-bob 2-§',
+    outcomes: ['Kamchilik bo‘lmasa hujjatlar qabul qilinadi va yig‘ilishga kiritiladi', 'Kamchilik bo‘lsa “Inson” markaziga qayta ishlashga qaytariladi'],
   },
   {
     id: 'N',
-    title: 'Yig‘ilish va xabarnoma',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Hujjatlar qabul qilingach ariza IPTK yig‘ilishiga kiritiladi, a’zolar va arizachi kamida uch kun oldin xabardor qilinadi.',
+    title: 'Yig‘ilish rejalashtirildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Hujjatlar qabul qilingach ish IPTK yig‘ilishiga kiritiladi. Kotib yig‘ilish sanasi, vaqti va joyi bo‘yicha komissiya a’zolari va qonuniy vakilni kamida uch kun oldin xabardor qiladi.',
     responsible: 'IPTK kotibi',
-    duration: 'Yig‘ilishdan kamida 3 kun oldin xabarnoma',
-    legalBasis: '26-, 27-bandlar',
-    outcomes: ['Ariza navbatdagi yig‘ilishga kiritiladi', 'A’zolar va arizachi xabardor qilinadi'],
+    duration: 'Kamida 2 oyda bir marta; xabarnoma yig‘ilishdan kamida 3 kun oldin',
+    legalBasis: '4-bob 2-§; 1-ilova',
+    outcomes: ['Ish navbatdagi yig‘ilishga kiritiladi', 'Komissiya a’zolari va qonuniy vakil xabardor qilinadi', 'Shaxs ko‘rikka kelishi uchun tashkiliy ma’lumotlar yuboriladi'],
   },
   {
     id: 'Q',
     title: 'IPTK tekshiruvi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'IPTK nogironligi bo‘lgan shaxsni ko‘rikdan o‘tkazadi, WHODAS va PPS kabi mezonlarni qo‘llaydi va bayonnoma rasmiylashtiradi.',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'IPTK to‘liq tarkibda shaxsni ko‘rikdan o‘tkazadi, tibbiy karta, WHODAS savolnomasi, “Inson” markazi funksionallik baholashi va 4-ilovadagi tibbiy ko‘rsatmalarni o‘rganadi.',
     responsible: 'IPTK a’zolari',
     duration: 'Yig‘ilish kuni',
-    legalBasis: '28–34-bandlar',
-    outcomes: ['Kompleks ijtimoiy-psixiatrik-tibbiy tekshiruv o‘tkaziladi', 'Bayonnoma va xulosa uchun asos yaratiladi'],
+    legalBasis: '4-bob 2-§; 1- va 4-ilovalar',
+    outcomes: ['Kompleks ijtimoiy-psixiatrik-tibbiy tekshiruv o‘tkaziladi', 'Bayonnoma imzolanadi', 'Xulosa uchun asos shakllanadi'],
   },
   {
     id: 'S',
     title: 'IPTK xulosasi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'IPTK tanlangan xizmatga yo‘naltirish, boshqa xizmatni tavsiya qilish yoki rad etish haqida xulosa qabul qiladi.',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'IPTK tekshiruv natijasi bo‘yicha tanlangan xizmatga yo‘naltirish, boshqa xizmatni tavsiya qilish yoki ijtimoiy xizmatga yo‘naltirishni rad etish haqida xulosa qabul qiladi.',
     responsible: 'IPTK',
     duration: 'Bayonnoma imzolangach 3 ish kuni ichida rasmiylashtiriladi',
-    legalBasis: '34-, 35-, 37-bandlar',
-    outcomes: ['Tanlangan xizmatga yo‘naltirish', 'Boshqa xizmatni tavsiya qilish', 'Rad etish'],
+    legalBasis: '4-bob 2-§; IPTK xulosasi shakli',
+    outcomes: ['Tanlangan xizmatga yo‘naltirish', 'Boshqa xizmatni tavsiya qilish (G‘amxo‘rlik va Madad bundan mustasno)', 'Ijtimoiy xizmatga yo‘naltirishni rad etish'],
   },
   {
     id: 'T',
-    title: 'Inson markaziga yuborildi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Rasmiylashtirilgan IPTK xulosasi bir ish kuni ichida yashash manzilidagi “Inson” markaziga yuboriladi va arizachi SMS orqali xabardor qilinadi.',
+    title: 'Yakuniy xulosa yuborildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Rasmiylashtirilgan IPTK xulosasi bir ish kuni ichida yashash manzilidagi “Inson” markaziga yuboriladi va qonuniy vakil SMS, YAIDXP yoki “Ijtimoiy karta” orqali xabardor qilinadi.',
     responsible: 'IPTK / axborot moduli',
     duration: '1 ish kuni',
-    legalBasis: '38-band',
+    legalBasis: '4-bob 2-§',
     outcomes: ['Xulosa yashash manzilidagi “Inson” markaziga yuboriladi', 'Arizachi yakuniy xabarnoma oladi'],
   },
   {
     id: 'R',
-    title: 'Bekor qilindi yoki qaytarildi',
-    services: ['Huzur', 'Madad', 'Ijtimoiy ta’til', 'Uy sharoitida qarab turish', 'Yangi kun'],
-    description: 'Ariza xizmat turiga mos kelmasa rad etiladi; hujjatlarda kamchilik bo‘lsa yoki ko‘rikka olib kelinmasa ish “Inson” markaziga qaytariladi.',
+    title: 'Bekor qilindi / qaytarildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'Tanlangan xizmatga mos tashxis/toifa bo‘lmasa, hujjatlar yetarli bo‘lmasa yoki arizachi xizmatdan voz kechsa so‘rovnoma bekor qilinadi. IPTK bosqichida kamchilik yoki ko‘rikka kelmaslik bo‘lsa ish “Inson” markaziga qaytariladi.',
     responsible: '“Inson” markazi / IPTK / IPTK kotibi',
     duration: 'Bosqichga qarab',
-    legalBasis: '23-, 24-, 25-, 27-bandlar',
-    outcomes: ['Rad etish bo‘yicha SMS xabarnoma yuboriladi', 'Yoki hujjatlar kamchiliklari bilan “Inson” markaziga qaytariladi'],
+    legalBasis: '4-bob 1-§ va 2-§',
+    outcomes: ['Bekor qilish bo‘yicha xabarnoma yuboriladi', 'Yoki hujjatlar kamchiliklari bilan “Inson” markaziga qaytariladi'],
+  },
+  {
+    id: 'U',
+    title: 'Qayta ishlashga qaytarildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'IPTK kotibi hujjatlarda kamchilik aniqlasa yoki qonuniy vakil shaxsni yig‘ilishga olib kelmasa, hujjatlar “Inson” markaziga qaytariladi.',
+    responsible: 'IPTK kotibi / “Inson” markazi',
+    duration: 'Kamchilik bartaraf etilgach qayta yuboriladi',
+    legalBasis: '4-bob 2-§',
+    outcomes: ['Kamchiliklar ko‘rsatiladi', '“Inson” markazi arizachi bilan birgalikda kamchiliklarni bartaraf etadi', 'Ish qayta IPTKga yuboriladi'],
+  },
+  {
+    id: 'W',
+    title: 'Rad etildi',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    description: 'IPTK tekshiruv natijasida ijtimoiy xizmatga yo‘naltirishni rad etish xulosasi qabul qilinishi mumkin.',
+    responsible: 'IPTK',
+    duration: 'Bayonnoma imzolangach 3 ish kuni ichida rasmiylashtiriladi',
+    legalBasis: '4-bob 2-§',
+    outcomes: ['Rad etish xulosasi rasmiylashtiriladi', 'Qonuniy vakil xabardor qilinadi', 'Xulosa ustidan Apellyatsiya kengashiga murojaat qilish mumkin'],
   },
 ]
 const iptkValidationGuides: IptkGuideInfo[] = [
@@ -589,7 +609,7 @@ const iptkValidationGuides: IptkGuideInfo[] = [
     items: [
       'Har bir xizmat turi uchun alohida tibbiy hujjatlar ro‘yxati shakllanadi.',
       'Majburiy hujjatlar yuklanmaguncha arizani saqlash mumkin emas.',
-      'Tezkor guruh uchun qo‘shimcha hujjatlar alohida so‘raladi.',
+      'G‘amxo‘rlik markaziga navbatsiz joylashtiriladigan shaxslar uchun qo‘shimcha hujjatlar alohida so‘raladi.',
       'IPTK kotibi kamchilik topsa ish “Inson” markaziga qaytariladi.',
     ],
   },
@@ -634,7 +654,7 @@ const iptkQuestionnaireSections: IptkQuestionnaireSectionInfo[] = [
     id: 'service-section',
     title: 'Xizmat turini tanlash',
     description: 'Tashxis va nogironlik guruhiga mos xizmatlar orasidan bitta xizmat turi tanlanadi.',
-    stepIds: ['C', 'F', 'H', 'J'],
+    stepIds: ['A', 'C', 'J'],
     fields: [
       'Custom dropdown ko‘rinishidagi xizmat tanlash maydoni',
       'Har bir xizmat uchun moslik holati va izoh',
@@ -669,12 +689,12 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
   {
     id: 'barthel-lawton',
     title: 'Barthel va Lawton shkalalari',
-    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. Ayniqsa Huzur va Madad xizmatlari bo‘yicha muhim o‘rin tutadi.',
+    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. Yangi nizomda ayniqsa Madad xizmati va G‘amxo‘rlik bo‘yicha parvarish/yashash sharoitini baholash bosqichida muhim.',
     stepIds: ['F', 'H'],
     purpose: 'Shaxsning o‘ziga-o‘zi xizmat ko‘rsatish, kundalik faoliyatlarni bajara olish va parvarishga ehtiyoj darajasini aniqlash.',
     usage: [
-      'Huzur va Madad bo‘yicha ishchi guruh baholashida qo‘llanadi.',
-      'Huzur xizmati uchun tezkor yoki rejali guruhga ajratishda asosiy mezonlardan biri hisoblanadi.',
+      'Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
+      'G‘amxo‘rlik markaziga navbat/navbatsiz joylashtirish toifasini aniqlashda parvarishga muhtojlik mezonlaridan biri sifatida ishlatiladi.',
       'Madad bo‘yicha 62 ballgacha bo‘lgan parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
     ],
   },
@@ -682,65 +702,67 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
     id: 'whodas',
     title: 'WHODAS savolnomasi',
     description: 'Jahon sog‘liqni saqlash tashkiloti savolnomasi bo‘lib, nogironligi bo‘lgan shaxsning kundalik funksional cheklovlari va ijtimoiy ishtirok darajasini baholashga xizmat qiladi.',
-    stepIds: ['Q', 'S'],
+    stepIds: ['F', 'Q', 'S'],
     purpose: 'Kundalik hayotdagi qiyinchiliklar, muloqot, harakatlanish, o‘ziga qarash va ijtimoiy faollikni kompleks baholash.',
     usage: [
-      'IPTK yig‘ilishida shaxsni ko‘rikdan o‘tkazishda qo‘llanadi.',
+      'Funksionallik avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa “Inson” markazi tomonidan qo‘llanadi.',
+      'IPTK yig‘ilishida shaxsni ko‘rikdan o‘tkazishda natijalari ko‘rib chiqiladi.',
       'Tibbiy kartadagi ma’lumotlar bilan birga komissiya xulosasini asoslashga yordam beradi.',
-      'Tanlangan xizmat turi mosligini aniqlashda qo‘shimcha funksional ko‘rsatkich beradi.',
     ],
   },
   {
-    id: 'pps',
-    title: 'PPS shkalasi',
-    description: 'Palliative Performance Scale shaxsning umumiy funksional holati, harakatlanishi va o‘zini parvarish qila olish darajasini ko‘rsatadi.',
+    id: 'medical-indications',
+    title: 'Tibbiy ko‘rsatmalar',
+    description: '4-ilova xizmat turiga mos tashxis, nogironlik guruhi va qarshi ko‘rsatmalarni tekshirish uchun asos bo‘ladi.',
     stepIds: ['Q', 'S'],
-    purpose: 'Jismoniy holat, yotoqda yotish darajasi, ovqatlanish va umumiy funksional imkoniyatlarni baholash.',
+    purpose: 'Tanlangan xizmatga mos tashxis mavjudligini va ijtimoiy xizmatga yo‘naltirishga qarshi holatlar yo‘qligini aniqlash.',
     usage: [
-      'IPTK yig‘ilishida WHODAS bilan birga qo‘llanadi.',
-      'Shaxsning holatiga mos ijtimoiy xizmatni tavsiya qilishda yordam beradi.',
-      'Xulosa va bayonnomani asoslash uchun komissiya a’zolari tomonidan ko‘rib chiqiladi.',
+      'IPTK yig‘ilishida tibbiy karta va tashxis ma’lumotlari bilan birga o‘rganiladi.',
+      'Tanlangan xizmat yoki boshqa xizmat tavsiyasini asoslashda ishlatiladi.',
+      'Rad etish xulosasining tibbiy asoslarini ko‘rsatishga yordam beradi.',
     ],
   },
 ]
 
 const iptkFlowMermaidDefinition = `
 flowchart TD
-    A["So'rovnoma tasdiqlandi"] --> B["Inson markaziga tushdi"]
-    B --> C["Inson markazi tekshiruvi"]
-    C --> D{"Rad etish asosi bormi?"}
+    A["So'rovnoma yaratildi<br/>xizmat tanlandi"] --> B["Inson markaziga<br/>shu kunning o'zida tushdi"]
+    B --> C["Dastlabki tekshiruv<br/>hujjat, tashxis, toifa"]
+    C --> D{"Rad etish<br/>asosi bormi?"}
 
-    D -->|Ha| R["Bekor qilindi"]
-    D -->|Yo'q| E{"Xizmat turi"}
+    D -->|Ha| R["Bekor qilindi<br/>xabarnoma yuborildi"]
+    D -->|Yo'q| F["WHODAS 2.0 bo'yicha<br/>funksionallik tekshirildi"]
+    F --> E{"Xizmat turi"}
 
-    E -->|"Huzur"| F["Baholash va xulosa kiritish"]
-    E -->|"Madad"| F
-    E -->|"Ijtimoiy ta'til"| J["IPTKga yuborildi"]
-    E -->|"Uy sharoitida qarab turish"| J
-    E -->|"Yangi kun"| J
+    E -->|"Yangi kun"| J["IPTKga yuborildi"]
+    E -->|"Uy sharoitida<br/>qarab turish"| J
+    E -->|"Ijtimoiy ta'til"| J
+    E -->|"Madad"| H["Parvarish va yashash<br/>sharoiti baholandi"]
+    E -->|"G'amxo'rlik"| H
 
-    F --> G{"Huzur bo'yichami?"}
-    G -->|Yo'q| J
-    G -->|Ha| H{"Tezkor guruhmi?"}
-    H -->|Yo'q| J
-    H -->|Ha| I["Qo'shimcha hujjatlar<br/>yig'iladi"]
-    I --> K{"Hujjatlar to'liqmi?"}
-    K -->|Yo'q| I
-    K -->|Ha| J
+    H --> M1{"Madad xizmati<br/>bo'yichami?"}
+    M1 -->|Ha| M2{"Barthel + Lawton<br/>62 ballgachami?"}
+    M2 -->|Yo'q| R
+    M2 -->|Ha| J
+    M1 -->|Yo'q| G{"G'amxo'rlik<br/>toifasi"}
+    G -->|"Navbat asosida"| J
+    G -->|"Navbatsiz"| I["Qo'shimcha hujjatlar<br/>yig'ildi"]
+    I --> J
 
-    J --> L["IPTK kotibi tekshiruvi"]
-    L --> M{"Kamchilik bormi?"}
-    M -->|Ha| U["Inson markaziga<br/>qaytarildi"]
-    M -->|Yo'q| N["Yig'ilishga kiritildi"]
-    N --> O["SMS / xabarnoma yuborildi"]
-    O --> P{"Ko'rikka olib kelindimi?"}
-    P -->|Yo'q| V["Inson markaziga<br/>qaytarildi"]
-    P -->|Ha| Q["IPTK tekshiruvi o'tkazildi"]
+    J --> L["IPTK kotibi<br/>hujjatlarni tekshirdi"]
+    L --> D2{"Kamchilik<br/>bormi?"}
+    D2 -->|Ha| U["Qayta ishlashga<br/>qaytarildi"]
+    U --> C
+    D2 -->|Yo'q| N["Yig'ilish<br/>rejalashtirildi"]
+    N --> P["Komissiya a'zolari va<br/>qonuniy vakil xabardor qilindi"]
+    P --> Z{"Shaxs ko'rikka<br/>olib kelindimi?"}
+    Z -->|Yo'q| U
+    Z -->|Ha| Q["IPTK tekshiruvi<br/>o'tkazildi"]
     Q --> S{"IPTK xulosasi"}
-    S -->|"Tanlangan xizmat"| T["Inson markaziga yuborildi"]
-    S -->|"Boshqa xizmat tavsiya qilindi"| T
-    S -->|"Bekor qilish"| W["Bekor qilindi"]
-    T --> X["Arizachi xabardor qilindi"]
+    S -->|"Tanlangan xizmat"| T["Xulosa Inson markaziga<br/>yuborildi"]
+    S -->|"Boshqa xizmat"| T
+    S -->|"Rad etish"| W["Rad etildi"]
+    T --> X["Qonuniy vakil<br/>xabardor qilindi"]
 
     classDef neutral fill:#f8fafc,stroke:#cbd5e1,color:#0f172a,stroke-width:1.5px;
     classDef decision fill:#ffffff,stroke:#94a3b8,color:#0f172a,stroke-width:1.5px;
@@ -750,13 +772,13 @@ flowchart TD
     classDef success fill:#ecfdf5,stroke:#86efac,color:#166534,stroke-width:1.5px;
     classDef return fill:#fefce8,stroke:#facc15,color:#854d0e,stroke-width:1.5px;
 
-    class A,B,C,N,O neutral;
-    class D,E,G,H,K,M,P,S decision;
+    class A,B,C,N,P neutral;
+    class D,D2,E,G,M1,M2,Z,S decision;
     class R,W danger;
-    class F,J,L,Q info;
+    class F,H,J,L,Q info;
     class I warning;
     class T,X success;
-    class U,V return;
+    class U return;
 
     click A handleIptkFlowNodeClick
     click C handleIptkFlowNodeClick
@@ -771,7 +793,6 @@ flowchart TD
     click T handleIptkFlowNodeClick
     click R handleIptkFlowNodeClick
     click U handleIptkFlowNodeClick
-    click V handleIptkFlowNodeClick
     click W handleIptkFlowNodeClick
 `
 
