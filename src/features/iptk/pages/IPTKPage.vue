@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Activity, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
+import { Activity, BadgeCheck, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -5031,6 +5031,30 @@ function canEditProtocol(record: ProtocolRecord) {
   return record.status === 'Yangi' || record.status === 'Tahrirlangan'
 }
 
+function canApproveProtocolPlan(record: ProtocolRecord) {
+  return record.status === 'Yangi' || record.status === 'Tahrirlangan'
+}
+
+function canSendProtocolToCommission(record: ProtocolRecord) {
+  return record.status === 'Reja tasdiqlangan'
+}
+
+function canSendProtocolToAgreement(record: ProtocolRecord) {
+  return record.status === 'Komissiyaga yuborilgan' || record.status === 'Bekor qilingan'
+}
+
+function canSendProtocolToApproval(record: ProtocolRecord) {
+  return record.status === 'Kelishish uchun yuborilgan'
+}
+
+function canCancelProtocol(record: ProtocolRecord) {
+  return record.status === 'Kelishish uchun yuborilgan' || record.status === 'Tasdiqlash uchun yuborilgan'
+}
+
+function canApproveProtocol(record: ProtocolRecord) {
+  return record.status === 'Tasdiqlash uchun yuborilgan'
+}
+
 function fillProtocolForm(record: ProtocolRecord) {
   protocolForm.value = {
     meetingDate: record.meetingDate,
@@ -5184,6 +5208,82 @@ function saveProtocol() {
   protocolCurrentPage.value = 1
   closeProtocolDialog()
   pushFeedback('success', `${documentNumber} raqamli bayonnoma yaratildi.`)
+}
+
+function updateProtocolStatus(recordId: string, status: ProtocolStatus, actionTitle: string, actionName: string) {
+  const target = protocols.value.find((record) => record.id === recordId)
+  if (!target) return
+
+  target.status = status
+  openActionMenuId.value = null
+  const notification = buildOperationNotification(actionTitle, actionName, 'Bayonnoma', target.documentNumber)
+  pushFeedback('success', notification.message, notification.title)
+}
+
+function requestApproveProtocolPlan(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'tasdiqlan', 'rejani tasdiqlash', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Tasdiqlash',
+    action: () => updateProtocolStatus(record.id, 'Reja tasdiqlangan', 'Tasdiqlash', 'rejani tasdiqlash'),
+  })
+}
+
+function requestSendProtocolToCommission(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'yuboril', 'komissiyaga yuborish', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Yuborish',
+    action: () => updateProtocolStatus(record.id, 'Komissiyaga yuborilgan', 'Yuborish', 'komissiyaga yuborish'),
+  })
+}
+
+function requestSendProtocolToAgreement(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'yuboril', 'kelishish uchun yuborish', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Yuborish',
+    action: () => updateProtocolStatus(record.id, 'Kelishish uchun yuborilgan', 'Yuborish', 'kelishish uchun yuborish'),
+  })
+}
+
+function requestSendProtocolToApproval(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'yuboril', 'tasdiqlash uchun yuborish', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Yuborish',
+    action: () => updateProtocolStatus(record.id, 'Tasdiqlash uchun yuborilgan', 'Yuborish', 'tasdiqlash uchun yuborish'),
+  })
+}
+
+function requestCancelProtocol(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'bekor qilin', 'bekor qilish', record.documentNumber)
+  openConfirmation({
+    tone: 'destructive',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Bekor qilish',
+    action: () => updateProtocolStatus(record.id, 'Bekor qilingan', 'Bekor qilish', 'bekor qilish'),
+  })
+}
+
+function requestApproveProtocol(record: ProtocolRecord) {
+  const copy = buildConfirmationCopy('Bayonnoma', 'tasdiqlan', 'tasdiqlash', record.documentNumber)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: 'Tasdiqlash',
+    action: () => updateProtocolStatus(record.id, 'Tasdiqlangan', 'Tasdiqlash', 'tasdiqlash'),
+  })
 }
 
 function applyAssessmentFilters() {
@@ -10763,6 +10863,54 @@ onUnmounted(() => {
                           >
                             <Pencil class="h-4 w-4 shrink-0" />
                             <span>{{ t('Tahrirlash') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canApproveProtocolPlan(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="requestApproveProtocolPlan(record)"
+                          >
+                            <BadgeCheck class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Rejani tasdiqlash') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canSendProtocolToCommission(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="requestSendProtocolToCommission(record)"
+                          >
+                            <Check class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Komissiyaga yuborish') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canSendProtocolToAgreement(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="requestSendProtocolToAgreement(record)"
+                          >
+                            <Check class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Kelishish uchun yuborish') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canSendProtocolToApproval(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="requestSendProtocolToApproval(record)"
+                          >
+                            <Check class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Tasdiqlash uchun yuborish') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canApproveProtocol(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @click="requestApproveProtocol(record)"
+                          >
+                            <BadgeCheck class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Tasdiqlash') }}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canCancelProtocol(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                            @click="requestCancelProtocol(record)"
+                          >
+                            <X class="h-4 w-4 shrink-0" />
+                            <span>{{ t('Bekor qilish') }}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
