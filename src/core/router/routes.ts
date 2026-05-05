@@ -72,11 +72,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-1',
         },
         meta: {
-          title: 'Info 1',
+          title: 'Xizmat turlari',
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 1'],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Xizmat turlari'],
         },
       },
       {
@@ -87,11 +87,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-2',
         },
         meta: {
-          title: 'Info 2',
+          title: 'Mos tashxislar',
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 2'],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Mos tashxislar'],
         },
       },
       {
@@ -102,11 +102,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-3',
         },
         meta: {
-          title: 'Info 3',
+          title: "Qarshi ko'rsatmalar",
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Info 3'],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "Qarshi ko'rsatmalar"],
         },
       },
       {
@@ -121,7 +121,7 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Hujjatlar'],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Hujjatlar'],
         },
       },
       {
@@ -136,7 +136,7 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', "So'rovnoma shabloni"],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "So'rovnoma shabloni"],
         },
       },
       {
@@ -151,7 +151,7 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Info', "Toifa guruhlari"],
+          breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "Toifa guruhlari"],
         },
       },
       {
@@ -178,7 +178,7 @@ export const routes: RouteRecordRaw[] = [
           requiresAuth: true,
           moduleKey: 'iptk',
           moduleTitle: 'IPTK',
-          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+          breadcrumb: ['Ilovalar', 'IPTK', 'Boshqaruv', 'Komissiyalar tarkibi'],
         },
       },
       {
@@ -249,11 +249,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-1',
         },
         meta: {
-          title: 'Info 1',
+          title: "Ma'lumot 1",
           requiresAuth: true,
           moduleKey: 'muruvvat',
           moduleTitle: 'Muruvvat',
-          breadcrumb: ['Ilovalar', 'Muruvvat', 'Info', 'Info 1'],
+          breadcrumb: ['Ilovalar', 'Muruvvat', "Ma'lumotnomalar", "Ma'lumot 1"],
         },
       },
       {
@@ -264,11 +264,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-2',
         },
         meta: {
-          title: 'Info 2',
+          title: "Ma'lumot 2",
           requiresAuth: true,
           moduleKey: 'muruvvat',
           moduleTitle: 'Muruvvat',
-          breadcrumb: ['Ilovalar', 'Muruvvat', 'Info', 'Info 2'],
+          breadcrumb: ['Ilovalar', 'Muruvvat', "Ma'lumotnomalar", "Ma'lumot 2"],
         },
       },
       {
@@ -279,11 +279,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'info-3',
         },
         meta: {
-          title: 'Info 3',
+          title: "Ma'lumot 3",
           requiresAuth: true,
           moduleKey: 'muruvvat',
           moduleTitle: 'Muruvvat',
-          breadcrumb: ['Ilovalar', 'Muruvvat', 'Info', 'Info 3'],
+          breadcrumb: ['Ilovalar', 'Muruvvat', "Ma'lumotnomalar", "Ma'lumot 3"],
         },
       },
       {

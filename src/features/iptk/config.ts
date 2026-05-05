@@ -1,4 +1,4 @@
-import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText } from 'lucide-vue-next'
+import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText, Settings2 } from 'lucide-vue-next'
 import type { MuruvvatMenuItem, MuruvvatPageDefinition } from '@/features/muruvvat/types'
 
 export const iptkPages: MuruvvatPageDefinition[] = [
@@ -14,42 +14,42 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     title: 'Xizmat turlari',
     description: '',
     route: '/apps/iptk/info/info-1',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Xizmat turlari'],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Xizmat turlari'],
   },
   {
     key: 'info-2',
     title: 'Mos tashxislar',
     description: '',
     route: '/apps/iptk/info/info-2',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Mos tashxislar'],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Mos tashxislar'],
   },
   {
     key: 'info-3',
     title: "Qarshi ko'rsatmalar",
     description: '',
     route: '/apps/iptk/info/info-3',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', "Qarshi ko'rsatmalar"],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "Qarshi ko'rsatmalar"],
   },
   {
     key: 'info-4',
     title: 'Hujjatlar',
     description: '',
     route: '/apps/iptk/info/info-4',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', 'Hujjatlar'],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", 'Hujjatlar'],
   },
   {
     key: 'info-5',
     title: "So'rovnoma shabloni",
     description: '',
     route: '/apps/iptk/info/info-5',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', "So'rovnoma shabloni"],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "So'rovnoma shabloni"],
   },
   {
     key: 'info-6',
     title: "Toifa guruhlari",
     description: '',
     route: '/apps/iptk/info/info-6',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Info', "Toifa guruhlari"],
+    breadcrumb: ['Ilovalar', 'IPTK', "Ma'lumotnomalar", "Toifa guruhlari"],
   },
   {
     key: 'applications-list',
@@ -83,7 +83,7 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     title: 'Komissiyalar tarkibi',
     description: '',
     route: '/apps/iptk/applications/commissions',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+    breadcrumb: ['Ilovalar', 'IPTK', 'Boshqaruv', 'Komissiyalar tarkibi'],
     sectionTitle: 'Komissiyalar tarkibi',
     sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
   },
@@ -105,7 +105,7 @@ export const iptkMenu: MuruvvatMenuItem[] = [
   },
   {
     id: 'info',
-    title: 'Info',
+    title: "Ma'lumotnomalar",
     icon: Info,
     children: [
       {
@@ -169,6 +169,13 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         route: '/apps/iptk/applications/protocol',
         icon: NotebookText,
       },
+    ],
+  },
+  {
+    id: 'management',
+    title: 'Boshqaruv',
+    icon: Settings2,
+    children: [
       {
         id: 'commissions-composition',
         title: 'Komissiyalar tarkibi',

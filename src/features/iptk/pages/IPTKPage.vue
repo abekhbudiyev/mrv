@@ -32,6 +32,7 @@ type ProtocolStatus =
   | 'Tasdiqlash uchun yuborilgan'
   | 'Bekor qilingan'
   | 'Tasdiqlangan'
+type ProtocolStatusTabValue = 'all' | ProtocolStatus
 type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
@@ -2734,6 +2735,14 @@ function setDropdownSearchValue(key: string, value: string) {
   }
 }
 
+function focusDropdownSearchInput(key: string) {
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>(`input[data-dropdown-search-key="${key}"]`)
+    input?.focus()
+    input?.select()
+  })
+}
+
 function filterDropdownOptions<T>(
   options: readonly T[],
   key: string,
@@ -4548,7 +4557,12 @@ function toggleFiltersFromMenu(nextOpen: boolean) {
 }
 
 function toggleFilterField(field: 'status' | 'region') {
-  openFilterField.value = openFilterField.value === field ? null : field
+  const nextField = openFilterField.value === field ? null : field
+  openFilterField.value = nextField
+
+  if (nextField) {
+    focusDropdownSearchInput(`commission-filter-${nextField}`)
+  }
 }
 
 function selectStatusFilter(value: 'all' | CommissionStatus) {
@@ -4876,7 +4890,12 @@ function toggleProtocolFiltersFromMenu(nextOpen: boolean) {
 }
 
 function toggleProtocolFilterField(field: 'status' | 'region') {
-  openProtocolFilterField.value = openProtocolFilterField.value === field ? null : field
+  const nextField = openProtocolFilterField.value === field ? null : field
+  openProtocolFilterField.value = nextField
+
+  if (nextField) {
+    focusDropdownSearchInput(`protocol-filter-${nextField}`)
+  }
 }
 
 function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
@@ -4885,8 +4904,16 @@ function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
     : toggleDropdownMultiSelectValue(draftProtocolStatusFilter.value, value)
 }
 
-function selectProtocolStatusTab(value: 'all' | ProtocolStatus) {
-  const nextStatuses = value === 'all' ? [] : [value]
+function isProtocolStatusTabActive(value: ProtocolStatusTabValue) {
+  return value === 'all'
+    ? appliedProtocolStatusFilter.value.length === 0
+    : appliedProtocolStatusFilter.value.includes(value)
+}
+
+function selectProtocolStatusTab(value: ProtocolStatusTabValue) {
+  const nextStatuses = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(appliedProtocolStatusFilter.value, value)
   if (areApplicationReportFiltersEqual(appliedProtocolStatusFilter.value, nextStatuses)) return
 
   closeProtocolFilters()
@@ -5378,7 +5405,12 @@ function toggleAssessmentFiltersFromMenu(nextOpen: boolean) {
 }
 
 function toggleAssessmentFilterField(field: 'status' | 'region') {
-  openAssessmentFilterField.value = openAssessmentFilterField.value === field ? null : field
+  const nextField = openAssessmentFilterField.value === field ? null : field
+  openAssessmentFilterField.value = nextField
+
+  if (nextField) {
+    focusDropdownSearchInput(`assessment-filter-${nextField}`)
+  }
 }
 
 function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
@@ -5798,7 +5830,7 @@ async function downloadProtocols() {
     downloadScheduled = true
     stopLoading(() => {
       xlsx.writeFile(workbook, 'iptk-bayonnoma.xlsx')
-      pushFeedback('success', 'Bayonnoma roâ€˜yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+      pushFeedback('success', 'Bayonnoma ro‘yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
     })
   } finally {
     if (!downloadScheduled && actionLoadingKey.value === 'protocol-download') {
@@ -5998,6 +6030,10 @@ function toggleServiceTypeDropdown(dropdown: ServiceTypeDropdown) {
   if (dropdown === 'contraindications') isServiceTypeContraindicationsOpen.value = isOpening
   if (dropdown === 'documents') isServiceTypeDocumentsOpen.value = isOpening
   if (dropdown === 'status') isServiceTypeStatusOpen.value = isOpening
+
+  if (isOpening) {
+    focusDropdownSearchInput(`service-type-${dropdown}`)
+  }
 }
 
 function toggleServiceTypeTranslations() {
@@ -6338,6 +6374,10 @@ function toggleDiagnosisDropdown(dropdown: DiagnosisDropdown) {
 
   if (dropdown === 'icd') isDiagnosisIcdOpen.value = isOpening
   if (dropdown === 'status') isDiagnosisStatusOpen.value = isOpening
+
+  if (isOpening) {
+    focusDropdownSearchInput(`diagnosis-${dropdown}`)
+  }
 }
 
 function toggleDiagnosisTranslations() {
@@ -6646,8 +6686,14 @@ function toggleApplicationReportFilters(nextOpen: boolean) {
 }
 
 function toggleApplicationReportFilterField(field: 'status' | 'step' | 'region' | 'district' | ApplicationReportMetricKey) {
-  openApplicationReportFilterField.value = openApplicationReportFilterField.value === field ? null : field
+  const nextField = openApplicationReportFilterField.value === field ? null : field
+  openApplicationReportFilterField.value = nextField
   openApplicationReportCalendarField.value = null
+
+  if (nextField) {
+    const prefix = isDashboardPage.value ? 'report-filter' : 'report-page-filter'
+    focusDropdownSearchInput(`${prefix}-${nextField}`)
+  }
 }
 
 function toggleApplicationReportStatusFilter(status: ApplicationReportStatus) {
@@ -7161,6 +7207,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-status')"
+                            data-dropdown-search-key="report-filter-status"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -7214,6 +7261,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-step')"
+                            data-dropdown-search-key="report-filter-step"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -7267,6 +7315,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-region')"
+                            data-dropdown-search-key="report-filter-region"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -7321,6 +7370,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-district')"
+                            data-dropdown-search-key="report-filter-district"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -7376,11 +7426,12 @@ onUnmounted(() => {
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            :model-value="getDropdownSearchValue(`report-filter-${group.key}`)"
-                            class="h-8 pl-8 text-xs"
-                            :placeholder="t('Qidirish')"
-                            @click.stop
+                            <Input
+                              :model-value="getDropdownSearchValue(`report-filter-${group.key}`)"
+                              :data-dropdown-search-key="`report-filter-${group.key}`"
+                              class="h-8 pl-8 text-xs"
+                              :placeholder="t('Qidirish')"
+                              @click.stop
                             @keydown.stop
                             @update:model-value="setDropdownSearchValue(`report-filter-${group.key}`, String($event ?? ''))"
                           />
@@ -7993,6 +8044,7 @@ onUnmounted(() => {
                             <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               :model-value="getDropdownSearchValue('commission-filter-status')"
+                              data-dropdown-search-key="commission-filter-status"
                               class="h-8 pl-8 text-xs"
                               :placeholder="t('Qidirish')"
                               @click.stop
@@ -8058,6 +8110,7 @@ onUnmounted(() => {
                               <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                               <Input
                                 :model-value="getDropdownSearchValue('commission-filter-region')"
+                                data-dropdown-search-key="commission-filter-region"
                                 class="h-8 pl-8 text-xs"
                                 :placeholder="t('Qidirish')"
                                 @click.stop
@@ -8552,14 +8605,14 @@ onUnmounted(() => {
               <table class="min-w-[1380px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
-                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Rais') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Rais o'rinbosari") }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Kotib') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("A'zolar") }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hudud') }}</th>
-                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -8591,6 +8644,49 @@ onUnmounted(() => {
                     :key="record.id"
                     class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">
+                        {{ record.documentNumber }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ formatDateDisplay(record.createdAt) }}
+                      </p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium uppercase text-foreground">
+                        {{ normalizeFullName(record.chair) }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ record.chairPinfl }}
+                      </p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium uppercase text-foreground">
+                        {{ normalizeFullName(record.deputyChair) }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ record.deputyChairPinfl }}
+                      </p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium uppercase text-foreground">
+                        {{ normalizeFullName(record.secretary) }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ record.secretaryPinfl }}
+                      </p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      {{ record.members.length }} ta
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      {{ record.region }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                        {{ record.status }}
+                      </span>
+                    </td>
                     <td class="border-b border-border px-4 py-3 align-top">
                       <DropdownMenuRoot @update:open="setActionMenuOpen(record.id, $event)">
                         <DropdownMenuTrigger as-child>
@@ -8653,49 +8749,6 @@ onUnmounted(() => {
                           </DropdownMenuContent>
                         </DropdownMenuPortal>
                       </DropdownMenuRoot>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium text-foreground">
-                        {{ record.documentNumber }}
-                      </p>
-                      <p class="mt-1 text-muted-foreground">
-                        {{ formatDateDisplay(record.createdAt) }}
-                      </p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium uppercase text-foreground">
-                        {{ normalizeFullName(record.chair) }}
-                      </p>
-                      <p class="mt-1 text-muted-foreground">
-                        {{ record.chairPinfl }}
-                      </p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium uppercase text-foreground">
-                        {{ normalizeFullName(record.deputyChair) }}
-                      </p>
-                      <p class="mt-1 text-muted-foreground">
-                        {{ record.deputyChairPinfl }}
-                      </p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium uppercase text-foreground">
-                        {{ normalizeFullName(record.secretary) }}
-                      </p>
-                      <p class="mt-1 text-muted-foreground">
-                        {{ record.secretaryPinfl }}
-                      </p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      {{ record.members.length }} ta
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      {{ record.region }}
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
-                        {{ record.status }}
-                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -9076,6 +9129,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('commission-form-region')"
+                        data-dropdown-search-key="commission-form-region"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -9656,6 +9710,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('assessment-filter-status')"
+                            data-dropdown-search-key="assessment-filter-status"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -9710,6 +9765,7 @@ onUnmounted(() => {
                             <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               :model-value="getDropdownSearchValue('assessment-filter-region')"
+                              data-dropdown-search-key="assessment-filter-region"
                               class="h-8 pl-8 text-xs"
                               :placeholder="t('Qidirish')"
                               @click.stop
@@ -9977,13 +10033,13 @@ onUnmounted(() => {
               <table class="min-w-[1240px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
-                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                    <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Natija') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
-                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                    <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -10008,6 +10064,35 @@ onUnmounted(() => {
                     :key="record.id"
                     class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      {{ record.serviceType }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <span
+                        v-if="getAssessmentResultDisplay(record) !== '-'"
+                        :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(record))"
+                      >
+                        {{ getAssessmentResultDisplay(record) }}
+                      </span>
+                      <span v-else class="text-muted-foreground">-</span>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                      <p class="font-medium text-foreground">{{ record.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                      <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                        {{ record.status }}
+                      </span>
+                    </td>
                     <td class="border-b border-border px-4 py-3 align-top">
                       <DropdownMenuRoot @update:open="setActionMenuOpen(`assessment-${record.id}`, $event)">
                         <DropdownMenuTrigger as-child>
@@ -10051,35 +10136,6 @@ onUnmounted(() => {
                           </DropdownMenuContent>
                         </DropdownMenuPortal>
                       </DropdownMenuRoot>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
-                      <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
-                      <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      {{ record.serviceType }}
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <span
-                        v-if="getAssessmentResultDisplay(record) !== '-'"
-                        :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', getAssessmentResultBadgeClass(record))"
-                      >
-                        {{ getAssessmentResultDisplay(record) }}
-                      </span>
-                      <span v-else class="text-muted-foreground">-</span>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      <p class="font-medium text-foreground">{{ record.region }}</p>
-                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top">
-                      <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
-                        {{ record.status }}
-                      </span>
                     </td>
                   </tr>
                 </tbody>
@@ -10546,6 +10602,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('protocol-filter-status')"
+                          data-dropdown-search-key="protocol-filter-status"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -10589,6 +10646,7 @@ onUnmounted(() => {
                           <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('protocol-filter-region')"
+                            data-dropdown-search-key="protocol-filter-region"
                             class="h-8 pl-8 text-xs"
                             :placeholder="t('Qidirish')"
                             @click.stop
@@ -10731,7 +10789,7 @@ onUnmounted(() => {
               type="button"
               :class="cn(
                 'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-                (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value))
+                isProtocolStatusTabActive(tab.value)
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground',
               )"
@@ -10741,14 +10799,14 @@ onUnmounted(() => {
                 :class="cn(
                   'h-2 w-2 shrink-0 rounded-full',
                   tab.dotClass,
-                  (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value)) ? 'opacity-100' : 'opacity-55',
+                  isProtocolStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
                 )"
               />
-              <span class="whitespace-nowrap">{{ tab.label }}</span>
+              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
               <span
                 :class="cn(
                   'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
-                  (tab.value === 'all' ? appliedProtocolStatusFilter.length === 0 : appliedProtocolStatusFilter.includes(tab.value))
+                  isProtocolStatusTabActive(tab.value)
                     ? tab.badgeClass
                     : 'bg-muted text-muted-foreground',
                 )"
@@ -10919,11 +10977,11 @@ onUnmounted(() => {
             <table class="min-w-[1040px] border-separate border-spacing-0 text-sm xl:min-w-full">
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Arizalar') }}</th>
-                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -10948,6 +11006,23 @@ onUnmounted(() => {
                   :key="record.id"
                   class="transition-colors duration-200 ease-out hover:bg-muted/30"
                 >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.region }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.acceptedApplications }} / {{ record.totalApplications }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ t('Qabul qilingan arizalar') }} / {{ t('Jami arizalar') }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
+                      {{ record.status }}
+                    </span>
+                  </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <DropdownMenuRoot @update:open="setActionMenuOpen(`protocol-${record.id}`, $event)">
                       <DropdownMenuTrigger as-child>
@@ -11034,23 +11109,6 @@ onUnmounted(() => {
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
                     </DropdownMenuRoot>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
-                    <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.region }}</p>
-                    <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.acceptedApplications }} / {{ record.totalApplications }}</p>
-                    <p class="mt-1 text-muted-foreground">{{ t('Qabul qilingan arizalar') }} / {{ t('Jami arizalar') }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', protocolStatusClassMap[record.status])">
-                      {{ record.status }}
-                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -11235,6 +11293,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('protocol-form-region')"
+                        data-dropdown-search-key="protocol-form-region"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -11276,6 +11335,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('protocol-form-district')"
+                        data-dropdown-search-key="protocol-form-district"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -11473,14 +11533,14 @@ onUnmounted(() => {
             <table class="min-w-[980px] border-separate border-spacing-0 text-sm xl:min-w-full">
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Sana') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Qisqa nomi") }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("To'liq nomi") }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Minimal yosh') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Maksimal yosh') }}</th>
-                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -11500,6 +11560,29 @@ onUnmounted(() => {
                   :key="record.id"
                   class="transition-colors duration-200 ease-out hover:bg-muted/30"
                 >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.id }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ formatDateDisplay(record.date) }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ record.minAge }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ record.maxAge ?? '-' }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                      {{ record.status }}
+                    </span>
+                  </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <DropdownMenuRoot @update:open="setServiceTypeActionMenuOpen(record.id, $event)">
                       <DropdownMenuTrigger as-child>
@@ -11544,29 +11627,6 @@ onUnmounted(() => {
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
                     </DropdownMenuRoot>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.id }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
-                    {{ formatDateDisplay(record.date) }}
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
-                    {{ record.minAge }}
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
-                    {{ record.maxAge ?? '-' }}
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
-                      {{ record.status }}
-                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -11867,6 +11927,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('service-type-diagnoses')"
+                          data-dropdown-search-key="service-type-diagnoses"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -11924,6 +11985,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('service-type-contraindications')"
+                          data-dropdown-search-key="service-type-contraindications"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -11982,6 +12044,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('service-type-documents')"
+                        data-dropdown-search-key="service-type-documents"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -12029,6 +12092,7 @@ onUnmounted(() => {
                     <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       :model-value="getDropdownSearchValue('service-type-status')"
+                      data-dropdown-search-key="service-type-status"
                       class="h-8 pl-8 text-xs"
                       :placeholder="t('Qidirish')"
                       @click.stop
@@ -12367,14 +12431,14 @@ onUnmounted(() => {
             <table class="min-w-[1040px] border-separate border-spacing-0 text-sm xl:min-w-full">
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">ID</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Sana') }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("Qisqa nomi") }}</th>
                   <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t("To'liq nomi") }}</th>
                   <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Minimal ball</th>
                   <th v-if="isCategoryGroupsPage" class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">Maksimal ball</th>
-                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -12394,6 +12458,27 @@ onUnmounted(() => {
                   :key="record.id"
                   class="transition-colors duration-200 ease-out hover:bg-muted/30"
                 >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.id }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">{{ formatDateDisplay(record.date) }}</td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
+                  </td>
+                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.minScore : '' }}</p>
+                  </td>
+                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.maxScore : '' }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
+                      {{ record.status }}
+                    </span>
+                  </td>
                   <td class="border-b border-border px-4 py-3 align-top">
                     <DropdownMenuRoot @update:open="setDiagnosisActionMenuOpen(record.id, $event)">
                       <DropdownMenuTrigger as-child>
@@ -12429,27 +12514,6 @@ onUnmounted(() => {
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
                     </DropdownMenuRoot>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.id }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">{{ formatDateDisplay(record.date) }}</td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ record.shortName.uzLatn }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <p class="max-w-xl font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
-                  </td>
-                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.minScore : '' }}</p>
-                  </td>
-                  <td v-if="isCategoryGroupsPage" class="border-b border-border px-4 py-3 align-top">
-                    <p class="font-medium text-foreground">{{ isCategoryGroupRecord(record) ? record.maxScore : '' }}</p>
-                  </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
-                    <span :class="['inline-flex rounded-full border px-3 py-1 text-xs font-semibold', serviceTypeStatusClassMap[record.status]]">
-                      {{ record.status }}
-                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -12808,6 +12872,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('diagnosis-icd')"
+                        data-dropdown-search-key="diagnosis-icd"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -12848,6 +12913,7 @@ onUnmounted(() => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('diagnosis-status')"
+                        data-dropdown-search-key="diagnosis-status"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -13097,6 +13163,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-status')"
+                          data-dropdown-search-key="report-page-filter-status"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -13150,6 +13217,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-step')"
+                          data-dropdown-search-key="report-page-filter-step"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -13203,6 +13271,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-region')"
+                          data-dropdown-search-key="report-page-filter-region"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -13257,6 +13326,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-district')"
+                          data-dropdown-search-key="report-page-filter-district"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop
@@ -13314,6 +13384,7 @@ onUnmounted(() => {
                         <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue(`report-page-filter-${group.key}`)"
+                          :data-dropdown-search-key="`report-page-filter-${group.key}`"
                           class="h-8 pl-8 text-xs"
                           :placeholder="t('Qidirish')"
                           @click.stop

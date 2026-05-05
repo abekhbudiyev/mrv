@@ -95,6 +95,7 @@ const sidebarGroupI18nKeys: Record<string, string> = {
   dashboard: 'nav.dashboard',
   homes: 'nav.homes',
   info: 'nav.info',
+  management: 'nav.management',
   reports: 'nav.reports',
 }
 

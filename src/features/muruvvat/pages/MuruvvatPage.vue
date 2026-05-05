@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { CalendarDays, Check, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Download, Ellipsis, Eye, FilePenLine, Filter, Info, LoaderCircle, Plus, Search, X } from 'lucide-vue-next'
 import mermaid from 'mermaid'
@@ -44,6 +44,7 @@ const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] o
 const filterPanelContentClass = 'flex flex-col gap-3'
 
 type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ApplicationStepTabValue = 'all' | ApplicationStep
 type ApplicationStep =
   | 'Ariza yaratildi'
   | 'Bekor qilindi'
@@ -183,6 +184,16 @@ const statusStyles = {
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 } as const
+const statusTabDotStyles: Record<ApplicationStatus, string> = {
+  Jarayonda: 'bg-amber-500',
+  Tasdiqlangan: 'bg-emerald-500',
+  'Bekor qilingan': 'bg-rose-500',
+}
+const statusTabBadgeStyles: Record<ApplicationStatus, string> = {
+  Jarayonda: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+  Tasdiqlangan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+  'Bekor qilingan': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+}
 
 const processApplicationSteps = [
   'Ariza yaratildi',
@@ -726,18 +737,30 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
 
 const iptkFlowMermaidDefinition = `
 flowchart TD
-    A["So'rovnoma yaratildi<br/>xizmat tanlandi"] --> B["Inson markaziga<br/>shu kunning o'zida tushdi"]
-    B --> C["Dastlabki tekshiruv<br/>hujjat, tashxis, toifa"]
+    O["ARIZACHI<br/>murojaat qiladi"] --> CH1["Inson"]
+    O --> CH2["Ijtimoiy xodim"]
+    O --> CH3["Ijtimoiy karta"]
+    O --> CH4["YAIDXP"]
+    O --> CH5["DXM"]
+    CH1 --> A1["ARIZANI YARATUVCHI<br/>arizachi va NBSH ma'lumotini to'ldiradi"]
+    CH2 --> A1
+    CH3 --> A1
+    CH4 --> A1
+    CH5 --> A1
+    A1 --> A2["TIZIM<br/>tekshirib, mos xizmatlarni taklif etadi"]
+    A2 --> A3["ARIZANI YARATUVCHI<br/>mos xizmatni tanlab,<br/>tegishli hujjatlarni biriktiradi"]
+    A3 --> A["ARIZACHI<br/>arizani tasdiqlaydi<br/>Bosqich:<br/>Ariza yaratildi"]
+    A --> C["INSON MARKAZI<br/>hujjat, tashxis va toifani tekshiradi"]
     C --> D{"Rad etish<br/>asosi bormi?"}
 
-    D -->|Ha| R["Bekor qilindi<br/>xabarnoma yuborildi"]
-    D -->|Yo'q| F["WHODAS 2.0 bo'yicha<br/>funksionallik tekshirildi"]
+    D -->|Ha| R["INSON MARKAZI<br/>arizani bekor qiladi va xabarnoma yuboradi<br/>Bosqich:<br/>Bekor qilindi"]
+    D -->|Yo'q| F["INSON MARKAZI<br/>WHODAS 2.0 bo'yicha funksionallikni tekshiradi<br/>Bosqich:<br/>Baholash jarayoni"]
     F --> E{"Xizmat turi"}
 
-    E -->|"Yangi kun"| J["IPTKga yuborildi"]
+    E -->|"Yangi kun"| J["INSON MARKAZI<br/>ma'lumot va hujjatlarni IPTKga yuboradi<br/>Bosqich:<br/>IPTKga yuborildi"]
     E -->|"Uy sharoitida<br/>qarab turish"| J
     E -->|"Ijtimoiy ta'til"| J
-    E -->|"Madad"| H["Parvarish va yashash<br/>sharoiti baholandi"]
+    E -->|"Madad"| H["ISHCHI GURUH<br/>parvarish va yashash sharoitini baholaydi<br/>Bosqich:<br/>Baholash jarayoni"]
     E -->|"G'amxo'rlik"| H
 
     H --> M1{"Madad xizmati<br/>bo'yichami?"}
@@ -746,23 +769,23 @@ flowchart TD
     M2 -->|Ha| J
     M1 -->|Yo'q| G{"G'amxo'rlik<br/>toifasi"}
     G -->|"Navbat asosida"| J
-    G -->|"Navbatsiz"| I["Qo'shimcha hujjatlar<br/>yig'ildi"]
+    G -->|"Navbatsiz"| I["ARIZACHI VA INSON MARKAZI<br/>qo'shimcha hujjatlarni yig'adi<br/>Bosqich:<br/>Qo'shimcha hujjatlar yig'ilmoqda"]
     I --> J
 
-    J --> L["IPTK kotibi<br/>hujjatlarni tekshirdi"]
+    J --> L["IPTK KOTIBI<br/>hujjatlarni tekshiradi<br/>Bosqich:<br/>IPTK qabul qildi"]
     L --> D2{"Kamchilik<br/>bormi?"}
-    D2 -->|Ha| U["Qayta ishlashga<br/>qaytarildi"]
+    D2 -->|Ha| U["IPTK KOTIBI<br/>kamchiliklarni ko'rsatib qaytaradi<br/>Bosqich:<br/>Qayta ishlashga qaytarildi"]
     U --> C
-    D2 -->|Yo'q| N["Yig'ilish<br/>rejalashtirildi"]
-    N --> P["Komissiya a'zolari va<br/>qonuniy vakil xabardor qilindi"]
+    D2 -->|Yo'q| N["IPTK KOTIBI<br/>ishlarni yig'ilishga kiritadi<br/>Bosqich:<br/>IPTK yig'ilishiga kiritildi"]
+    N --> P["IPTK KOTIBI<br/>komissiya a'zolari va qonuniy vakilni xabardor qiladi"]
     P --> Z{"Shaxs ko'rikka<br/>olib kelindimi?"}
     Z -->|Yo'q| U
-    Z -->|Ha| Q["IPTK tekshiruvi<br/>o'tkazildi"]
+    Z -->|Ha| Q["IPTK<br/>ijtimoiy-psixiatrik-tibbiy tekshiruv o'tkazadi<br/>Bosqich:<br/>IPTK tekshiruvi o'tkazildi"]
     Q --> S{"IPTK xulosasi"}
-    S -->|"Tanlangan xizmat"| T["Xulosa Inson markaziga<br/>yuborildi"]
+    S -->|"Tanlangan xizmat"| T["IPTK<br/>xulosani Inson markaziga yuboradi<br/>Bosqich:<br/>Tasdiqlandi"]
     S -->|"Boshqa xizmat"| T
-    S -->|"Rad etish"| W["Rad etildi"]
-    T --> X["Qonuniy vakil<br/>xabardor qilindi"]
+    S -->|"Rad etish"| W["IPTK<br/>rad etish xulosasini rasmiylashtiradi<br/>Bosqich:<br/>Rad etildi"]
+    T --> X["TIZIM<br/>qonuniy vakilni xabardor qiladi"]
 
     classDef neutral fill:#f8fafc,stroke:#cbd5e1,color:#0f172a,stroke-width:1.5px;
     classDef decision fill:#ffffff,stroke:#94a3b8,color:#0f172a,stroke-width:1.5px;
@@ -771,14 +794,16 @@ flowchart TD
     classDef warning fill:#fff7ed,stroke:#fdba74,color:#9a3412,stroke-width:1.5px;
     classDef success fill:#ecfdf5,stroke:#86efac,color:#166534,stroke-width:1.5px;
     classDef return fill:#fefce8,stroke:#facc15,color:#854d0e,stroke-width:1.5px;
+    classDef channel fill:#f0fdf4,stroke:#86efac,color:#166534,stroke-width:1.5px;
 
-    class A,B,C,N,P neutral;
+    class A1,A2,A3,C,N,P neutral;
     class D,D2,E,G,M1,M2,Z,S decision;
     class R,W danger;
     class F,H,J,L,Q info;
     class I warning;
-    class T,X success;
+    class A,T,X success;
     class U return;
+    class O,CH1,CH2,CH3,CH4,CH5 channel;
 
     click A handleIptkFlowNodeClick
     click C handleIptkFlowNodeClick
@@ -1570,6 +1595,22 @@ const hasPendingFilterChanges = computed(() => {
 const draftStatusLabel = computed(() => getMultiSelectLabel(draftStatusFilter.value, 'Barchasi'))
 const draftStepLabel = computed(() => getMultiSelectLabel(draftStepFilter.value, 'Barchasi'))
 const draftRegionLabel = computed(() => getMultiSelectLabel(draftRegionFilter.value, 'Barchasi'))
+const applicationStepTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: applicationRows.value.length,
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+  },
+  ...applicationSteps.map((step) => ({
+    label: step,
+    value: step,
+    count: applicationRows.value.filter((row) => row.step === step).length,
+    dotClass: statusTabDotStyles[applicationStepStatusMap[step]],
+    badgeClass: statusTabBadgeStyles[applicationStepStatusMap[step]],
+  })),
+])
 const isDistrictFilterEnabled = computed(() => draftRegionFilter.value.length > 0)
 const draftDistrictLabel = computed(() => {
   if (!isDistrictFilterEnabled.value) {
@@ -1680,6 +1721,14 @@ function setDropdownSearchValue(key: string, value: string) {
   }
 }
 
+function focusDropdownSearchInput(key: string) {
+  nextTick(() => {
+    const input = document.querySelector<HTMLInputElement>(`input[data-dropdown-search-key="${key}"]`)
+    input?.focus()
+    input?.select()
+  })
+}
+
 function filterDropdownOptions<T>(
   options: readonly T[],
   key: string,
@@ -1715,6 +1764,19 @@ function closeFilters() {
 
 function toggleCreateAddressField(field: typeof openCreateAddressField.value) {
   openCreateAddressField.value = openCreateAddressField.value === field ? null : field
+
+  if (openCreateAddressField.value) {
+    const searchKeyMap: Record<NonNullable<typeof openCreateAddressField.value>, string> = {
+      'applicant-region': 'muruvvat-applicant-region',
+      'applicant-district': 'muruvvat-applicant-district',
+      'applicant-mfy': 'muruvvat-applicant-mfy',
+      'recipient-region': 'muruvvat-recipient-region',
+      'recipient-district': 'muruvvat-recipient-district',
+      'recipient-mfy': 'muruvvat-recipient-mfy',
+      'service-option': 'muruvvat-service-option',
+    }
+    focusDropdownSearchInput(searchKeyMap[openCreateAddressField.value])
+  }
 }
 
 function closeCreateAddressField() {
@@ -1940,7 +2002,12 @@ function toggleFiltersFromMenu(nextOpen: boolean) {
 }
 
 function toggleFilterField(field: 'status' | 'step' | 'region' | 'district') {
-  openFilterField.value = openFilterField.value === field ? null : field
+  const nextField = openFilterField.value === field ? null : field
+  openFilterField.value = nextField
+
+  if (nextField) {
+    focusDropdownSearchInput(`muruvvat-filter-${nextField}`)
+  }
 }
 
 function selectStatusFilter(value: 'all' | ApplicationStatus) {
@@ -1948,6 +2015,31 @@ function selectStatusFilter(value: 'all' | ApplicationStatus) {
     ? []
     : toggleFilterValue(draftStatusFilter.value, value)
   syncDraftStepsWithSelectedStatuses()
+}
+
+function isApplicationStepTabActive(value: ApplicationStepTabValue) {
+  return value === 'all'
+    ? appliedStepFilter.value.length === 0
+    : appliedStepFilter.value.includes(value)
+}
+
+function selectApplicationStepTab(value: ApplicationStepTabValue) {
+  const nextStepFilter = value === 'all'
+    ? []
+    : toggleFilterValue(appliedStepFilter.value, value)
+
+  if (areFilterListsEqual(appliedStepFilter.value, nextStepFilter) && appliedStatusFilter.value.length === 0) {
+    return
+  }
+
+  draftStatusFilter.value = []
+  draftStepFilter.value = [...nextStepFilter]
+
+  runTableLoading(() => {
+    appliedStatusFilter.value = []
+    appliedStepFilter.value = [...nextStepFilter]
+    currentPage.value = 1
+  })
 }
 
 function selectStepFilter(value: 'all' | ApplicationStep) {
@@ -4111,6 +4203,7 @@ watch(serviceRecipientLookupResult, () => {
                                 <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-status')"
+                                  data-dropdown-search-key="muruvvat-filter-status"
                                   class="h-8 pl-8 text-xs"
                                   :placeholder="t('Qidirish')"
                                   @click.stop
@@ -4181,6 +4274,7 @@ watch(serviceRecipientLookupResult, () => {
                                 <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-step')"
+                                  data-dropdown-search-key="muruvvat-filter-step"
                                   class="h-8 pl-8 text-xs"
                                   :placeholder="t('Qidirish')"
                                   @click.stop
@@ -4248,6 +4342,7 @@ watch(serviceRecipientLookupResult, () => {
                                 <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-region')"
+                                  data-dropdown-search-key="muruvvat-filter-region"
                                   class="h-8 pl-8 text-xs"
                                   :placeholder="t('Qidirish')"
                                   @click.stop
@@ -4316,6 +4411,7 @@ watch(serviceRecipientLookupResult, () => {
                                 <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-district')"
+                                  data-dropdown-search-key="muruvvat-filter-district"
                                   class="h-8 pl-8 text-xs"
                                   :placeholder="t('Qidirish')"
                                   @click.stop
@@ -4600,6 +4696,45 @@ watch(serviceRecipientLookupResult, () => {
             </div>
           </div>
 
+          <div
+            v-if="isIptkApplicationsListPage"
+            class="-mt-1 max-w-full min-w-0 overflow-x-auto"
+          >
+            <div class="inline-flex min-w-max items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+              <button
+                v-for="tab in applicationStepTabs"
+                :key="`application-step-tab-${tab.value}`"
+                type="button"
+                :class="[
+                  'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                  isApplicationStepTabActive(tab.value)
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground',
+                ]"
+                @click="selectApplicationStepTab(tab.value)"
+              >
+                <span
+                  :class="[
+                    'h-2 w-2 shrink-0 rounded-full',
+                    tab.dotClass,
+                    isApplicationStepTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                  ]"
+                />
+                <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+                <span
+                  :class="[
+                    'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                    isApplicationStepTabActive(tab.value)
+                      ? tab.badgeClass
+                      : 'bg-muted text-muted-foreground',
+                  ]"
+                >
+                  {{ tab.count }}
+                </span>
+              </button>
+            </div>
+          </div>
+
           <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
             <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
               <div class="relative flex-1 xl:hidden">
@@ -4791,12 +4926,12 @@ watch(serviceRecipientLookupResult, () => {
                 <table class="min-w-[1260px] border-separate border-spacing-0 text-sm xl:min-w-full">
                   <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                     <tr>
-                      <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
-                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Ariza') }}</th>
+                      <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Ariza') }}</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
                       <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
-                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t(getApplicationStageColumnLabel()) }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t(getApplicationStageColumnLabel()) }}</th>
+                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
                     </tr>
                   </thead>
                 <tbody>
@@ -4828,6 +4963,45 @@ watch(serviceRecipientLookupResult, () => {
                     :key="row.id"
                     class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium text-foreground">
+                          {{ row.id }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.date }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium uppercase text-foreground">
+                          {{ normalizeFullName(row.fullName) }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.pinfl }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="max-w-[320px] font-medium text-foreground">
+                          {{ getApplicationServiceTypeLabel(row) }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium text-foreground">
+                          {{ row.region }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.district }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <span
+                          :class="[
+                            'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
+                            row.statusClass,
+                          ]"
+                        >
+                          {{ getApplicationStageLabel(row) }}
+                        </span>
+                      </td>
                       <td class="border-b border-border px-4 py-3 align-top">
                         <DropdownMenuRoot @update:open="setActionMenuOpen(row.id, $event)">
                           <DropdownMenuTrigger as-child>
@@ -4898,45 +5072,6 @@ watch(serviceRecipientLookupResult, () => {
                             </DropdownMenuContent>
                           </DropdownMenuPortal>
                         </DropdownMenuRoot>
-                      </td>
-                      <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="font-medium text-foreground">
-                          {{ row.id }}
-                        </div>
-                        <div class="mt-1 text-muted-foreground">
-                          {{ row.date }}
-                        </div>
-                      </td>
-                      <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="font-medium uppercase text-foreground">
-                          {{ normalizeFullName(row.fullName) }}
-                        </div>
-                        <div class="mt-1 text-muted-foreground">
-                          {{ row.pinfl }}
-                        </div>
-                      </td>
-                      <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="max-w-[320px] font-medium text-foreground">
-                          {{ getApplicationServiceTypeLabel(row) }}
-                        </div>
-                      </td>
-                      <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="font-medium text-foreground">
-                          {{ row.region }}
-                        </div>
-                        <div class="mt-1 text-muted-foreground">
-                          {{ row.district }}
-                        </div>
-                      </td>
-                      <td class="border-b border-border px-4 py-3 align-top">
-                        <span
-                          :class="[
-                            'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
-                            row.statusClass,
-                          ]"
-                        >
-                          {{ getApplicationStageLabel(row) }}
-                        </span>
                       </td>
                     </tr>
                   </tbody>
@@ -5200,6 +5335,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-region')"
+                        data-dropdown-search-key="muruvvat-applicant-region"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5254,6 +5390,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-district')"
+                        data-dropdown-search-key="muruvvat-applicant-district"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5308,6 +5445,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-mfy')"
+                        data-dropdown-search-key="muruvvat-applicant-mfy"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5496,6 +5634,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-region')"
+                        data-dropdown-search-key="muruvvat-recipient-region"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5550,6 +5689,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-district')"
+                        data-dropdown-search-key="muruvvat-recipient-district"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5604,6 +5744,7 @@ watch(serviceRecipientLookupResult, () => {
                       <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-mfy')"
+                        data-dropdown-search-key="muruvvat-recipient-mfy"
                         class="h-8 pl-8 text-xs"
                         :placeholder="t('Qidirish')"
                         @click.stop
@@ -5717,6 +5858,7 @@ watch(serviceRecipientLookupResult, () => {
                     <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       :model-value="getDropdownSearchValue('muruvvat-service-option')"
+                      data-dropdown-search-key="muruvvat-service-option"
                       class="h-8 pl-8 text-xs"
                       :placeholder="t('Qidirish')"
                       @click.stop
