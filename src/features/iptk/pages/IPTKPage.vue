@@ -35,6 +35,8 @@ type ProtocolStatus =
   | 'Bekor qilingan'
   | 'Tasdiqlangan'
 type ProtocolStatusTabValue = 'all' | ProtocolStatus
+type ConclusionStatus = 'Yangi' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+type ConclusionResult = 'Ijobiy' | 'Salbiy'
 type CommissionWorkflowStage = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
@@ -172,6 +174,22 @@ interface ProtocolApplicationCandidate {
   step: ApplicationReportStep
 }
 
+interface ConclusionRecord {
+  id: string
+  documentNumber: string
+  createdAt: string
+  applicationNumber: string
+  serviceRecipient: string
+  serviceRecipientPinfl: string
+  serviceType: string
+  recommendedService: string
+  validityPeriod: string
+  region: string
+  district: string
+  result: ConclusionResult
+  status: ConclusionStatus
+}
+
 interface LocalizedValue {
   uzLatn: string
   uzCyrl: string
@@ -278,6 +296,7 @@ const isDashboardPage = computed(() => props.pageKey === 'dashboard')
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
 const isAssessmentPage = computed(() => props.pageKey === 'applications-assessment')
 const isProtocolPage = computed(() => props.pageKey === 'applications-protocol')
+const isConclusionsPage = computed(() => props.pageKey === 'applications-conclusions')
 const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
 const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
 const isContraindicationsPage = computed(() => props.pageKey === 'info-3')
@@ -345,6 +364,10 @@ const protocolStatusClassMap: Record<ProtocolStatus, string> = {
   'Tasdiqlash uchun yuborilgan': statusClassMap.Jarayonda,
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+}
+const conclusionResultClassMap: Record<ConclusionResult, string> = {
+  Ijobiy: statusClassMap.Tasdiqlangan,
+  Salbiy: statusClassMap['Bekor qilingan'],
 }
 
 const applicationReportStatuses: ApplicationReportStatus[] = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']
@@ -970,6 +993,69 @@ const protocols = ref<ProtocolRecord[]>([
   }),
 ])
 
+const conclusions = ref<ConclusionRecord[]>([
+  {
+    id: '1',
+    documentNumber: 'IPTK-XUL-2026-001',
+    createdAt: '2026-04-18 10:20',
+    applicationNumber: 'ARZ-000006',
+    serviceRecipient: 'SAIDOVA NILUFAR AKMAL QIZI',
+    serviceRecipientPinfl: '1000000000685',
+    serviceType: 'Huzur',
+    recommendedService: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish',
+    validityPeriod: '12 oy',
+    region: 'Buxoro viloyati',
+    district: 'Buxoro shahri',
+    result: 'Ijobiy',
+    status: 'Yangi',
+  },
+  {
+    id: '2',
+    documentNumber: 'IPTK-XUL-2026-002',
+    createdAt: '2026-04-19 11:40',
+    applicationNumber: 'ARZ-000007',
+    serviceRecipient: "YULDASHEV BEKZOD ILHOM O'G'LI",
+    serviceRecipientPinfl: '1000000000822',
+    serviceType: 'Madad',
+    recommendedService: 'Kichik hajmli “Madad” uylari xizmatiga joylashtirish',
+    validityPeriod: '6 oy',
+    region: 'Qashqadaryo viloyati',
+    district: 'Qarshi shahri',
+    result: 'Ijobiy',
+    status: 'Yuborilgan',
+  },
+  {
+    id: '3',
+    documentNumber: 'IPTK-XUL-2026-003',
+    createdAt: '2026-04-20 15:10',
+    applicationNumber: 'ARZ-000008',
+    serviceRecipient: "ABDULLAYEVA MADINA ULUG'BEK QIZI",
+    serviceRecipientPinfl: '1000000000959',
+    serviceType: 'Ijtimoiy ta’til',
+    recommendedService: '“Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish',
+    validityPeriod: '3 oy',
+    region: 'Surxondaryo viloyati',
+    district: 'Termiz shahri',
+    result: 'Ijobiy',
+    status: 'Tasdiqlangan',
+  },
+  {
+    id: '4',
+    documentNumber: 'IPTK-XUL-2026-004',
+    createdAt: '2026-04-21 09:30',
+    applicationNumber: 'ARZ-000009',
+    serviceRecipient: "MAMATOV SANJAR DILSHOD O'G'LI",
+    serviceRecipientPinfl: '1000000001096',
+    serviceType: 'Yangi kun',
+    recommendedService: '“Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish',
+    validityPeriod: '12 oy',
+    region: 'Navoiy viloyati',
+    district: 'Navoiy shahri',
+    result: 'Salbiy',
+    status: 'Bekor qilingan',
+  },
+])
+
 const serviceTypes = ref<ServiceTypeRecord[]>([
   {
     id: 'XIZ-2026-001',
@@ -1571,6 +1657,8 @@ const assessmentSearchInput = ref('')
 const assessmentSearchQuery = ref('')
 const protocolSearchInput = ref('')
 const protocolSearchQuery = ref('')
+const conclusionSearchInput = ref('')
+const conclusionSearchQuery = ref('')
 const isProtocolFilterOpen = ref(false)
 const openProtocolFilterField = ref<'status' | 'region' | null>(null)
 const openProtocolCalendarField = ref<'start' | 'end' | 'meeting' | null>(null)
@@ -1638,6 +1726,9 @@ const isAssessmentRowsPerPageOpen = ref(false)
 const protocolRowsPerPage = ref(20)
 const protocolCurrentPage = ref(1)
 const isProtocolRowsPerPageOpen = ref(false)
+const conclusionRowsPerPage = ref(20)
+const conclusionCurrentPage = ref(1)
+const isConclusionRowsPerPageOpen = ref(false)
 const isProtocolDialogOpen = ref(false)
 const protocolDialogMode = ref<'create' | 'view' | 'edit'>('create')
 const editingProtocolId = ref<string | null>(null)
@@ -2715,6 +2806,30 @@ const filteredProtocols = computed(() => {
   })
 })
 
+const filteredConclusions = computed(() => {
+  const query = conclusionSearchQuery.value.trim().toLowerCase()
+
+  return conclusions.value.filter((record) => {
+    const matchesQuery = !query || [
+      record.documentNumber,
+      record.createdAt,
+      formatDateDisplay(record.createdAt),
+      record.applicationNumber,
+      record.serviceRecipient,
+      record.serviceRecipientPinfl,
+      record.serviceType,
+      record.recommendedService,
+      record.validityPeriod,
+      record.region,
+      record.district,
+      record.result,
+      record.status,
+    ].some((value) => value.toLowerCase().includes(query))
+
+    return matchesQuery
+  })
+})
+
 const totalRows = computed(() => filteredCommissions.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
 const paginatedCommissions = computed(() => {
@@ -2751,6 +2866,19 @@ const protocolPaginationRange = computed(() => {
   return { start, end }
 })
 const protocolCurrentPageSummary = computed(() => `${protocolCurrentPage.value}/${protocolTotalPages.value}`)
+const conclusionTotalRows = computed(() => filteredConclusions.value.length)
+const conclusionTotalPages = computed(() => Math.max(1, Math.ceil(conclusionTotalRows.value / conclusionRowsPerPage.value)))
+const paginatedConclusions = computed(() => {
+  const start = (conclusionCurrentPage.value - 1) * conclusionRowsPerPage.value
+  return filteredConclusions.value.slice(start, start + conclusionRowsPerPage.value)
+})
+const conclusionPaginationRange = computed(() => {
+  const start = conclusionTotalRows.value === 0 ? 0 : (conclusionCurrentPage.value - 1) * conclusionRowsPerPage.value + 1
+  const end = Math.min(conclusionCurrentPage.value * conclusionRowsPerPage.value, conclusionTotalRows.value)
+  return { start, end }
+})
+const conclusionCurrentPageSummary = computed(() => `${conclusionCurrentPage.value}/${conclusionTotalPages.value}`)
+const conclusionHasActiveFilters = computed(() => Boolean(conclusionSearchQuery.value))
 const protocolActiveFilterCount = computed(() => {
   let count = 0
   if (appliedProtocolStatusFilter.value.length) count += 1
@@ -4964,6 +5092,49 @@ function setProtocolRowsPerPage(nextValue: number) {
   })
 }
 
+function handleConclusionSearchInput(value: string) {
+  conclusionSearchInput.value = value
+
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+
+  searchDebounceTimer = setTimeout(() => {
+    runTableLoading(() => {
+      conclusionSearchQuery.value = conclusionSearchInput.value
+      conclusionCurrentPage.value = 1
+    })
+    searchDebounceTimer = null
+  }, 1000)
+}
+
+function resetConclusionSearch() {
+  conclusionSearchInput.value = ''
+  conclusionSearchQuery.value = ''
+  runTableLoading(() => {
+    conclusionCurrentPage.value = 1
+  })
+}
+
+function goToConclusionPage(page: number) {
+  if (page < 1 || page > conclusionTotalPages.value || page === conclusionCurrentPage.value) return
+
+  runTableLoading(() => {
+    conclusionCurrentPage.value = page
+  })
+}
+
+function setConclusionRowsPerPageOpen(nextOpen: boolean) {
+  isConclusionRowsPerPageOpen.value = nextOpen
+}
+
+function setConclusionRowsPerPage(nextValue: number) {
+  runTableLoading(() => {
+    conclusionRowsPerPage.value = nextValue
+    conclusionCurrentPage.value = 1
+  })
+}
+
 function applyProtocolFilters() {
   const stopLoading = startActionLoading('protocol-filter-apply')
   isProtocolFilterOpen.value = false
@@ -6001,6 +6172,47 @@ async function downloadProtocols() {
       stopLoading()
     }
   }
+}
+
+async function downloadConclusions() {
+  const stopLoading = startActionLoading('conclusion-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+
+    const exportRows = filteredConclusions.value.map((record) => ({
+      ID: record.documentNumber,
+      Sana: formatDateDisplay(record.createdAt),
+      Ariza: record.applicationNumber,
+      'Xizmat oluvchi': record.serviceRecipient,
+      JSHSHIR: record.serviceRecipientPinfl,
+      'Xizmat turi': record.serviceType,
+      Hudud: record.region,
+      Tuman: record.district,
+      Natija: record.result,
+    }))
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Xulosalar')
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, 'iptk-xulosalar.xlsx')
+      pushFeedback('success', 'Xulosalar ro‘yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'conclusion-download') {
+      stopLoading()
+    }
+  }
+}
+
+function viewConclusion(record: ConclusionRecord) {
+  runActionIconLoading(`conclusion-view-${record.id}`, () => {
+    pushFeedback('info', `${record.documentNumber} raqamli xulosa ko‘rish uchun ochildi.`)
+    openActionMenuId.value = null
+  })
 }
 
 function nextServiceTypeId() {
@@ -7372,7 +7584,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-status')"
                             data-dropdown-search-key="report-filter-status"
@@ -7426,7 +7638,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-step')"
                             data-dropdown-search-key="report-filter-step"
@@ -7480,7 +7692,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-region')"
                             data-dropdown-search-key="report-filter-region"
@@ -7535,7 +7747,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('report-filter-district')"
                             data-dropdown-search-key="report-filter-district"
@@ -7593,7 +7805,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-background">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               :model-value="getDropdownSearchValue(`report-filter-${group.key}`)"
                               :data-dropdown-search-key="`report-filter-${group.key}`"
@@ -8119,7 +8331,7 @@ onUnmounted(() => {
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
-              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 :model-value="searchInput"
                           class="pl-9"
@@ -8209,7 +8421,7 @@ onUnmounted(() => {
                           class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                         >
                           <div class="relative mb-1">
-                            <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               :model-value="getDropdownSearchValue('commission-filter-status')"
                               data-dropdown-search-key="commission-filter-status"
@@ -8275,7 +8487,7 @@ onUnmounted(() => {
                         >
                           <div class="sticky top-0 z-10 mb-1 bg-background">
                             <div class="relative">
-                              <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                              <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                               <Input
                                 :model-value="getDropdownSearchValue('commission-filter-region')"
                                 data-dropdown-search-key="commission-filter-region"
@@ -9330,7 +9542,7 @@ onUnmounted(() => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-popover">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('commission-form-region')"
                         data-dropdown-search-key="commission-form-region"
@@ -9839,7 +10051,7 @@ onUnmounted(() => {
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               :model-value="assessmentSearchInput"
               class="pl-9"
@@ -9916,7 +10128,7 @@ onUnmounted(() => {
                         class="overflow-hidden rounded-md border border-border bg-background p-1 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
                       >
                         <div class="relative mb-1">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('assessment-filter-status')"
                             data-dropdown-search-key="assessment-filter-status"
@@ -9971,7 +10183,7 @@ onUnmounted(() => {
                       >
                         <div class="sticky top-0 z-10 mb-1 bg-background">
                           <div class="relative">
-                            <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                               :model-value="getDropdownSearchValue('assessment-filter-region')"
                               data-dropdown-search-key="assessment-filter-region"
@@ -10796,7 +11008,7 @@ onUnmounted(() => {
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               :model-value="protocolSearchInput"
               class="pl-9"
@@ -10853,7 +11065,7 @@ onUnmounted(() => {
                       class="absolute left-0 right-0 top-[calc(100%+6px)] z-50 rounded-lg border border-border bg-popover p-1 shadow-lg"
                     >
                       <div class="relative mb-1">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('protocol-filter-status')"
                           data-dropdown-search-key="protocol-filter-status"
@@ -10897,7 +11109,7 @@ onUnmounted(() => {
                     >
                       <div class="sticky top-0 z-10 mb-1 bg-popover">
                         <div class="relative">
-                          <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                          <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                           <Input
                             :model-value="getDropdownSearchValue('protocol-filter-region')"
                             data-dropdown-search-key="protocol-filter-region"
@@ -11544,7 +11756,7 @@ onUnmounted(() => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-popover">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('protocol-form-region')"
                         data-dropdown-search-key="protocol-form-region"
@@ -11586,7 +11798,7 @@ onUnmounted(() => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-popover">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('protocol-form-district')"
                         data-dropdown-search-key="protocol-form-district"
@@ -11707,6 +11919,363 @@ onUnmounted(() => {
       </div>
     </template>
 
+    <template v-else-if="isConclusionsPage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div
+          class="absolute left-0 top-0 h-1"
+          :class="[
+            feedback.type === 'success' && 'bg-emerald-500',
+            feedback.type === 'error' && 'bg-rose-500',
+            feedback.type === 'info' && 'bg-sky-500',
+          ]"
+          :style="{ width: `${notificationProgress}%` }"
+        />
+        <span
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedback.title }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="conclusionSearchInput"
+              class="pl-9"
+              :placeholder="t('Qidirish')"
+              @update:model-value="handleConclusionSearchInput(String($event ?? ''))"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'conclusion-download'"
+              @click="downloadConclusions"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'conclusion-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download
+                v-else
+                class="h-4 w-4"
+              />
+              {{ t('Yuklab olish') }}
+            </Button>
+          </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+          <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <div v-if="paginatedConclusions.length === 0" class="flex min-h-80 items-center justify-center p-6 text-center">
+              <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  :disabled="isTableLoading || !conclusionHasActiveFilters"
+                  @click="resetConclusionSearch"
+                >
+                  {{ t('Tozalash') }}
+                </Button>
+              </div>
+            </div>
+
+            <div v-else class="grid gap-3 p-3 md:grid-cols-2 xl:hidden">
+              <Card
+                v-for="record in paginatedConclusions"
+                :key="record.id"
+                class="rounded-xl border-border bg-card"
+              >
+                <CardContent class="p-4">
+                  <div class="mb-4 flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="font-semibold text-foreground">{{ record.documentNumber }}</p>
+                      <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', conclusionResultClassMap[record.result])">
+                        {{ record.result }}
+                      </span>
+                      <DropdownMenuRoot @update:open="setActionMenuOpen(`conclusion-${record.id}`, $event)">
+                        <DropdownMenuTrigger as-child>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            :class="openActionMenuId === `conclusion-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                          >
+                            <LoaderCircle
+                              v-if="isActionButtonLoading(`conclusion-view-${record.id}`)"
+                              class="h-4 w-4 animate-spin"
+                            />
+                            <Ellipsis v-else class="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuContent
+                            side="left"
+                            align="start"
+                            :side-offset="6"
+                            :collision-padding="12"
+                            class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                          >
+                            <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewConclusion(record)">
+                              <Eye class="h-4 w-4 shrink-0" />
+                              <span>{{ t("Ko'rish") }}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuRoot>
+                    </div>
+                  </div>
+                  <div class="grid gap-3 text-sm">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat oluvchi') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.serviceRecipient }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.serviceType }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <table class="min-w-[1120px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Natija') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedConclusions.length === 0">
+                  <td colspan="6" class="border-b border-border px-4 py-12 text-center">
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                      <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="isTableLoading || !conclusionHasActiveFilters"
+                        @click="resetConclusionSearch"
+                      >
+                        {{ t('Tozalash') }}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedConclusions"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.serviceRecipient }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.serviceType }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.region }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', conclusionResultClassMap[record.result])">
+                      {{ record.result }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(`conclusion-${record.id}`, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === `conclusion-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <LoaderCircle
+                            v-if="isActionButtonLoading(`conclusion-view-${record.id}`)"
+                            class="h-4 w-4 animate-spin"
+                          />
+                          <Ellipsis v-else class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewConclusion(record)">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>{{ t("Ko'rish") }}</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
+                <DropdownMenuRoot @update:open="setConclusionRowsPerPageOpen($event)">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isConclusionRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    >
+                      <span>{{ conclusionRowsPerPage }}</span>
+                      <ChevronRight class="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @select.prevent="setConclusionRowsPerPage(option)"
+                      >
+                        <span :class="option === conclusionRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                          {{ option }}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
+                <span class="font-medium text-foreground">{{ conclusionPaginationRange.start }}-{{ conclusionPaginationRange.end }} / {{ conclusionTotalRows }}</span>
+              </div>
+            </div>
+
+            <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || conclusionCurrentPage === 1"
+                @click="goToConclusionPage(1)"
+              >
+                <ChevronsLeft class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || conclusionCurrentPage === 1"
+                @click="goToConclusionPage(conclusionCurrentPage - 1)"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </Button>
+              <span class="min-w-14 text-center text-sm font-semibold text-foreground">
+                {{ conclusionCurrentPageSummary }}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || conclusionCurrentPage === conclusionTotalPages"
+                @click="goToConclusionPage(conclusionCurrentPage + 1)"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || conclusionCurrentPage === conclusionTotalPages"
+                @click="goToConclusionPage(conclusionTotalPages)"
+              >
+                <ChevronsRight class="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <template v-else-if="isServiceTypesPage">
       <div
         v-if="feedback"
@@ -11754,7 +12323,7 @@ onUnmounted(() => {
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               :model-value="serviceTypeSearchInput"
               class="pl-9"
@@ -12187,7 +12756,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-popover">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('service-type-diagnoses')"
                           data-dropdown-search-key="service-type-diagnoses"
@@ -12245,7 +12814,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-popover">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('service-type-contraindications')"
                           data-dropdown-search-key="service-type-contraindications"
@@ -12304,7 +12873,7 @@ onUnmounted(() => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-popover">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('service-type-documents')"
                         data-dropdown-search-key="service-type-documents"
@@ -12352,7 +12921,7 @@ onUnmounted(() => {
                   class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                 >
                   <div class="relative mb-1">
-                    <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       :model-value="getDropdownSearchValue('service-type-status')"
                       data-dropdown-search-key="service-type-status"
@@ -12657,7 +13226,7 @@ onUnmounted(() => {
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               :model-value="diagnosisSearchInput"
               class="pl-9"
@@ -13137,7 +13706,7 @@ onUnmounted(() => {
                     class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
                   >
                     <div class="relative mb-1">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('diagnosis-icd')"
                         data-dropdown-search-key="diagnosis-icd"
@@ -13178,7 +13747,7 @@ onUnmounted(() => {
                   </button>
                   <div v-if="isDiagnosisStatusOpen" class="absolute left-0 top-full z-50 mt-2 w-full rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg">
                     <div class="relative mb-1">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('diagnosis-status')"
                         data-dropdown-search-key="diagnosis-status"
@@ -13438,7 +14007,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-background">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-status')"
                           data-dropdown-search-key="report-page-filter-status"
@@ -13492,7 +14061,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-background">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-step')"
                           data-dropdown-search-key="report-page-filter-step"
@@ -13546,7 +14115,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-background">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-region')"
                           data-dropdown-search-key="report-page-filter-region"
@@ -13601,7 +14170,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-background">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue('report-page-filter-district')"
                           data-dropdown-search-key="report-page-filter-district"
@@ -13659,7 +14228,7 @@ onUnmounted(() => {
                   >
                     <div class="sticky top-0 z-10 mb-1 bg-background">
                       <div class="relative">
-                        <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                        <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           :model-value="getDropdownSearchValue(`report-page-filter-${group.key}`)"
                           :data-dropdown-search-key="`report-page-filter-${group.key}`"

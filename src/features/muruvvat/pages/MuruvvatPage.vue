@@ -4092,7 +4092,7 @@ watch(serviceRecipientLookupResult, () => {
         <template v-if="isApplicationsListPage">
           <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
-              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 :model-value="searchInput"
                 :placeholder="t('Qidirish')"
@@ -4200,7 +4200,7 @@ watch(serviceRecipientLookupResult, () => {
                           >
                             <div class="mb-1">
                               <div class="relative">
-                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-status')"
                                   data-dropdown-search-key="muruvvat-filter-status"
@@ -4271,7 +4271,7 @@ watch(serviceRecipientLookupResult, () => {
                           >
                             <div class="sticky top-0 z-10 mb-1 bg-background">
                               <div class="relative">
-                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-step')"
                                   data-dropdown-search-key="muruvvat-filter-step"
@@ -4339,7 +4339,7 @@ watch(serviceRecipientLookupResult, () => {
                           >
                             <div class="sticky top-0 z-10 mb-1 bg-background">
                               <div class="relative">
-                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-region')"
                                   data-dropdown-search-key="muruvvat-filter-region"
@@ -4408,7 +4408,7 @@ watch(serviceRecipientLookupResult, () => {
                           >
                             <div class="sticky top-0 z-10 mb-1 bg-background">
                               <div class="relative">
-                                <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                   :model-value="getDropdownSearchValue('muruvvat-filter-district')"
                                   data-dropdown-search-key="muruvvat-filter-district"
@@ -5332,7 +5332,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-region')"
                         data-dropdown-search-key="muruvvat-applicant-region"
@@ -5387,7 +5387,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-district')"
                         data-dropdown-search-key="muruvvat-applicant-district"
@@ -5442,7 +5442,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-applicant-mfy')"
                         data-dropdown-search-key="muruvvat-applicant-mfy"
@@ -5631,7 +5631,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-region')"
                         data-dropdown-search-key="muruvvat-recipient-region"
@@ -5686,7 +5686,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-district')"
                         data-dropdown-search-key="muruvvat-recipient-district"
@@ -5741,7 +5741,7 @@ watch(serviceRecipientLookupResult, () => {
                 >
                   <div class="sticky top-0 z-10 mb-1 bg-background">
                     <div class="relative">
-                      <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         :model-value="getDropdownSearchValue('muruvvat-recipient-mfy')"
                         data-dropdown-search-key="muruvvat-recipient-mfy"
@@ -5855,7 +5855,7 @@ watch(serviceRecipientLookupResult, () => {
               >
                 <div class="sticky top-0 z-10 mb-1 bg-background">
                   <div class="relative">
-                    <Search class="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Search class="pointer-events-none absolute z-10 left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       :model-value="getDropdownSearchValue('muruvvat-service-option')"
                       data-dropdown-search-key="muruvvat-service-option"

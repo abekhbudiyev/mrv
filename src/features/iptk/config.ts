@@ -88,6 +88,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: '',
   },
   {
+    key: 'applications-conclusions',
+    title: 'Xulosalar',
+    description: '',
+    route: '/apps/iptk/applications/conclusions',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Xulosalar'],
+    sectionTitle: 'Xulosalar',
+    sectionDescription: '',
+  },
+  {
     key: 'applications-report',
     title: "Arizalar bo'yicha hisobot",
     description: '',
@@ -173,6 +182,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         id: 'applications-protocol',
         title: 'Bayonnoma',
         route: '/apps/iptk/applications/protocol',
+        icon: NotebookText,
+      },
+      {
+        id: 'applications-conclusions',
+        title: 'Xulosalar',
+        route: '/apps/iptk/applications/conclusions',
         icon: NotebookText,
       },
     ],
