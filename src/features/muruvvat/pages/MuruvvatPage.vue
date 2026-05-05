@@ -66,6 +66,7 @@ type ApplicationRow = {
   pinfl: string
   serviceId: ServiceOption['id']
   serviceType: string
+  careQueueCategory?: CareQueueCategory
   region: string
   district: string
   status: ApplicationStatus
@@ -95,6 +96,8 @@ type ServiceOption = {
   label: string
   shortLabel?: string
 }
+
+type CareQueueCategory = 'Navbat asosida' | 'Navbatsiz'
 
 type ServiceEligibilityOption = ServiceOption & {
   eligible: boolean
@@ -393,17 +396,20 @@ const serviceOptions: ServiceOption[] = [
   { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish', shortLabel: 'Ijtimoiy ta’til' },
   { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish', shortLabel: 'Uy sharoitida qarab turish' },
   { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish', shortLabel: 'Yangi kun' },
+  { id: 'gamxorlik', label: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” bo‘yicha joylashtirish', shortLabel: 'G‘amxo‘rlik' },
 ]
 const demoApplicationCases = [
   { step: 'Ariza yaratildi', serviceId: 'huzur' },
   { step: 'Ariza yaratildi', serviceId: 'social-holiday' },
+  { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbat asosida' },
+  { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbatsiz' },
   ...applicationSteps
     .filter((step) => step !== 'Ariza yaratildi')
     .map((step, index) => ({
       step,
       serviceId: serviceOptions[(index + 1) % serviceOptions.length]?.id ?? 'huzur',
     })),
-] as const satisfies ReadonlyArray<{ step: ApplicationStep; serviceId: ServiceOption['id'] }>
+] as const satisfies ReadonlyArray<{ step: ApplicationStep; serviceId: ServiceOption['id']; careQueueCategory?: CareQueueCategory }>
 const diagnosisOptions = [
   { code: 'F71', label: 'Mo‘tadil darajadagi aqliy zaiflik' },
   { code: 'F72', label: 'Og‘ir darajadagi aqliy zaiflik' },
@@ -444,6 +450,12 @@ const serviceRequirements = {
     disabilityGroups: ['I guruh', 'II guruh'],
     disabilityGroupText: 'I yoki II guruh',
   },
+  gamxorlik: {
+    diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
+    diagnosisText: 'F71, F72, F73 yoki F00-F03',
+    disabilityGroups: ['I guruh', 'II guruh'],
+    disabilityGroupText: 'I yoki II guruh',
+  },
 } as const
 const iptkFlowSteps: FlowStepInfo[] = [
   {
@@ -469,22 +481,32 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'F',
     title: 'Funksionallik baholandi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
-    description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi.',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Huzur', 'Madad'],
+    description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi. G‘amxo‘rlik bo‘yicha ariza bu baholashdan o‘tkazilmaydi.',
     responsible: '“Inson” markazi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; WHODAS 2.0 baholashi',
-    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'Madad va G‘amxo‘rlik bo‘yicha qo‘shimcha baholash bosqichiga o‘tiladi'],
+    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'Huzur va Madad bo‘yicha parvarish baholash bosqichiga o‘tiladi'],
   },
   {
     id: 'H',
     title: 'Parvarish baholandi',
-    services: ['Madad', 'G‘amxo‘rlik'],
-    description: 'Madad va G‘amxo‘rlik bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
+    services: ['Huzur', 'Madad'],
+    description: 'Huzur va Madad bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
     responsible: '“Inson” markazi xodimi, oilaviy shifokor, FYO‘B organi raisi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; VMQ-123 reglamenti; Barthel va Lawton shkalalari',
-    outcomes: ['Madad bo‘yicha 62 ballgacha bo‘lsa IPTKga yuboriladi', '62 balldan yuqori bo‘lsa so‘rovnoma bekor qilinadi', 'G‘amxo‘rlik bo‘yicha navbat yoki navbatsiz toifa aniqlanadi'],
+    outcomes: ['Parvarishga muhtojlik tasdiqlansa IPTKga yuboriladi', 'Moslik tasdiqlanmasa so‘rovnoma bekor qilinadi'],
+  },
+  {
+    id: 'G',
+    title: 'G‘amxo‘rlik toifasi aniqlandi',
+    services: ['G‘amxo‘rlik'],
+    description: 'G‘amxo‘rlik bo‘yicha ariza yaratilganidan keyin baholashdan o‘tkazilmaydi. Tizim arizani navbat asosida yoki navbatsiz toifaga ajratadi.',
+    responsible: 'Tizim / “Inson” markazi',
+    duration: 'Ariza yaratilgandan keyin',
+    legalBasis: 'G‘amxo‘rlik bo‘yicha xizmat jarayoni',
+    outcomes: ['Navbat asosida bo‘lsa komissiyaga yuborish mumkin bo‘ladi', 'Navbatsiz bo‘lsa qo‘shimcha hujjatlar so‘raladi'],
   },
   {
     id: 'I',
@@ -700,13 +722,13 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
   {
     id: 'barthel-lawton',
     title: 'Barthel va Lawton shkalalari',
-    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. Yangi nizomda ayniqsa Madad xizmati va G‘amxo‘rlik bo‘yicha parvarish/yashash sharoitini baholash bosqichida muhim.',
+    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. G‘amxo‘rlik arizasi baholashdan o‘tkazilmaydi, u yaratilganidan keyin navbat asosida yoki navbatsiz toifaga ajratiladi.',
     stepIds: ['F', 'H'],
     purpose: 'Shaxsning o‘ziga-o‘zi xizmat ko‘rsatish, kundalik faoliyatlarni bajara olish va parvarishga ehtiyoj darajasini aniqlash.',
     usage: [
-      'Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
-      'G‘amxo‘rlik markaziga navbat/navbatsiz joylashtirish toifasini aniqlashda parvarishga muhtojlik mezonlaridan biri sifatida ishlatiladi.',
-      'Madad bo‘yicha 62 ballgacha bo‘lgan parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
+      'Huzur va Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
+      'G‘amxo‘rlik bo‘yicha navbat asosida/navbatsiz toifa baholash dialogisiz alohida aniqlanadi.',
+      'Parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
     ],
   },
   {
@@ -754,20 +776,18 @@ flowchart TD
     C --> D{"Rad etish<br/>asosi bormi?"}
 
     D -->|Ha| R["INSON MARKAZI<br/>arizani bekor qiladi va xabarnoma yuboradi<br/>Bosqich:<br/>Bekor qilindi"]
-    D -->|Yo'q| F["INSON MARKAZI<br/>WHODAS 2.0 bo'yicha funksionallikni tekshiradi<br/>Bosqich:<br/>Baholash jarayoni"]
-    F --> E{"Xizmat turi"}
+    D -->|Yo'q| E{"Xizmat turi"}
 
     E -->|"Yangi kun"| J["INSON MARKAZI<br/>ma'lumot va hujjatlarni IPTKga yuboradi<br/>Bosqich:<br/>IPTKga yuborildi"]
     E -->|"Uy sharoitida<br/>qarab turish"| J
     E -->|"Ijtimoiy ta'til"| J
-    E -->|"Madad"| H["ISHCHI GURUH<br/>parvarish va yashash sharoitini baholaydi<br/>Bosqich:<br/>Baholash jarayoni"]
-    E -->|"G'amxo'rlik"| H
+    E -->|"Huzur / Madad"| F["INSON MARKAZI<br/>baholash jarayonini boshlaydi<br/>Bosqich:<br/>Baholash jarayoni"]
+    F --> H["ISHCHI GURUH<br/>parvarish va yashash sharoitini baholaydi<br/>Bosqich:<br/>Baholash jarayoni"]
+    E -->|"G'amxo'rlik"| G{"G'amxo'rlik<br/>toifasi"}
 
-    H --> M1{"Madad xizmati<br/>bo'yichami?"}
-    M1 -->|Ha| M2{"Barthel + Lawton<br/>62 ballgachami?"}
+    H --> M2{"Parvarishga<br/>muhtojlik tasdiqlandimi?"}
     M2 -->|Yo'q| R
     M2 -->|Ha| J
-    M1 -->|Yo'q| G{"G'amxo'rlik<br/>toifasi"}
     G -->|"Navbat asosida"| J
     G -->|"Navbatsiz"| I["ARIZACHI VA INSON MARKAZI<br/>qo'shimcha hujjatlarni yig'adi<br/>Bosqich:<br/>Qo'shimcha hujjatlar yig'ilmoqda"]
     I --> J
@@ -797,7 +817,7 @@ flowchart TD
     classDef channel fill:#f0fdf4,stroke:#86efac,color:#166534,stroke-width:1.5px;
 
     class A1,A2,A3,C,N,P neutral;
-    class D,D2,E,G,M1,M2,Z,S decision;
+    class D,D2,E,G,M2,Z,S decision;
     class R,W danger;
     class F,H,J,L,Q info;
     class I warning;
@@ -808,6 +828,7 @@ flowchart TD
     click A handleIptkFlowNodeClick
     click C handleIptkFlowNodeClick
     click F handleIptkFlowNodeClick
+    click G handleIptkFlowNodeClick
     click H handleIptkFlowNodeClick
     click I handleIptkFlowNodeClick
     click J handleIptkFlowNodeClick
@@ -839,7 +860,9 @@ const monthNames = [
   'Dekabr',
 ] as const
 
-const applicationRows = ref(demoApplicationCases.map(({ step, serviceId }, index) => {
+const applicationRows = ref(demoApplicationCases.map((applicationCase, index) => {
+  const { step, serviceId } = applicationCase
+  const careQueueCategory = 'careQueueCategory' in applicationCase ? applicationCase.careQueueCategory : undefined
   const person = demoPeople[index % demoPeople.length] ?? demoPeople[0]
   const regionEntry = demoRegions[index % demoRegions.length] ?? demoRegions[0]
   const [region, district] = regionEntry
@@ -857,6 +880,7 @@ const applicationRows = ref(demoApplicationCases.map(({ step, serviceId }, index
     pinfl: pinflSeed,
     serviceId: service?.id ?? 'huzur',
     serviceType: service?.label ?? 'Xizmat turi belgilanmagan',
+    careQueueCategory,
     region,
     district,
     status,
@@ -1208,6 +1232,7 @@ function getMedicalDocumentsForService(serviceId: string) {
     case 'social-holiday':
     case 'home-care':
     case 'yangi-kun':
+    case 'gamxorlik':
       return communityMedicalDocumentFields
     default:
       return []
@@ -3030,8 +3055,20 @@ function requiresAssessmentBeforeIptk(row: ApplicationRow) {
   return row.step === 'Ariza yaratildi' && ['huzur', 'madad'].includes(row.serviceId)
 }
 
+function isGamxorlikApplication(row: ApplicationRow) {
+  return row.serviceId === 'gamxorlik'
+}
+
+function canRequestAdditionalDocuments(row: ApplicationRow) {
+  return row.step === 'Ariza yaratildi'
+    && isGamxorlikApplication(row)
+    && row.careQueueCategory === 'Navbatsiz'
+}
+
 function canSendDirectlyToIptk(row: ApplicationRow) {
-  return row.step === 'Ariza yaratildi' && !['huzur', 'madad'].includes(row.serviceId)
+  return row.step === 'Ariza yaratildi'
+    && !['huzur', 'madad'].includes(row.serviceId)
+    && !canRequestAdditionalDocuments(row)
 }
 
 function canApproveApplication(row: ApplicationRow) {
@@ -3082,6 +3119,22 @@ function confirmSendToIptk(row: ApplicationRow) {
       runTableLoading(() => {
         updateRowStatus(row.id, 'Jarayonda', 'IPTKga yuborildi')
         showNotification(buildOperationNotification('IPTKga yuborish', 'IPTKga yuborish', 'Ariza', row.id))
+      })
+    },
+  })
+}
+
+function confirmRequestAdditionalDocuments(row: ApplicationRow) {
+  const copy = buildConfirmationCopy('Ariza', "hujjat so'ral", "qo'shimcha hujjat so'rash", row.id)
+  openConfirmation({
+    tone: 'success',
+    title: copy.title,
+    description: copy.description,
+    confirmLabel: "Hujjat so'rash",
+    action: () => {
+      runTableLoading(() => {
+        updateRowStatus(row.id, 'Jarayonda', 'Qo‘shimcha hujjatlar yig‘ilmoqda')
+        showNotification(buildOperationNotification("Hujjat so'rash", "qo'shimcha hujjat so'rash", 'Ariza', row.id))
       })
     },
   })
@@ -4853,6 +4906,14 @@ watch(serviceRecipientLookupResult, () => {
                                   <span>{{ t('IPTKga yuborish') }}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  v-if="canRequestAdditionalDocuments(row)"
+                                  class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                  @click="confirmRequestAdditionalDocuments(row)"
+                                >
+                                  <FilePenLine class="h-4 w-4 shrink-0" />
+                                  <span>{{ t("Hujjat so'rash") }}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   v-if="canApproveApplication(row)"
                                   class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                   @click="confirmApprove(row)"
@@ -5052,6 +5113,14 @@ watch(serviceRecipientLookupResult, () => {
                               >
                                 <Check class="h-4 w-4 shrink-0" />
                                 <span>{{ t('IPTKga yuborish') }}</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                v-if="canRequestAdditionalDocuments(row)"
+                                class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                                @click="confirmRequestAdditionalDocuments(row)"
+                              >
+                                <FilePenLine class="h-4 w-4 shrink-0" />
+                                <span>{{ t("Hujjat so'rash") }}</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 v-if="canApproveApplication(row)"

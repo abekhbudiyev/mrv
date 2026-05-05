@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { Activity, BadgeCheck, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
+import { Activity, BadgeCheck, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, Info, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,6 +38,7 @@ type ProtocolStatusTabValue = 'all' | ProtocolStatus
 type ConclusionStatus = 'Yangi' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ConclusionResult = 'Ijobiy' | 'Salbiy'
 type CommissionWorkflowStage = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+type DocumentFlowKind = 'commission' | 'assessment' | 'protocol'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
 type AssessmentAnswers = Record<string, string>
@@ -70,6 +71,15 @@ type DocumentHistoryEntry = {
   performer: string
   performedAt: string
   tone: 'process' | 'success' | 'destructive'
+}
+
+type DocumentFlowStep = {
+  id: string
+  actor: string
+  title: string
+  description: string
+  stage?: string
+  tone: 'start' | 'process' | 'success' | 'destructive'
 }
 
 const NOTIFICATION_DURATION = 2600
@@ -368,6 +378,190 @@ const protocolStatusClassMap: Record<ProtocolStatus, string> = {
 const conclusionResultClassMap: Record<ConclusionResult, string> = {
   Ijobiy: statusClassMap.Tasdiqlangan,
   Salbiy: statusClassMap['Bekor qilingan'],
+}
+const documentFlowToneClassMap: Record<DocumentFlowStep['tone'], string> = {
+  start: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/25 dark:text-sky-200',
+  process: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/25 dark:text-amber-200',
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/25 dark:text-emerald-200',
+  destructive: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-200',
+}
+const documentFlowDefinitions: Record<DocumentFlowKind, { title: string; description: string; steps: DocumentFlowStep[] }> = {
+  commission: {
+    title: 'Komissiyalar tarkibi flow',
+    description: 'Komissiya tarkibini shakllantirish, yuborish va tasdiqlash bosqichlari.',
+    steps: [
+      {
+        id: 'commission-create',
+        actor: 'HUDUDIY KOTIB',
+        title: 'Komissiya tarkibini shakllantiradi',
+        description: 'Viloyat tanlanadi, rais, rais o‘rinbosari, kotib va a’zolar JSHSHIR orqali aniqlanadi.',
+        stage: 'Yangi',
+        tone: 'start',
+      },
+      {
+        id: 'commission-edit',
+        actor: 'HUDUDIY KOTIB',
+        title: 'Tarkibni tahrirlaydi',
+        description: 'Qoralama yoki bekor qilingan hujjat ma’lumotlari yangilanadi.',
+        stage: 'Tahrirlangan',
+        tone: 'process',
+      },
+      {
+        id: 'commission-submit',
+        actor: 'HUDUDIY KOTIB',
+        title: 'Tasdiqlashga yuboradi',
+        description: 'Tarkib hujjati rais ko‘rib chiqishi uchun yuboriladi.',
+        stage: 'Yuborilgan',
+        tone: 'process',
+      },
+      {
+        id: 'commission-decision',
+        actor: 'RAIS',
+        title: 'Qaror qabul qiladi',
+        description: 'Rais tarkibni tasdiqlaydi yoki qayta ishlash uchun bekor qiladi.',
+        tone: 'process',
+      },
+      {
+        id: 'commission-approved',
+        actor: 'RAIS',
+        title: 'Tarkib tasdiqlanadi',
+        description: 'Komissiya tarkibi amalda foydalanish uchun tasdiqlangan holatga o‘tadi.',
+        stage: 'Tasdiqlangan',
+        tone: 'success',
+      },
+      {
+        id: 'commission-canceled',
+        actor: 'RAIS',
+        title: 'Tarkib bekor qilinadi',
+        description: 'Bekor qilingan hujjat kotib tomonidan qayta tahrirlanishi va yuborilishi mumkin.',
+        stage: 'Bekor qilingan',
+        tone: 'destructive',
+      },
+    ],
+  },
+  assessment: {
+    title: 'Baholash flow',
+    description: 'Barthel va Lawton so‘rovnomasi asosida baholash hujjati yuritilishi.',
+    steps: [
+      {
+        id: 'assessment-create',
+        actor: 'INSON MARKAZI',
+        title: 'Baholash hujjatini ochadi',
+        description: 'Xizmat oluvchi ma’lumotlari, tashxis, nogironlik guruhi va manzil ma’lumotlari ko‘rsatiladi.',
+        stage: 'Yangi',
+        tone: 'start',
+      },
+      {
+        id: 'assessment-fill',
+        actor: 'ISHCHI GURUH',
+        title: 'So‘rovnomani to‘ldiradi',
+        description: 'Barthel va Lawton savollariga javoblar kiritiladi, natija tizimda hisoblanadi.',
+        stage: 'Tahrirlangan',
+        tone: 'process',
+      },
+      {
+        id: 'assessment-submit',
+        actor: 'INSON MARKAZI',
+        title: 'Baholashni yuboradi',
+        description: 'So‘rovnoma to‘liq bo‘lsa, baholash hujjati tasdiqlash uchun yuboriladi.',
+        stage: 'Yuborilgan',
+        tone: 'process',
+      },
+      {
+        id: 'assessment-decision',
+        actor: 'MAS’UL XODIM',
+        title: 'Natijani ko‘rib chiqadi',
+        description: 'Yuborilgan baholash tasdiqlanadi yoki bekor qilinadi.',
+        tone: 'process',
+      },
+      {
+        id: 'assessment-approved',
+        actor: 'MAS’UL XODIM',
+        title: 'Baholash tasdiqlanadi',
+        description: 'Natija ariza keyingi bosqichga o‘tishi uchun asos bo‘ladi.',
+        stage: 'Tasdiqlangan',
+        tone: 'success',
+      },
+      {
+        id: 'assessment-canceled',
+        actor: 'MAS’UL XODIM',
+        title: 'Baholash bekor qilinadi',
+        description: 'Bekor qilingan hujjat qayta tahrirlanib, yana yuborilishi mumkin.',
+        stage: 'Bekor qilingan',
+        tone: 'destructive',
+      },
+    ],
+  },
+  protocol: {
+    title: 'Bayonnoma flow',
+    description: 'IPTK yig‘ilishi bayonnomasini shakllantirishdan tasdiqlashgacha bo‘lgan jarayon.',
+    steps: [
+      {
+        id: 'protocol-create',
+        actor: 'KOTIB',
+        title: 'Bayonnoma qoralamasini yaratadi',
+        description: 'Yig‘ilish sanasi, hudud, tuman va manzil kiritiladi, IPTK qabul qilgan arizalar shakllantiriladi.',
+        stage: 'Yangi',
+        tone: 'start',
+      },
+      {
+        id: 'protocol-edit',
+        actor: 'KOTIB',
+        title: 'Bayonnomani tahrirlaydi',
+        description: 'Yig‘ilish ma’lumotlari va arizalar ro‘yxati tekshiriladi.',
+        stage: 'Tahrirlangan',
+        tone: 'process',
+      },
+      {
+        id: 'protocol-plan',
+        actor: 'KOTIB',
+        title: 'Rejani tasdiqlaydi',
+        description: 'Yig‘ilish rejasi tasdiqlanib, komissiyaga yuborishga tayyorlanadi.',
+        stage: 'Reja tasdiqlangan',
+        tone: 'process',
+      },
+      {
+        id: 'protocol-commission',
+        actor: 'KOTIB',
+        title: 'Komissiyaga yuboradi',
+        description: 'Bayonnoma komissiya ko‘rib chiqishi uchun yuboriladi.',
+        stage: 'Komissiyaga yuborilgan',
+        tone: 'process',
+      },
+      {
+        id: 'protocol-agreement',
+        actor: 'KOMISSIYA',
+        title: 'Kelishish uchun yuboradi',
+        description: 'Komissiya bayonnomani kelishish bosqichiga o‘tkazadi.',
+        stage: 'Kelishish uchun yuborilgan',
+        tone: 'process',
+      },
+      {
+        id: 'protocol-approval',
+        actor: 'KOMISSIYA',
+        title: 'Tasdiqlash uchun yuboradi',
+        description: 'Kelishilgan bayonnoma rais tasdiqlashi uchun yuboriladi.',
+        stage: 'Tasdiqlash uchun yuborilgan',
+        tone: 'process',
+      },
+      {
+        id: 'protocol-approved',
+        actor: 'RAIS',
+        title: 'Bayonnoma tasdiqlanadi',
+        description: 'Bayonnoma yakuniy tasdiqlangan holatga o‘tadi.',
+        stage: 'Tasdiqlangan',
+        tone: 'success',
+      },
+      {
+        id: 'protocol-canceled',
+        actor: 'RAIS',
+        title: 'Bayonnoma bekor qilinadi',
+        description: 'Bekor qilingan bayonnoma qayta kelishish uchun yuborilishi mumkin.',
+        stage: 'Bekor qilingan',
+        tone: 'destructive',
+      },
+    ],
+  },
 }
 
 const applicationReportStatuses: ApplicationReportStatus[] = ['Jarayonda', 'Tasdiqlangan', 'Bekor qilingan']
@@ -1650,6 +1844,7 @@ const notificationRemaining = ref(NOTIFICATION_DURATION)
 const isTableLoading = ref(false)
 const actionLoadingKey = ref<string | null>(null)
 const isConfirmationLoading = ref(false)
+const documentFlowDialogKind = ref<DocumentFlowKind | null>(null)
 const dropdownSearchQueries = ref<Record<string, string>>({})
 const searchInput = ref('')
 const searchQuery = ref('')
@@ -1781,6 +1976,7 @@ const isAnyDialogOpen = computed(() => (
   || isProtocolDialogOpen.value
   || isServiceTypeDialogOpen.value
   || isDiagnosisDialogOpen.value
+  || Boolean(documentFlowDialogKind.value)
   || Boolean(selectedViewRecord.value)
   || Boolean(selectedAssessmentViewRecord.value)
   || Boolean(selectedServiceTypeRecord.value)
@@ -1829,6 +2025,19 @@ const selectedViewLeadership = computed(() => {
     },
   ]
 })
+
+const activeDocumentFlow = computed(() => {
+  if (!documentFlowDialogKind.value) return null
+  return documentFlowDefinitions[documentFlowDialogKind.value]
+})
+
+function openDocumentFlow(kind: DocumentFlowKind) {
+  documentFlowDialogKind.value = kind
+}
+
+function closeDocumentFlow() {
+  documentFlowDialogKind.value = null
+}
 
 const selectedViewHistory = computed<DocumentHistoryEntry[]>(() => {
   const record = selectedViewRecord.value
@@ -8342,6 +8551,15 @@ onUnmounted(() => {
 
             <div class="flex flex-wrap items-center gap-2">
               <Button
+                variant="outline"
+                size="icon"
+                class="order-4 h-10 w-10"
+                aria-label="Komissiya tarkibi flow"
+                @click="openDocumentFlow('commission')"
+              >
+                <Info class="h-4 w-4" />
+              </Button>
+              <Button
                 class="order-3 h-10 gap-2"
                 @click="openCreateDialog"
               >
@@ -10061,6 +10279,15 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              class="order-4 h-10 w-10"
+              aria-label="Baholash flow"
+              @click="openDocumentFlow('assessment')"
+            >
+              <Info class="h-4 w-4" />
+            </Button>
             <div class="relative order-1">
               <div
                 v-if="isAssessmentFilterOpen"
@@ -11018,6 +11245,15 @@ onUnmounted(() => {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              class="order-4 h-10 w-10"
+              aria-label="Bayonnoma flow"
+              @click="openDocumentFlow('protocol')"
+            >
+              <Info class="h-4 w-4" />
+            </Button>
             <div class="relative">
               <div
                 v-if="isProtocolFilterOpen"
@@ -14586,5 +14822,91 @@ onUnmounted(() => {
         description="This module is prepared for future implementation."
       />
     </SectionBlock>
+
+    <div
+      v-if="activeDocumentFlow"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
+      @click.stop
+      @mousedown.stop
+      @touchmove.prevent
+      @wheel.self.prevent
+    >
+      <div class="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-foreground">{{ t(activeDocumentFlow.title) }}</h2>
+            <p class="mt-1 text-sm text-muted-foreground">{{ t(activeDocumentFlow.description) }}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="h-9 w-9 shrink-0"
+            @click="closeDocumentFlow"
+          >
+            <X class="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div class="min-h-0 flex-1 overflow-auto px-6 py-6">
+          <div class="rounded-2xl border border-border bg-card p-4">
+            <p class="text-sm font-semibold text-foreground">{{ t('Hujjat bosqichlari') }}</p>
+            <div class="mt-5 min-w-[860px]">
+              <div class="grid grid-cols-[repeat(var(--flow-count),minmax(9rem,1fr))] items-stretch gap-3" :style="{ '--flow-count': String(activeDocumentFlow.steps.length) }">
+                <template
+                  v-for="(step, index) in activeDocumentFlow.steps"
+                  :key="step.id"
+                >
+                  <div class="relative">
+                    <div
+                      :class="cn(
+                        'flex min-h-44 flex-col rounded-2xl border p-4 transition-colors duration-200 ease-out',
+                        documentFlowToneClassMap[step.tone],
+                      )"
+                    >
+                      <div class="flex items-start justify-between gap-2">
+                        <span class="rounded-full border border-current/20 bg-background/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide">
+                          {{ step.actor }}
+                        </span>
+                        <span class="text-xs font-semibold opacity-70">{{ index + 1 }}</span>
+                      </div>
+                      <p class="mt-4 text-sm font-semibold leading-snug">{{ t(step.title) }}</p>
+                      <p class="mt-2 flex-1 text-xs leading-5 opacity-80">{{ t(step.description) }}</p>
+                      <span
+                        v-if="step.stage"
+                        class="mt-4 inline-flex w-fit rounded-full border border-current/20 bg-background/60 px-2.5 py-1 text-xs font-medium"
+                      >
+                        {{ t('Bosqich') }}: {{ t(step.stage) }}
+                      </span>
+                    </div>
+                    <div
+                      v-if="index < activeDocumentFlow.steps.length - 1"
+                      class="pointer-events-none absolute -right-3 top-1/2 z-10 hidden h-px w-3 -translate-y-1/2 bg-border xl:block"
+                    />
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-border bg-muted/20 p-4">
+            <p class="text-sm font-semibold text-foreground">{{ t('O‘tish qoidalari') }}</p>
+            <div class="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+              <p v-if="documentFlowDialogKind === 'commission'">
+                {{ t("Yangi yoki Tahrirlangan tarkib yuboriladi; Yuborilgan tarkib tasdiqlanadi yoki bekor qilinadi; Bekor qilingan tarkib qayta tahrirlanishi mumkin.") }}
+              </p>
+              <p v-if="documentFlowDialogKind === 'assessment'">
+                {{ t("So‘rovnoma to‘liq to‘ldirilmaguncha yuborish yakunlanmaydi; Yuborilgan baholash tasdiqlanadi yoki bekor qilinadi.") }}
+              </p>
+              <p v-if="documentFlowDialogKind === 'protocol'">
+                {{ t("Bayonnoma rejasi tasdiqlangandan keyin komissiyaga yuboriladi, kelishiladi, tasdiqlashga yuboriladi va yakunda tasdiqlanadi yoki bekor qilinadi.") }}
+              </p>
+              <p>
+                {{ t("Ko‘rish amali barcha holatlarda mavjud; tahrirlash va keyingi actionlar hujjatning joriy bosqichiga qarab ochiladi.") }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </PageContainer>
 </template>
