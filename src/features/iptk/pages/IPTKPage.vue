@@ -21,8 +21,10 @@ import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
 
-type CommissionStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
-type AssessmentStatus = 'Jarayonda' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type CommissionStatus = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type AssessmentStatus = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Bekor qilingan' | 'Tasdiqlangan'
+type AssessmentStatusTabValue = 'all' | AssessmentStatus
+type CommissionStatusTabValue = 'all' | CommissionStatus
 type ProtocolStatus =
   | 'Yangi'
   | 'Tahrirlangan'
@@ -33,7 +35,7 @@ type ProtocolStatus =
   | 'Bekor qilingan'
   | 'Tasdiqlangan'
 type ProtocolStatusTabValue = 'all' | ProtocolStatus
-type CommissionWorkflowStage = 'Jarayonda' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+type CommissionWorkflowStage = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
 type AssessmentAnswers = Record<string, string>
@@ -326,15 +328,17 @@ const protocolDistrictOptions: Record<string, string[]> = {
   'Toshkent shahri': ['Yunusobod tumani', 'Mirzo Ulug‘bek tumani'],
 }
 
-const statusClassMap: Record<CommissionStatus | AssessmentStatus, string> = {
+const statusClassMap: Record<CommissionStatus | AssessmentStatus | ApplicationReportStatus, string> = {
+  Yangi: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300',
+  Tahrirlangan: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Yuborilgan: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
 }
 const protocolStatusClassMap: Record<ProtocolStatus, string> = {
-  Yangi: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300',
-  Tahrirlangan: statusClassMap.Jarayonda,
+  Yangi: statusClassMap.Yangi,
+  Tahrirlangan: statusClassMap.Tahrirlangan,
   'Reja tasdiqlangan': statusClassMap.Jarayonda,
   'Komissiyaga yuborilgan': statusClassMap.Jarayonda,
   'Kelishish uchun yuborilgan': statusClassMap.Jarayonda,
@@ -445,8 +449,8 @@ const applicationReportDistricts: Record<string, string[]> = {
   'Xorazm viloyati': ['Urganch shahri', 'Xiva shahri', 'Hazorasp tumani'],
 }
 
-const assessmentStatusOptions: AssessmentStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
-const commissionStatusOptions: CommissionStatus[] = ['Jarayonda', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const assessmentStatusOptions: AssessmentStatus[] = ['Yangi', 'Tahrirlangan', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const commissionStatusOptions: CommissionStatus[] = ['Yangi', 'Tahrirlangan', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
 const protocolStatusOptions: ProtocolStatus[] = [
   'Yangi',
   'Tahrirlangan',
@@ -459,7 +463,8 @@ const protocolStatusOptions: ProtocolStatus[] = [
 ]
 
 const workflowStageLabels: Record<CommissionWorkflowStage, string> = {
-  Jarayonda: 'Jarayonda',
+  Yangi: 'Yangi',
+  Tahrirlangan: 'Tahrirlangan',
   Yuborilgan: 'Yuborilgan',
   Tasdiqlangan: 'Tasdiqlangan',
   'Bekor qilingan': 'Bekor qilingan',
@@ -508,8 +513,8 @@ const commissions = ref<CommissionRecord[]>([
         error: '',
       },
     ],
-    status: 'Jarayonda',
-    workflowStage: 'Jarayonda',
+    status: 'Yangi',
+    workflowStage: 'Yangi',
     createdAt: '2026-04-10 09:30',
     updatedAt: '2026-04-10 09:30',
   },
@@ -555,11 +560,47 @@ const commissions = ref<CommissionRecord[]>([
         error: '',
       },
     ],
-    status: 'Yuborilgan',
-    workflowStage: 'Yuborilgan',
+    status: 'Tahrirlangan',
+    workflowStage: 'Tahrirlangan',
     createdAt: '2026-04-11 14:20',
     updatedAt: '2026-04-12 10:05',
     submittedAt: '2026-04-12 09:10',
+  },
+  {
+    id: '5',
+    documentNumber: 'IPTK-TARKIB-2026-005',
+    region: 'Namangan viloyati',
+    chair: "Qodirov Jamshid Shuhrat o'g'li",
+    chairPinfl: '10000000005001',
+    chairPosition: 'Komissiya raisi',
+    chairPhone: '+998901234570',
+    deputyChair: 'Nazarova Maftuna Otabek qizi',
+    deputyChairPinfl: '10000000005002',
+    deputyChairPosition: "Rais o'rinbosari",
+    deputyChairPhone: '+998901234571',
+    secretary: 'Saidova Nilufar Akmal qizi',
+    secretaryPinfl: '10000000005003',
+    secretaryPosition: 'Komissiya kotibi',
+    secretaryPhone: '+998901234572',
+    members: [
+      {
+        id: crypto.randomUUID(),
+        pinfl: '10000000000007',
+        fullName: 'Yuldashev Bekzod Ilhom o‘g‘li',
+        birthDate: '19.08.1986',
+        position: 'Psixiatr',
+        phone: '+998901113355',
+        organization: 'Viloyat ruhiy salomatlik markazi',
+        region: 'Namangan viloyati',
+        district: 'Namangan shahri',
+        error: '',
+      },
+    ],
+    status: 'Yuborilgan',
+    workflowStage: 'Yuborilgan',
+    createdAt: '2026-04-12 15:30',
+    updatedAt: '2026-04-12 16:10',
+    submittedAt: '2026-04-12 16:10',
   },
   {
     id: '3',
@@ -651,7 +692,22 @@ const assessments = ref<AssessmentRecord[]>([
     hasHousing: false,
     region: 'Toshkent viloyati',
     district: 'Zangiota tumani',
-    status: 'Jarayonda',
+    status: 'Yangi',
+  },
+  {
+    id: '5',
+    documentNumber: 'BHL-2026-005',
+    createdAt: '2026-04-12 16:30',
+    serviceRecipient: "QODIROV JAMSHID SHUHRAT O'G'LI",
+    serviceRecipientPinfl: '10000000000548',
+    serviceType: 'Huzur',
+    answers: buildAssessmentAnswersByScoreMode('high'),
+    result: 'Rejali guruh',
+    hasCloseRelatives: true,
+    hasHousing: true,
+    region: 'Namangan viloyati',
+    district: 'Chortoq tumani',
+    status: 'Tahrirlangan',
   },
   {
     id: '2',
@@ -2866,6 +2922,34 @@ const draftAssessmentStatusLabel = computed(() => (
 const draftAssessmentRegionLabel = computed(() => (
   getDropdownMultiSelectLabel(draftAssessmentRegionFilter.value)
 ))
+const assessmentStatusTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: assessments.value.length,
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+  },
+  ...assessmentStatusOptions.map((status) => ({
+    label: status,
+    value: status,
+    count: assessments.value.filter((record) => record.status === status).length,
+    dotClass: {
+      Yangi: 'bg-slate-500',
+      Tahrirlangan: 'bg-amber-500',
+      Yuborilgan: 'bg-sky-500',
+      'Bekor qilingan': 'bg-rose-500',
+      Tasdiqlangan: 'bg-emerald-500',
+    }[status],
+    badgeClass: {
+      Yangi: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+      Tahrirlangan: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      Yuborilgan: 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-200',
+      'Bekor qilingan': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+      Tasdiqlangan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+    }[status],
+  })),
+])
 const assessmentCalendarMonthLabel = computed(() => {
   const monthValue = assessmentCalendarMonth.value || getTodayIso().slice(0, 7)
   const [year, month] = monthValue.split('-')
@@ -3907,6 +3991,34 @@ const draftStatusLabel = computed(() => (
 const draftRegionLabel = computed(() => (
   getDropdownMultiSelectLabel(draftRegionFilter.value)
 ))
+const commissionStatusTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: commissions.value.length,
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+  },
+  ...commissionStatusOptions.map((status) => ({
+    label: status,
+    value: status,
+    count: commissions.value.filter((record) => record.status === status).length,
+    dotClass: {
+      Yangi: 'bg-slate-500',
+      Tahrirlangan: 'bg-amber-500',
+      Yuborilgan: 'bg-sky-500',
+      'Bekor qilingan': 'bg-rose-500',
+      Tasdiqlangan: 'bg-emerald-500',
+    }[status],
+    badgeClass: {
+      Yangi: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+      Tahrirlangan: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      Yuborilgan: 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-200',
+      'Bekor qilingan': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+      Tasdiqlangan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+    }[status],
+  })),
+])
 const calendarMonthLabel = computed(() => {
   const monthValue = calendarMonth.value || getTodayIso().slice(0, 7)
   const [year, month] = monthValue.split('-')
@@ -4216,6 +4328,7 @@ function saveCommission() {
     return
   }
 
+  runSaveLoading(editingId.value ? 'commission-save-edit' : 'commission-save-create', () => {
   const timestamp = nowLabel()
   const payload = {
     region: formRegion.value,
@@ -4261,9 +4374,8 @@ function saveCommission() {
     target.updatedAt = timestamp
 
     if (target.status !== 'Tasdiqlangan') {
-      target.workflowStage = 'Jarayonda'
-      target.status = 'Jarayonda'
-      target.submittedAt = timestamp
+      target.workflowStage = 'Tahrirlangan'
+      target.status = 'Tahrirlangan'
       target.rejectedAt = undefined
     }
 
@@ -4273,11 +4385,10 @@ function saveCommission() {
     const createdRecord: CommissionRecord = {
       id: String(commissions.value.length + 1),
       documentNumber: nextDocumentNumber(),
-      status: 'Jarayonda',
-      workflowStage: 'Jarayonda',
+      status: 'Yangi',
+      workflowStage: 'Yangi',
       createdAt: timestamp,
       updatedAt: timestamp,
-      submittedAt: timestamp,
       ...payload,
     }
 
@@ -4287,6 +4398,7 @@ function saveCommission() {
   }
 
   closeCreateDialog()
+  })
 }
 
 function editCommission(record: CommissionRecord) {
@@ -4407,6 +4519,11 @@ function startActionLoading(key: string, minimumDuration = 420) {
 
 function runActionIconLoading(key: string, action: () => void) {
   const stopLoading = startActionLoading(key, 520)
+  stopLoading(action)
+}
+
+function runSaveLoading(key: string, action: () => void) {
+  const stopLoading = startActionLoading(key, 700)
   stopLoading(action)
 }
 
@@ -4569,6 +4686,26 @@ function selectStatusFilter(value: 'all' | CommissionStatus) {
   draftStatusFilter.value = value === 'all'
     ? []
     : toggleDropdownMultiSelectValue(draftStatusFilter.value, value)
+}
+
+function isCommissionStatusTabActive(value: CommissionStatusTabValue) {
+  return value === 'all'
+    ? appliedStatusFilter.value.length === 0
+    : appliedStatusFilter.value.includes(value)
+}
+
+function selectCommissionStatusTab(value: CommissionStatusTabValue) {
+  const nextStatuses = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(appliedStatusFilter.value, value)
+  if (areApplicationReportFiltersEqual(appliedStatusFilter.value, nextStatuses)) return
+
+  closeFilters()
+  draftStatusFilter.value = [...nextStatuses]
+  runTableLoading(() => {
+    appliedStatusFilter.value = [...nextStatuses]
+    currentPage.value = 1
+  })
 }
 
 function selectRegionFilter(value: 'all' | string) {
@@ -5193,6 +5330,7 @@ function saveProtocol() {
     return
   }
 
+  runSaveLoading(protocolDialogMode.value === 'edit' ? 'protocol-save-edit' : 'protocol-save-create', () => {
   if (protocolDialogMode.value === 'edit' && editingProtocolId.value) {
     const target = protocols.value.find((record) => record.id === editingProtocolId.value)
     if (!target) return
@@ -5235,6 +5373,7 @@ function saveProtocol() {
   protocolCurrentPage.value = 1
   closeProtocolDialog()
   pushFeedback('success', `${documentNumber} raqamli bayonnoma yaratildi.`)
+  })
 }
 
 function requestSaveProtocol() {
@@ -5419,6 +5558,26 @@ function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
     : toggleDropdownMultiSelectValue(draftAssessmentStatusFilter.value, value)
 }
 
+function isAssessmentStatusTabActive(value: AssessmentStatusTabValue) {
+  return value === 'all'
+    ? appliedAssessmentStatusFilter.value.length === 0
+    : appliedAssessmentStatusFilter.value.includes(value)
+}
+
+function selectAssessmentStatusTab(value: AssessmentStatusTabValue) {
+  const nextStatuses = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(appliedAssessmentStatusFilter.value, value)
+  if (areApplicationReportFiltersEqual(appliedAssessmentStatusFilter.value, nextStatuses)) return
+
+  closeAssessmentFilters()
+  draftAssessmentStatusFilter.value = [...nextStatuses]
+  runTableLoading(() => {
+    appliedAssessmentStatusFilter.value = [...nextStatuses]
+    assessmentCurrentPage.value = 1
+  })
+}
+
 function formatAssessmentScore(score: number) {
   return Number.isInteger(score) ? String(score) : String(score).replace('.', ',')
 }
@@ -5554,11 +5713,16 @@ function saveAssessmentFromDialog() {
   const record = selectedAssessmentViewRecord.value
   if (!record || !isAssessmentComplete.value) return
 
+  runSaveLoading('assessment-save-edit', () => {
   record.answers = { ...assessmentAnswers.value }
   record.result = assessmentGroupLabel.value
+  if (record.status !== 'Tasdiqlangan') {
+    record.status = 'Tahrirlangan'
+  }
   closeAssessmentViewDialog()
   const notification = buildOperationNotification('Tahrirlash', 'tahrirlash', 'Baholash hujjati', record.documentNumber)
   pushFeedback('success', notification.message, notification.title)
+  })
 }
 
 function updateAssessmentStatus(recordId: string, status: AssessmentStatus, actionTitle: string, actionName: string) {
@@ -5906,6 +6070,7 @@ function saveServiceType() {
     return
   }
 
+  runSaveLoading(editingServiceTypeId.value ? 'service-type-save-edit' : 'service-type-save-create', () => {
   const payload = {
     shortName: {
       uzLatn: serviceTypeForm.value.shortName.uzLatn.trim(),
@@ -5954,6 +6119,7 @@ function saveServiceType() {
   }
 
   closeServiceTypeDialog()
+  })
 }
 
 function requestDeleteServiceType(record: ServiceTypeRecord) {
@@ -6163,6 +6329,7 @@ function saveDiagnosis() {
     return
   }
 
+  runSaveLoading(editingDiagnosisId.value ? 'reference-save-edit' : 'reference-save-create', () => {
   const payload = {
     shortName: {
       uzLatn: diagnosisForm.value.shortName.uzLatn.trim(),
@@ -6237,6 +6404,7 @@ function saveDiagnosis() {
   }
 
   closeDiagnosisDialog()
+  })
 }
 
 function addQuestionnaireGroup() {
@@ -7562,7 +7730,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div
             v-for="item in applicationDashboardKpis"
             :key="item.label"
@@ -8405,6 +8573,42 @@ onUnmounted(() => {
             </div>
         </div>
 
+        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+            <button
+              v-for="tab in commissionStatusTabs"
+              :key="`commission-status-tab-${tab.value}`"
+              type="button"
+              :class="cn(
+                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                isCommissionStatusTabActive(tab.value)
+                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+              )"
+              @click="selectCommissionStatusTab(tab.value)"
+            >
+              <span
+                :class="cn(
+                  'h-2 w-2 shrink-0 rounded-full',
+                  tab.dotClass,
+                  isCommissionStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                )"
+              />
+              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+              <span
+                :class="cn(
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  isCommissionStatusTabActive(tab.value)
+                    ? tab.badgeClass
+                    : 'bg-muted text-muted-foreground',
+                )"
+              >
+                {{ tab.count }}
+              </span>
+            </button>
+          </div>
+        </div>
+
         <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
           <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
             <div class="relative flex-1 xl:hidden">
@@ -8494,7 +8698,7 @@ onUnmounted(() => {
                                 <span>Ko'rish</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                                v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 @click="editCommission(record)"
                               >
@@ -8502,7 +8706,7 @@ onUnmounted(() => {
                                 <span>Tahrirlash</span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                                v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'"
                                 class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                                 @click="requestSendCommission(record)"
                               >
@@ -8715,7 +8919,7 @@ onUnmounted(() => {
                               <span>{{ t("Ko'rish") }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                              v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'"
                               class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               @click="editCommission(record)"
                             >
@@ -8723,7 +8927,7 @@ onUnmounted(() => {
                               <span>{{ t('Tahrirlash') }}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'"
+                              v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'"
                               class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
                               @click="requestSendCommission(record)"
                             >
@@ -8963,7 +9167,7 @@ onUnmounted(() => {
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">FIO</p>
                         <p class="mt-1 font-semibold text-foreground">{{ normalizeFullName(member.fullName) }}</p>
                       </div>
-                      <div class="grid gap-2 text-sm sm:grid-cols-2">
+                      <div class="grid gap-2 text-sm md:grid-cols-2">
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tug'ilgan sanasi</p>
                           <p class="text-foreground">{{ member.birthDate }}</p>
@@ -9571,9 +9775,14 @@ onUnmounted(() => {
                   Tozalash
                 </Button>
                 <Button
-                  :disabled="!canSave"
+                  class="min-w-24 gap-2"
+                  :disabled="!canSave || actionLoadingKey === 'commission-save-create' || actionLoadingKey === 'commission-save-edit'"
                   @click="saveCommission"
                 >
+                  <LoaderCircle
+                    v-if="actionLoadingKey === 'commission-save-create' || actionLoadingKey === 'commission-save-edit'"
+                    class="h-4 w-4 animate-spin"
+                  />
                   Saqlash
                 </Button>
               </div>
@@ -9891,6 +10100,42 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+            <button
+              v-for="tab in assessmentStatusTabs"
+              :key="`assessment-status-tab-${tab.value}`"
+              type="button"
+              :class="cn(
+                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                isAssessmentStatusTabActive(tab.value)
+                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+              )"
+              @click="selectAssessmentStatusTab(tab.value)"
+            >
+              <span
+                :class="cn(
+                  'h-2 w-2 shrink-0 rounded-full',
+                  tab.dotClass,
+                  isAssessmentStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                )"
+              />
+              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+              <span
+                :class="cn(
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  isAssessmentStatusTabActive(tab.value)
+                    ? tab.badgeClass
+                    : 'bg-muted text-muted-foreground',
+                )"
+              >
+                {{ tab.count }}
+              </span>
+            </button>
+          </div>
+        </div>
+
         <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
           <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
             <div class="relative flex-1 xl:hidden">
@@ -9966,11 +10211,11 @@ onUnmounted(() => {
                                 <Eye class="h-4 w-4 shrink-0" />
                                 <span>{{ t("Ko'rish") }}</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
+                              <DropdownMenuItem v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
                                 <Pencil class="h-4 w-4 shrink-0" />
                                 <span>{{ t('Tahrirlash') }}</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
+                              <DropdownMenuItem v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
                                 <Check class="h-4 w-4 shrink-0" />
                                 <span>{{ t('Yuborish') }}</span>
                               </DropdownMenuItem>
@@ -10117,11 +10362,11 @@ onUnmounted(() => {
                               <Eye class="h-4 w-4 shrink-0" />
                               <span>{{ t("Ko'rish") }}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
+                            <DropdownMenuItem v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="editAssessment(record)">
                               <Pencil class="h-4 w-4 shrink-0" />
                               <span>{{ t('Tahrirlash') }}</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem v-if="record.status === 'Jarayonda' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
+                            <DropdownMenuItem v-if="record.status === 'Yangi' || record.status === 'Tahrirlangan' || record.status === 'Bekor qilingan'" class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="requestSendAssessment(record)">
                               <Check class="h-4 w-4 shrink-0" />
                               <span>{{ t('Yuborish') }}</span>
                             </DropdownMenuItem>
@@ -10372,7 +10617,7 @@ onUnmounted(() => {
                 <span class="rounded-full border border-border bg-background px-3 py-1">{{ isAssessmentComplete ? "So'rovnoma to'ldirilgan" : "So'rovnoma davom etmoqda" }}</span>
               </div>
             </div>
-            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid flex-[1.4] gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div class="rounded-xl border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Barthel</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentBarthelTotal) }} ball</p>
@@ -10402,7 +10647,16 @@ onUnmounted(() => {
           <Button variant="outline" @click="closeAssessmentViewDialog">
             {{ selectedAssessmentReadonly ? t('Yopish') : t('Bekor qilish') }}
           </Button>
-          <Button v-if="!selectedAssessmentReadonly" :disabled="!isAssessmentComplete" @click="saveAssessmentFromDialog">
+          <Button
+            v-if="!selectedAssessmentReadonly"
+            class="min-w-36 gap-2"
+            :disabled="!isAssessmentComplete || actionLoadingKey === 'assessment-save-edit'"
+            @click="saveAssessmentFromDialog"
+          >
+            <LoaderCircle
+              v-if="actionLoadingKey === 'assessment-save-edit'"
+              class="h-4 w-4 animate-spin"
+            />
             Baholashni saqlash
           </Button>
         </div>
@@ -10472,7 +10726,7 @@ onUnmounted(() => {
           <div class="grid grid-cols-[12rem_1fr] text-sm">
             <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Status</div>
             <div class="px-4 py-3">
-              <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[selectedAssessmentViewRecord?.status ?? 'Jarayonda'])">
+              <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[selectedAssessmentViewRecord?.status ?? 'Yangi'])">
                 {{ selectedAssessmentViewRecord?.status }}
               </span>
             </div>
@@ -10782,16 +11036,16 @@ onUnmounted(() => {
         </div>
 
         <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
             <button
               v-for="tab in protocolStatusTabs"
               :key="`protocol-status-tab-${tab.value}`"
               type="button"
               :class="cn(
-                'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
                 isProtocolStatusTabActive(tab.value)
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
+                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
+                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
               )"
               @click="selectProtocolStatusTab(tab.value)"
             >
@@ -10844,7 +11098,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div v-else class="grid gap-3 p-3 sm:grid-cols-2">
+            <div v-else class="grid gap-3 p-3 md:grid-cols-2">
               <Card
                 v-for="record in paginatedProtocols"
                 :key="record.id"
@@ -11436,7 +11690,16 @@ onUnmounted(() => {
             <Button variant="outline" @click="isProtocolReadonly ? closeProtocolDialog() : resetProtocolForm()">
               {{ isProtocolReadonly ? t('Yopish') : t('Tozalash') }}
             </Button>
-            <Button v-if="!isProtocolReadonly" :disabled="!canSaveProtocol" @click="requestSaveProtocol">
+            <Button
+              v-if="!isProtocolReadonly"
+              class="min-w-24 gap-2"
+              :disabled="!canSaveProtocol || actionLoadingKey === 'protocol-save-create' || actionLoadingKey === 'protocol-save-edit'"
+              @click="requestSaveProtocol"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'protocol-save-create' || actionLoadingKey === 'protocol-save-edit'"
+                class="h-4 w-4 animate-spin"
+              />
               {{ protocolDialogMode === 'edit' ? t('Saqlash') : t('Saqlash') }}
             </Button>
           </div>
@@ -11633,7 +11896,7 @@ onUnmounted(() => {
             </table>
           </div>
 
-          <div class="relative grid gap-3 p-3 xl:hidden">
+          <div class="relative grid gap-3 p-3 md:grid-cols-2 xl:hidden">
             <div
               v-if="isTableLoading"
               class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
@@ -11703,7 +11966,7 @@ onUnmounted(() => {
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("To'liq nomi") }}</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div class="grid gap-3 md:grid-cols-2">
                   <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Minimal yosh') }}</p>
                     <p class="mt-1 text-sm font-medium text-foreground">{{ record.minAge }}</p>
@@ -12139,9 +12402,14 @@ onUnmounted(() => {
                   {{ t('Tozalash') }}
                 </Button>
                 <Button
-                  :disabled="!canSaveServiceType"
+                  class="min-w-24 gap-2"
+                  :disabled="!canSaveServiceType || actionLoadingKey === 'service-type-save-create' || actionLoadingKey === 'service-type-save-edit'"
                   @click="saveServiceType"
                 >
+                  <LoaderCircle
+                    v-if="actionLoadingKey === 'service-type-save-create' || actionLoadingKey === 'service-type-save-edit'"
+                    class="h-4 w-4 animate-spin"
+                  />
                   Saqlash
                 </Button>
               </div>
@@ -12520,7 +12788,7 @@ onUnmounted(() => {
             </table>
           </div>
 
-          <div class="relative grid gap-3 p-3 xl:hidden">
+          <div class="relative grid gap-3 p-3 md:grid-cols-2 xl:hidden">
             <div
               v-if="isTableLoading"
               class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
@@ -12588,7 +12856,7 @@ onUnmounted(() => {
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t("To'liq nomi") }}</p>
                   <p class="mt-1 text-sm font-medium text-foreground">{{ record.fullName.uzLatn }}</p>
                 </div>
-                <div v-if="isCategoryGroupsPage && isCategoryGroupRecord(record)" class="grid gap-3 sm:grid-cols-2">
+                <div v-if="isCategoryGroupsPage && isCategoryGroupRecord(record)" class="grid gap-3 md:grid-cols-2">
                   <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Minimal ball</p>
                     <p class="mt-1 text-sm font-medium text-foreground">{{ record.minScore }}</p>
@@ -12941,7 +13209,17 @@ onUnmounted(() => {
               <p v-else class="text-sm text-muted-foreground">Barcha ma'lumotlar to'ldirildi.</p>
               <div class="flex items-center gap-3">
                 <Button variant="outline" @click="resetDiagnosisForm">{{ t('Tozalash') }}</Button>
-                <Button :disabled="!canSaveDiagnosis" @click="saveDiagnosis">Saqlash</Button>
+                <Button
+                  class="min-w-24 gap-2"
+                  :disabled="!canSaveDiagnosis || actionLoadingKey === 'reference-save-create' || actionLoadingKey === 'reference-save-edit'"
+                  @click="saveDiagnosis"
+                >
+                  <LoaderCircle
+                    v-if="actionLoadingKey === 'reference-save-create' || actionLoadingKey === 'reference-save-edit'"
+                    class="h-4 w-4 animate-spin"
+                  />
+                  Saqlash
+                </Button>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText, Settings2 } from 'lucide-vue-next'
+import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText } from 'lucide-vue-next'
 import type { MuruvvatMenuItem, MuruvvatPageDefinition } from '@/features/muruvvat/types'
 
 export const iptkPages: MuruvvatPageDefinition[] = [
@@ -70,6 +70,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: '',
   },
   {
+    key: 'commissions-composition',
+    title: 'Komissiyalar tarkibi',
+    description: '',
+    route: '/apps/iptk/applications/commissions',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+    sectionTitle: 'Komissiyalar tarkibi',
+    sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
+  },
+  {
     key: 'applications-protocol',
     title: 'Bayonnoma',
     description: '',
@@ -77,15 +86,6 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Bayonnoma'],
     sectionTitle: 'Bayonnoma',
     sectionDescription: '',
-  },
-  {
-    key: 'commissions-composition',
-    title: 'Komissiyalar tarkibi',
-    description: '',
-    route: '/apps/iptk/applications/commissions',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Boshqaruv', 'Komissiyalar tarkibi'],
-    sectionTitle: 'Komissiyalar tarkibi',
-    sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
   },
   {
     key: 'applications-report',
@@ -164,22 +164,15 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         icon: NotebookText,
       },
       {
-        id: 'applications-protocol',
-        title: 'Bayonnoma',
-        route: '/apps/iptk/applications/protocol',
-        icon: NotebookText,
-      },
-    ],
-  },
-  {
-    id: 'management',
-    title: 'Boshqaruv',
-    icon: Settings2,
-    children: [
-      {
         id: 'commissions-composition',
         title: 'Komissiyalar tarkibi',
         route: '/apps/iptk/applications/commissions',
+        icon: NotebookText,
+      },
+      {
+        id: 'applications-protocol',
+        title: 'Bayonnoma',
+        route: '/apps/iptk/applications/protocol',
         icon: NotebookText,
       },
     ],

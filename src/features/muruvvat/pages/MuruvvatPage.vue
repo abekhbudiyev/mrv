@@ -4700,16 +4700,16 @@ watch(serviceRecipientLookupResult, () => {
             v-if="isIptkApplicationsListPage"
             class="-mt-1 max-w-full min-w-0 overflow-x-auto"
           >
-            <div class="inline-flex min-w-max items-center justify-start rounded-lg bg-muted p-1 text-muted-foreground">
+            <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
               <button
                 v-for="tab in applicationStepTabs"
                 :key="`application-step-tab-${tab.value}`"
                 type="button"
                 :class="[
-                  'inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                  'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
                   isApplicationStepTabActive(tab.value)
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground',
+                    ? 'border-border bg-background text-foreground ring-1 ring-border/70'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
                 ]"
                 @click="selectApplicationStepTab(tab.value)"
               >
@@ -6017,9 +6017,14 @@ watch(serviceRecipientLookupResult, () => {
             Tozalash
           </Button>
           <Button
+            class="min-w-36 gap-2"
             :disabled="!isCreateFormReadyToSave || isSavingApplication"
             @click="saveApplicationDraft"
           >
+            <LoaderCircle
+              v-if="isSavingApplication"
+              class="h-4 w-4 animate-spin"
+            />
             Arizani saqlash
           </Button>
         </div>
@@ -6260,7 +6265,7 @@ watch(serviceRecipientLookupResult, () => {
                 </span>
               </div>
             </div>
-            <div class="grid flex-[1.4] gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid flex-[1.4] gap-3 md:grid-cols-2 xl:grid-cols-4">
               <div class="rounded-xl border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">
                   Barthel
