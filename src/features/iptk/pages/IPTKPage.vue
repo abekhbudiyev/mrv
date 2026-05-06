@@ -16,6 +16,7 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import PageContainer from '@/shared/components/PageContainer.vue'
 import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
+import StatusTabs from '@/shared/components/StatusTabs.vue'
 import { useI18n } from '@/shared/i18n'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
@@ -5039,16 +5040,10 @@ function selectStatusFilter(value: 'all' | CommissionStatus) {
     : toggleDropdownMultiSelectValue(draftStatusFilter.value, value)
 }
 
-function isCommissionStatusTabActive(value: CommissionStatusTabValue) {
-  return value === 'all'
-    ? appliedStatusFilter.value.length === 0
-    : appliedStatusFilter.value.includes(value)
-}
-
 function selectCommissionStatusTab(value: CommissionStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : toggleDropdownMultiSelectValue(appliedStatusFilter.value, value)
+    : appliedStatusFilter.value.includes(value) ? [] : [value]
   if (areApplicationReportFiltersEqual(appliedStatusFilter.value, nextStatuses)) return
 
   closeFilters()
@@ -5057,12 +5052,6 @@ function selectCommissionStatusTab(value: CommissionStatusTabValue) {
     appliedStatusFilter.value = [...nextStatuses]
     currentPage.value = 1
   })
-}
-
-function blurStatusTabAfterPointer(event: PointerEvent) {
-  if (event.pointerType === 'mouse' || event.pointerType === 'touch') {
-    (event.currentTarget as HTMLElement | null)?.blur()
-  }
 }
 
 function selectRegionFilter(value: 'all' | string) {
@@ -5441,16 +5430,10 @@ function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
     : toggleDropdownMultiSelectValue(draftProtocolStatusFilter.value, value)
 }
 
-function isProtocolStatusTabActive(value: ProtocolStatusTabValue) {
-  return value === 'all'
-    ? appliedProtocolStatusFilter.value.length === 0
-    : appliedProtocolStatusFilter.value.includes(value)
-}
-
 function selectProtocolStatusTab(value: ProtocolStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : toggleDropdownMultiSelectValue(appliedProtocolStatusFilter.value, value)
+    : appliedProtocolStatusFilter.value.includes(value) ? [] : [value]
   if (areApplicationReportFiltersEqual(appliedProtocolStatusFilter.value, nextStatuses)) return
 
   closeProtocolFilters()
@@ -5958,16 +5941,10 @@ function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
     : toggleDropdownMultiSelectValue(draftAssessmentStatusFilter.value, value)
 }
 
-function isAssessmentStatusTabActive(value: AssessmentStatusTabValue) {
-  return value === 'all'
-    ? appliedAssessmentStatusFilter.value.length === 0
-    : appliedAssessmentStatusFilter.value.includes(value)
-}
-
 function selectAssessmentStatusTab(value: AssessmentStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : toggleDropdownMultiSelectValue(appliedAssessmentStatusFilter.value, value)
+    : appliedAssessmentStatusFilter.value.includes(value) ? [] : [value]
   if (areApplicationReportFiltersEqual(appliedAssessmentStatusFilter.value, nextStatuses)) return
 
   closeAssessmentFilters()
@@ -9023,43 +9000,12 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
-            <button
-              v-for="tab in commissionStatusTabs"
-              :key="`commission-status-tab-${tab.value}`"
-              type="button"
-              :aria-pressed="isCommissionStatusTabActive(tab.value)"
-              :class="cn(
-                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
-                isCommissionStatusTabActive(tab.value)
-                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
-                  : '',
-              )"
-              @pointerup="blurStatusTabAfterPointer"
-              @click="selectCommissionStatusTab(tab.value)"
-            >
-              <span
-                :class="cn(
-                  'h-2 w-2 shrink-0 rounded-full',
-                  tab.dotClass,
-                  isCommissionStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
-                )"
-              />
-              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
-              <span
-                :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
-                  isCommissionStatusTabActive(tab.value)
-                    ? tab.badgeClass
-                    : 'bg-muted text-muted-foreground',
-                )"
-              >
-                {{ tab.count }}
-              </span>
-            </button>
-          </div>
-        </div>
+        <StatusTabs
+          :tabs="commissionStatusTabs"
+          :selected-values="appliedStatusFilter"
+          item-key-prefix="commission-status-tab"
+          @select="selectCommissionStatusTab($event as CommissionStatusTabValue)"
+        />
 
         <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
           <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
@@ -10561,43 +10507,12 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
-            <button
-              v-for="tab in assessmentStatusTabs"
-              :key="`assessment-status-tab-${tab.value}`"
-              type="button"
-              :aria-pressed="isAssessmentStatusTabActive(tab.value)"
-              :class="cn(
-                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
-                isAssessmentStatusTabActive(tab.value)
-                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
-                  : '',
-              )"
-              @pointerup="blurStatusTabAfterPointer"
-              @click="selectAssessmentStatusTab(tab.value)"
-            >
-              <span
-                :class="cn(
-                  'h-2 w-2 shrink-0 rounded-full',
-                  tab.dotClass,
-                  isAssessmentStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
-                )"
-              />
-              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
-              <span
-                :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
-                  isAssessmentStatusTabActive(tab.value)
-                    ? tab.badgeClass
-                    : 'bg-muted text-muted-foreground',
-                )"
-              >
-                {{ tab.count }}
-              </span>
-            </button>
-          </div>
-        </div>
+        <StatusTabs
+          :tabs="assessmentStatusTabs"
+          :selected-values="appliedAssessmentStatusFilter"
+          item-key-prefix="assessment-status-tab"
+          @select="selectAssessmentStatusTab($event as AssessmentStatusTabValue)"
+        />
 
         <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
           <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
@@ -11507,43 +11422,12 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
-            <button
-              v-for="tab in protocolStatusTabs"
-              :key="`protocol-status-tab-${tab.value}`"
-              type="button"
-              :aria-pressed="isProtocolStatusTabActive(tab.value)"
-              :class="cn(
-                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
-                isProtocolStatusTabActive(tab.value)
-                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
-                  : '',
-              )"
-              @pointerup="blurStatusTabAfterPointer"
-              @click="selectProtocolStatusTab(tab.value)"
-            >
-              <span
-                :class="cn(
-                  'h-2 w-2 shrink-0 rounded-full',
-                  tab.dotClass,
-                  isProtocolStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
-                )"
-              />
-              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
-              <span
-                :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
-                  isProtocolStatusTabActive(tab.value)
-                    ? tab.badgeClass
-                    : 'bg-muted text-muted-foreground',
-                )"
-              >
-                {{ tab.count }}
-              </span>
-            </button>
-          </div>
-        </div>
+        <StatusTabs
+          :tabs="protocolStatusTabs"
+          :selected-values="appliedProtocolStatusFilter"
+          item-key-prefix="protocol-status-tab"
+          @select="selectProtocolStatusTab($event as ProtocolStatusTabValue)"
+        />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
           <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
