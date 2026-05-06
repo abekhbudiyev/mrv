@@ -595,9 +595,9 @@ const applicationReportStepStatusMap: Record<ApplicationReportStep, ApplicationR
 }
 const applicationReportServiceTypes = [
   'G‘amxo‘rlik markazi',
-  'Madad',
+  'Madad uylari',
   'Ijtimoiy ta’til',
-  'Uyda qarab turish',
+  'Uy sharoitida qarab turish',
   'Yangi kun',
 ] as const
 const applicationReportDisabilityGroups = ['1-guruh', '2-guruh'] as const
@@ -932,7 +932,7 @@ const assessments = ref<AssessmentRecord[]>([
     createdAt: '2026-04-13 11:10',
     serviceRecipient: 'KARIMOVA MOHIRA BAXTIYOR QIZI',
     serviceRecipientPinfl: '10000000000137',
-    serviceType: 'Madad',
+    serviceType: 'Madad uylari',
     answers: buildAssessmentAnswersByScoreMode('high'),
     result: 'Rejali guruh',
     hasCloseRelatives: true,
@@ -962,7 +962,7 @@ const assessments = ref<AssessmentRecord[]>([
     createdAt: '2026-04-15 09:05',
     serviceRecipient: 'TURSUNOVA SHAHNOZA SHERZOD QIZI',
     serviceRecipientPinfl: '10000000000411',
-    serviceType: 'Madad',
+    serviceType: 'Madad uylari',
     result: 'Rejali guruh',
     hasCloseRelatives: true,
     hasHousing: true,
@@ -990,7 +990,7 @@ const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
     createdAt: '2026-04-13 10:15',
     serviceRecipient: "MAMATOV SANJAR DILSHOD O'G'LI",
     serviceRecipientPinfl: '10000000001096',
-    serviceType: 'Madad',
+    serviceType: 'Madad uylari',
     region: 'Samarqand viloyati',
     district: 'Samarqand shahri',
     step: 'IPTK qabul qildi',
@@ -1012,7 +1012,7 @@ const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
     createdAt: '2026-04-15 12:10',
     serviceRecipient: "ERGASHEV SHOHJAHON AKMAL O'G'LI",
     serviceRecipientPinfl: '10000000001370',
-    serviceType: 'Uyda qarab turish',
+    serviceType: 'Uy sharoitida qarab turish',
     region: "Farg'ona viloyati",
     district: "Qo'qon shahri",
     step: 'IPTK qabul qildi',
@@ -1045,7 +1045,7 @@ const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
     createdAt: '2026-04-18 15:25',
     serviceRecipient: "QODIROV JAMSHID SHUHRAT O'G'LI",
     serviceRecipientPinfl: '10000000001781',
-    serviceType: 'Madad',
+    serviceType: 'Madad uylari',
     region: 'Buxoro viloyati',
     district: 'Buxoro shahri',
     step: 'IPTK qabul qildi',
@@ -1078,7 +1078,7 @@ const protocolApplicationCandidates: ProtocolApplicationCandidate[] = [
     createdAt: '2026-04-21 11:10',
     serviceRecipient: "RASULOV DOSTON ELYOR O'G'LI",
     serviceRecipientPinfl: '10000000002192',
-    serviceType: 'Uyda qarab turish',
+    serviceType: 'Uy sharoitida qarab turish',
     region: 'Surxondaryo viloyati',
     district: 'Termiz shahri',
     step: 'IPTK qabul qildi',
@@ -1196,7 +1196,7 @@ const conclusions = ref<ConclusionRecord[]>([
     serviceRecipient: 'SAIDOVA NILUFAR AKMAL QIZI',
     serviceRecipientPinfl: '1000000000685',
     serviceType: 'G‘amxo‘rlik markazi',
-    recommendedService: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” markaziga joylashtirish',
+    recommendedService: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik markazi”ga joylashtirish',
     validityPeriod: '12 oy',
     region: 'Buxoro viloyati',
     district: 'Buxoro shahri',
@@ -1210,7 +1210,7 @@ const conclusions = ref<ConclusionRecord[]>([
     applicationNumber: 'ARZ-000007',
     serviceRecipient: "YULDASHEV BEKZOD ILHOM O'G'LI",
     serviceRecipientPinfl: '1000000000822',
-    serviceType: 'Madad',
+    serviceType: 'Madad uylari',
     recommendedService: 'Kichik hajmli “Madad” uylari xizmatiga joylashtirish',
     validityPeriod: '6 oy',
     region: 'Qashqadaryo viloyati',
@@ -1257,13 +1257,13 @@ const serviceTypes = ref<ServiceTypeRecord[]>([
     shortName: {
       uzLatn: 'G‘amxo‘rlik markazi',
       uzCyrl: 'Ғамхўрлик маркази',
-      kaaLatn: 'G‘amxo‘rlik orayı',
+      kaaLatn: 'G‘amxo‘rlik markazi',
       ru: 'Центр заботы',
     },
     fullName: {
-      uzLatn: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” markaziga joylashtirish',
-      uzCyrl: 'Ногиронлиги бўлган шахсни “Ғамхўрлик” марказига жойлаштириш',
-      kaaLatn: 'Mayıplıǵı bolǵan shaxstı “G‘amxo‘rlik” orayına jaylastırıw',
+      uzLatn: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik markazi”ga joylashtirish',
+      uzCyrl: 'Ногиронлиги бўлган шахсни “Ғамхўрлик маркази”га жойлаштириш',
+      kaaLatn: 'Mayıplıǵı bolǵan shaxstı “G‘amxo‘rlik markazi”ga jaylastırıw',
       ru: 'Размещение лица с инвалидностью в центр заботы',
     },
     minAge: 18,
@@ -5057,6 +5057,12 @@ function selectCommissionStatusTab(value: CommissionStatusTabValue) {
     appliedStatusFilter.value = [...nextStatuses]
     currentPage.value = 1
   })
+}
+
+function blurStatusTabAfterPointer(event: PointerEvent) {
+  if (event.pointerType === 'mouse' || event.pointerType === 'touch') {
+    (event.currentTarget as HTMLElement | null)?.blur()
+  }
 }
 
 function selectRegionFilter(value: 'all' | string) {
@@ -9018,30 +9024,32 @@ onUnmounted(() => {
         </div>
 
         <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
             <button
               v-for="tab in commissionStatusTabs"
               :key="`commission-status-tab-${tab.value}`"
               type="button"
+              :aria-pressed="isCommissionStatusTabActive(tab.value)"
               :class="cn(
-                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
                 isCommissionStatusTabActive(tab.value)
-                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
+                  : '',
               )"
+              @pointerup="blurStatusTabAfterPointer"
               @click="selectCommissionStatusTab(tab.value)"
             >
               <span
                 :class="cn(
                   'h-2 w-2 shrink-0 rounded-full',
                   tab.dotClass,
-                  isCommissionStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                  isCommissionStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
                 )"
               />
-              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
               <span
                 :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
                   isCommissionStatusTabActive(tab.value)
                     ? tab.badgeClass
                     : 'bg-muted text-muted-foreground',
@@ -10554,30 +10562,32 @@ onUnmounted(() => {
         </div>
 
         <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
             <button
               v-for="tab in assessmentStatusTabs"
               :key="`assessment-status-tab-${tab.value}`"
               type="button"
+              :aria-pressed="isAssessmentStatusTabActive(tab.value)"
               :class="cn(
-                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
                 isAssessmentStatusTabActive(tab.value)
-                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
+                  : '',
               )"
+              @pointerup="blurStatusTabAfterPointer"
               @click="selectAssessmentStatusTab(tab.value)"
             >
               <span
                 :class="cn(
                   'h-2 w-2 shrink-0 rounded-full',
                   tab.dotClass,
-                  isAssessmentStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                  isAssessmentStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
                 )"
               />
-              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
               <span
                 :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
                   isAssessmentStatusTabActive(tab.value)
                     ? tab.badgeClass
                     : 'bg-muted text-muted-foreground',
@@ -11498,30 +11508,32 @@ onUnmounted(() => {
         </div>
 
         <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+          <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
             <button
               v-for="tab in protocolStatusTabs"
               :key="`protocol-status-tab-${tab.value}`"
               type="button"
+              :aria-pressed="isProtocolStatusTabActive(tab.value)"
               :class="cn(
-                'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
                 isProtocolStatusTabActive(tab.value)
-                  ? 'border-border bg-background text-foreground ring-1 ring-border/70'
-                  : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                  ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
+                  : '',
               )"
+              @pointerup="blurStatusTabAfterPointer"
               @click="selectProtocolStatusTab(tab.value)"
             >
               <span
                 :class="cn(
                   'h-2 w-2 shrink-0 rounded-full',
                   tab.dotClass,
-                  isProtocolStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                  isProtocolStatusTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
                 )"
               />
-              <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+              <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
               <span
                 :class="cn(
-                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                  'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
                   isProtocolStatusTabActive(tab.value)
                     ? tab.badgeClass
                     : 'bg-muted text-muted-foreground',

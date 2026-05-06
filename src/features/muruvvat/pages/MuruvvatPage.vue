@@ -93,8 +93,8 @@ type MedicalDocumentField = {
 
 type ServiceOption = {
   id: string
-  label: string
-  shortLabel?: string
+  shortName: string
+  fullName: string
 }
 
 type CareQueueCategory = 'Navbat asosida' | 'Navbatsiz'
@@ -391,18 +391,17 @@ const madadMedicalDocumentFields: MedicalDocumentField[] = [
   },
 ]
 const serviceOptions: ServiceOption[] = [
-  { id: 'gamxorlik-markazi', label: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” markaziga joylashtirish', shortLabel: 'G‘amxo‘rlik markazi' },
-  { id: 'madad', label: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish', shortLabel: 'Madad' },
-  { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish', shortLabel: 'Ijtimoiy ta’til' },
-  { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish', shortLabel: 'Uy sharoitida qarab turish' },
-  { id: 'yangi-kun', label: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish', shortLabel: 'Yangi kun' },
-  { id: 'gamxorlik', label: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” bo‘yicha joylashtirish', shortLabel: 'G‘amxo‘rlik' },
+  { id: 'gamxorlik-markazi', shortName: 'G‘amxo‘rlik markazi', fullName: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik markazi”ga joylashtirish' },
+  { id: 'madad', shortName: 'Madad uylari', fullName: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish' },
+  { id: 'social-holiday', shortName: 'Ijtimoiy ta’til', fullName: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish' },
+  { id: 'home-care', shortName: 'Uy sharoitida qarab turish', fullName: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish' },
+  { id: 'yangi-kun', shortName: 'Yangi kun', fullName: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
 ]
 const demoApplicationCases = [
   { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi' },
   { step: 'Ariza yaratildi', serviceId: 'social-holiday' },
-  { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbat asosida' },
-  { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbatsiz' },
+  { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi', careQueueCategory: 'Navbat asosida' },
+  { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi', careQueueCategory: 'Navbatsiz' },
   ...applicationSteps
     .filter((step) => step !== 'Ariza yaratildi')
     .map((step, index) => ({
@@ -461,7 +460,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'A',
     title: 'So‘rovnoma yaratildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'Arizachi yoki mas’ul xodim 2-ilova shaklidagi so‘rovnomani elektron tarzda to‘ldiradi, xizmat turini tanlaydi, 3-ilovaga mos hujjatlarni biriktiradi va tasdiqlaydi.',
     responsible: 'Arizachi / YAIDXP / “Ijtimoiy karta” / “Inson” markazi / DXM / ijtimoiy xodim',
     duration: 'Tasdiqlangandan so‘ng shu kunning o‘zida “Inson” markaziga tushadi',
@@ -471,7 +470,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'C',
     title: 'Dastlabki tekshiruv',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: '“Inson” markazi bir ish kuni ichida hujjatlarni, tanlangan xizmatga mos tashxis va toifani, rad etish asoslari bor yoki yo‘qligini tekshiradi.',
     responsible: '“Inson” markazi',
     duration: '1 ish kuni',
@@ -481,18 +480,18 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'F',
     title: 'Funksionallik baholandi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'G‘amxo‘rlik markazi', 'Madad'],
-    description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi. G‘amxo‘rlik bo‘yicha ariza bu baholashdan o‘tkazilmaydi.',
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari'],
+    description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi. G‘amxo‘rlik markazi bo‘yicha ariza bu baholashdan o‘tkazilmaydi.',
     responsible: '“Inson” markazi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; WHODAS 2.0 baholashi',
-    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'G‘amxo‘rlik markazi va Madad bo‘yicha parvarish baholash bosqichiga o‘tiladi'],
+    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'Madad bo‘yicha parvarish baholash bosqichiga o‘tiladi'],
   },
   {
     id: 'H',
     title: 'Parvarish baholandi',
-    services: ['G‘amxo‘rlik markazi', 'Madad'],
-    description: 'G‘amxo‘rlik markazi va Madad bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
+    services: ['Madad uylari'],
+    description: 'Madad bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
     responsible: '“Inson” markazi xodimi, oilaviy shifokor, FYO‘B organi raisi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; VMQ-123 reglamenti; Barthel va Lawton shkalalari',
@@ -500,18 +499,18 @@ const iptkFlowSteps: FlowStepInfo[] = [
   },
   {
     id: 'G',
-    title: 'G‘amxo‘rlik toifasi aniqlandi',
-    services: ['G‘amxo‘rlik'],
-    description: 'G‘amxo‘rlik bo‘yicha ariza yaratilganidan keyin baholashdan o‘tkazilmaydi. Tizim arizani navbat asosida yoki navbatsiz toifaga ajratadi.',
+    title: 'G‘amxo‘rlik markazi toifasi aniqlandi',
+    services: ['G‘amxo‘rlik markazi'],
+    description: 'G‘amxo‘rlik markazi bo‘yicha ariza yaratilganidan keyin baholashdan o‘tkazilmaydi. Tizim arizani navbat asosida yoki navbatsiz toifaga ajratadi.',
     responsible: 'Tizim / “Inson” markazi',
     duration: 'Ariza yaratilgandan keyin',
-    legalBasis: 'G‘amxo‘rlik bo‘yicha xizmat jarayoni',
+    legalBasis: 'G‘amxo‘rlik markazi bo‘yicha xizmat jarayoni',
     outcomes: ['Navbat asosida bo‘lsa komissiyaga yuborish mumkin bo‘ladi', 'Navbatsiz bo‘lsa qo‘shimcha hujjatlar so‘raladi'],
   },
   {
     id: 'I',
     title: 'Qo‘shimcha hujjatlar yig‘ildi',
-    services: ['G‘amxo‘rlik (navbatsiz toifa)'],
+    services: ['G‘amxo‘rlik markazi (navbatsiz toifa)'],
     description: 'G‘amxo‘rlik markaziga navbatsiz joylashtiriladigan shaxslar uchun 3-ilovaga muvofiq qo‘shimcha hujjatlar arizachidan talab qilib olinadi.',
     responsible: 'Arizachi / “Inson” markazi',
     duration: '5 ish kuni',
@@ -521,7 +520,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'J',
     title: 'IPTKga yuborildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'Ma’lumotlar, hujjatlar va funksionallik baholash natijalari axborot moduli orqali IPTKga yuboriladi, arizachi SMS, YAIDXP yoki “Ijtimoiy karta” orqali xabardor qilinadi.',
     responsible: '“Inson” markazi',
     duration: '1 ish kuni',
@@ -531,7 +530,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'L',
     title: 'IPTK kotibi tekshirdi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'IPTK kotibi besh ish kuni ichida ma’lumot va hujjatlarning to‘liqligi hamda to‘g‘ri rasmiylashtirilganligini o‘rganadi.',
     responsible: 'IPTK kotibi',
     duration: '5 ish kuni',
@@ -541,7 +540,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'N',
     title: 'Yig‘ilish rejalashtirildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'Hujjatlar qabul qilingach ish IPTK yig‘ilishiga kiritiladi. Kotib yig‘ilish sanasi, vaqti va joyi bo‘yicha komissiya a’zolari va qonuniy vakilni kamida uch kun oldin xabardor qiladi.',
     responsible: 'IPTK kotibi',
     duration: 'Kamida 2 oyda bir marta; xabarnoma yig‘ilishdan kamida 3 kun oldin',
@@ -551,7 +550,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'Q',
     title: 'IPTK tekshiruvi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'IPTK to‘liq tarkibda shaxsni ko‘rikdan o‘tkazadi, tibbiy karta, WHODAS savolnomasi, “Inson” markazi funksionallik baholashi va 4-ilovadagi tibbiy ko‘rsatmalarni o‘rganadi.',
     responsible: 'IPTK a’zolari',
     duration: 'Yig‘ilish kuni',
@@ -561,17 +560,17 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'S',
     title: 'IPTK xulosasi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'IPTK tekshiruv natijasi bo‘yicha tanlangan xizmatga yo‘naltirish, boshqa xizmatni tavsiya qilish yoki ijtimoiy xizmatga yo‘naltirishni rad etish haqida xulosa qabul qiladi.',
     responsible: 'IPTK',
     duration: 'Bayonnoma imzolangach 3 ish kuni ichida rasmiylashtiriladi',
     legalBasis: '4-bob 2-§; IPTK xulosasi shakli',
-    outcomes: ['Tanlangan xizmatga yo‘naltirish', 'Boshqa xizmatni tavsiya qilish (G‘amxo‘rlik va Madad bundan mustasno)', 'Ijtimoiy xizmatga yo‘naltirishni rad etish'],
+    outcomes: ['Tanlangan xizmatga yo‘naltirish', 'Boshqa xizmatni tavsiya qilish (G‘amxo‘rlik markazi va Madad bundan mustasno)', 'Ijtimoiy xizmatga yo‘naltirishni rad etish'],
   },
   {
     id: 'T',
     title: 'Yakuniy xulosa yuborildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'Rasmiylashtirilgan IPTK xulosasi bir ish kuni ichida yashash manzilidagi “Inson” markaziga yuboriladi va qonuniy vakil SMS, YAIDXP yoki “Ijtimoiy karta” orqali xabardor qilinadi.',
     responsible: 'IPTK / axborot moduli',
     duration: '1 ish kuni',
@@ -581,7 +580,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'R',
     title: 'Bekor qilindi / qaytarildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'Tanlangan xizmatga mos tashxis/toifa bo‘lmasa, hujjatlar yetarli bo‘lmasa yoki arizachi xizmatdan voz kechsa so‘rovnoma bekor qilinadi. IPTK bosqichida kamchilik yoki ko‘rikka kelmaslik bo‘lsa ish “Inson” markaziga qaytariladi.',
     responsible: '“Inson” markazi / IPTK / IPTK kotibi',
     duration: 'Bosqichga qarab',
@@ -591,7 +590,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'U',
     title: 'Qayta ishlashga qaytarildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad uylari', 'G‘amxo‘rlik markazi'],
     description: 'IPTK kotibi hujjatlarda kamchilik aniqlasa yoki qonuniy vakil shaxsni yig‘ilishga olib kelmasa, hujjatlar “Inson” markaziga qaytariladi.',
     responsible: 'IPTK kotibi / “Inson” markazi',
     duration: 'Kamchilik bartaraf etilgach qayta yuboriladi',
@@ -601,7 +600,7 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'W',
     title: 'Rad etildi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Madad', 'G‘amxo‘rlik markazi'],
     description: 'IPTK tekshiruv natijasida ijtimoiy xizmatga yo‘naltirishni rad etish xulosasi qabul qilinishi mumkin.',
     responsible: 'IPTK',
     duration: 'Bayonnoma imzolangach 3 ish kuni ichida rasmiylashtiriladi',
@@ -722,12 +721,12 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
   {
     id: 'barthel-lawton',
     title: 'Barthel va Lawton shkalalari',
-    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. G‘amxo‘rlik arizasi baholashdan o‘tkazilmaydi, u yaratilganidan keyin navbat asosida yoki navbatsiz toifaga ajratiladi.',
+    description: 'Parvarishga muhtojlik darajasi va kundalik mustaqillikni baholash uchun ishlatiladi. G‘amxo‘rlik markazi arizasi baholashdan o‘tkazilmaydi, u yaratilganidan keyin navbat asosida yoki navbatsiz toifaga ajratiladi.',
     stepIds: ['F', 'H'],
     purpose: 'Shaxsning o‘ziga-o‘zi xizmat ko‘rsatish, kundalik faoliyatlarni bajara olish va parvarishga ehtiyoj darajasini aniqlash.',
     usage: [
-      'G‘amxo‘rlik markazi va Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
-      'G‘amxo‘rlik bo‘yicha navbat asosida/navbatsiz toifa baholash dialogisiz alohida aniqlanadi.',
+      'Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
+      'G‘amxo‘rlik markazi bo‘yicha navbat asosida/navbatsiz toifa baholash dialogisiz alohida aniqlanadi.',
       'Parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
     ],
   },
@@ -781,9 +780,9 @@ flowchart TD
     E -->|"Yangi kun"| J["INSON MARKAZI<br/>ma'lumot va hujjatlarni IPTKga yuboradi<br/>Bosqich:<br/>IPTKga yuborildi"]
     E -->|"Uy sharoitida<br/>qarab turish"| J
     E -->|"Ijtimoiy ta'til"| J
-    E -->|"G'amxo'rlik markazi / Madad"| F["INSON MARKAZI<br/>baholash jarayonini boshlaydi<br/>Bosqich:<br/>Baholash jarayoni"]
+    E -->|"Madad uylari"| F["INSON MARKAZI<br/>baholash jarayonini boshlaydi<br/>Bosqich:<br/>Baholash jarayoni"]
     F --> H["ISHCHI GURUH<br/>parvarish va yashash sharoitini baholaydi<br/>Bosqich:<br/>Baholash jarayoni"]
-    E -->|"G'amxo'rlik"| G{"G'amxo'rlik<br/>toifasi"}
+    E -->|"G'amxo'rlik markazi"| G{"G'amxo'rlik markazi<br/>toifasi"}
 
     H --> M2{"Parvarishga<br/>muhtojlik tasdiqlandimi?"}
     M2 -->|Yo'q| R
@@ -879,7 +878,7 @@ const applicationRows = ref(demoApplicationCases.map((applicationCase, index) =>
     fullName: person,
     pinfl: pinflSeed,
     serviceId: service?.id ?? 'gamxorlik-markazi',
-    serviceType: service?.label ?? 'Xizmat turi belgilanmagan',
+    serviceType: getServiceOptionFullName(service),
     careQueueCategory,
     region,
     district,
@@ -1088,12 +1087,50 @@ function getApplicationStageLabel(row: ApplicationRow) {
   return isIptkApplicationsListPage.value ? row.step : row.status
 }
 
+function getServiceOptionById(serviceId?: string) {
+  return serviceOptions.find((service) => service.id === serviceId) ?? null
+}
+
+function getServiceOptionByName(value?: string) {
+  if (!value) {
+    return null
+  }
+
+  const normalized = value.trim().toLowerCase()
+
+  return serviceOptions.find((service) => {
+    const shortName = service.shortName.toLowerCase()
+    const fullName = service.fullName.toLowerCase()
+
+    return normalized === shortName
+      || normalized === fullName
+      || normalized.includes(shortName)
+      || normalized.includes(fullName)
+  }) ?? null
+}
+
+function getServiceOptionShortName(service?: ServiceOption | null) {
+  return service?.shortName ?? 'Xizmat turi belgilanmagan'
+}
+
+function getServiceOptionFullName(service?: ServiceOption | null) {
+  return service?.fullName ?? 'Xizmat turi belgilanmagan'
+}
+
 function getApplicationServiceTypeLabel(row: ApplicationRow) {
   if (!isIptkApplicationsListPage.value) {
     return row.serviceType
   }
 
-  return serviceOptions.find((service) => service.label === row.serviceType)?.shortLabel ?? row.serviceType
+  return getServiceOptionShortName(getServiceOptionById(row.serviceId) ?? getServiceOptionByName(row.serviceType))
+}
+
+function getApplicationCareQueueLabel(row: ApplicationRow) {
+  if (!isGamxorlikApplication(row)) {
+    return ''
+  }
+
+  return row.careQueueCategory === 'Navbatsiz' ? 'Navbatsiz toifa' : 'Navbatli toifa'
 }
 
 function formatAssessmentScore(score: number) {
@@ -1213,7 +1250,7 @@ const selectedServiceOption = computed(() => {
   return serviceOptions.find((service) => service.id === selectedServiceOptionId.value) ?? null
 })
 const selectedServiceOptionLabel = computed(() => {
-  return selectedServiceOption.value?.label ?? 'Xizmat turini tanlang'
+  return selectedServiceOption.value ? getServiceOptionFullName(selectedServiceOption.value) : 'Xizmat turini tanlang'
 })
 const serviceEligibilityOptions = computed(() => {
   return serviceOptions.map((service) => buildServiceEligibility(service, serviceRecipientLookupResult.value))
@@ -1450,7 +1487,7 @@ const selectedViewDetail = computed<ViewApplicationDetail | null>(() => {
     return null
   }
 
-  const service = serviceOptions[rowIndex % serviceOptions.length] ?? defaultService
+  const service = getServiceOptionById(row.serviceId) ?? getServiceOptionByName(row.serviceType) ?? defaultService
   const serviceRecipient = {
     ...buildLookupResultFromRow(row, 0, true),
     fullName: row.fullName,
@@ -2065,6 +2102,14 @@ function selectApplicationStepTab(value: ApplicationStepTabValue) {
     appliedStepFilter.value = [...nextStepFilter]
     currentPage.value = 1
   })
+}
+
+function blurStatusTabAfterPointer(event: PointerEvent) {
+  if (event.pointerType === 'mouse' || event.pointerType === 'touch') {
+    window.setTimeout(() => {
+      (event.currentTarget as HTMLElement | null)?.blur()
+    }, 0)
+  }
 }
 
 function selectStepFilter(value: 'all' | ApplicationStep) {
@@ -2917,7 +2962,7 @@ function buildViewDocumentContent(viewDocument: { label: string, fileName: strin
     `Fayl: ${viewDocument.fileName}`,
     `Ariza raqami: ${selectedViewRow.value.id}`,
     `Ariza sanasi: ${selectedViewRow.value.date}`,
-    `Xizmat turi: ${selectedViewDetail.value.service.label}`,
+    `Xizmat turi: ${getServiceOptionFullName(selectedViewDetail.value.service)}`,
     `Arizachi: ${normalizeFullName(selectedViewDetail.value.applicant.fullName)}`,
     `Xizmat oluvchi: ${normalizeFullName(selectedViewDetail.value.serviceRecipient.fullName)}`,
     '',
@@ -3052,7 +3097,7 @@ function canEditApplication(row: ApplicationRow) {
 }
 
 function requiresAssessmentBeforeIptk(row: ApplicationRow) {
-  return row.step === 'Ariza yaratildi' && ['gamxorlik-markazi', 'madad'].includes(row.serviceId)
+  return row.step === 'Ariza yaratildi' && row.serviceId === 'madad'
 }
 
 function isGamxorlikApplication(row: ApplicationRow) {
@@ -3067,7 +3112,7 @@ function canRequestAdditionalDocuments(row: ApplicationRow) {
 
 function canSendDirectlyToIptk(row: ApplicationRow) {
   return row.step === 'Ariza yaratildi'
-    && !['gamxorlik-markazi', 'madad'].includes(row.serviceId)
+    && row.serviceId !== 'madad'
     && !canRequestAdditionalDocuments(row)
 }
 
@@ -3527,7 +3572,7 @@ watch(serviceRecipientLookupResult, () => {
                 </p>
                 <div class="mt-4 rounded-xl border border-border bg-background px-4 py-3">
                   <p class="text-sm font-medium leading-6 text-foreground">
-                    {{ selectedViewDetail.service.label }}
+                    {{ getServiceOptionFullName(selectedViewDetail.service) }}
                   </p>
                 </div>
               </div>
@@ -4753,30 +4798,32 @@ watch(serviceRecipientLookupResult, () => {
             v-if="isIptkApplicationsListPage"
             class="-mt-1 max-w-full min-w-0 overflow-x-auto"
           >
-            <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-xl border border-border bg-card p-1.5 text-muted-foreground">
+            <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
               <button
                 v-for="tab in applicationStepTabs"
                 :key="`application-step-tab-${tab.value}`"
                 type="button"
+                :aria-pressed="isApplicationStepTabActive(tab.value)"
                 :class="[
-                  'inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent px-3.5 py-1 text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+                  'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
                   isApplicationStepTabActive(tab.value)
-                    ? 'border-border bg-background text-foreground ring-1 ring-border/70'
-                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                    ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25'
+                    : '',
                 ]"
+                @pointerup="blurStatusTabAfterPointer"
                 @click="selectApplicationStepTab(tab.value)"
               >
                 <span
                   :class="[
                     'h-2 w-2 shrink-0 rounded-full',
                     tab.dotClass,
-                    isApplicationStepTabActive(tab.value) ? 'opacity-100' : 'opacity-55',
+                    isApplicationStepTabActive(tab.value) ? 'opacity-100' : 'opacity-55 group-hover:opacity-100 group-focus:opacity-100',
                   ]"
                 />
-                <span class="whitespace-nowrap">{{ t(tab.label) }}</span>
+                <span class="whitespace-nowrap group-hover:text-foreground group-focus:text-foreground">{{ t(tab.label) }}</span>
                 <span
                   :class="[
-                    'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold',
+                    'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold transition-colors duration-150 group-hover:bg-primary/10 group-hover:text-foreground group-focus:bg-primary/10 group-focus:text-foreground',
                     isApplicationStepTabActive(tab.value)
                       ? tab.badgeClass
                       : 'bg-muted text-muted-foreground',
@@ -4955,6 +5002,12 @@ watch(serviceRecipientLookupResult, () => {
                           <p class="mt-1 font-medium text-foreground">
                             {{ getApplicationServiceTypeLabel(row) }}
                           </p>
+                          <p
+                            v-if="getApplicationCareQueueLabel(row)"
+                            class="mt-1 text-xs font-medium text-muted-foreground"
+                          >
+                            {{ getApplicationCareQueueLabel(row) }}
+                          </p>
                         </div>
 
                         <div>
@@ -5043,6 +5096,12 @@ watch(serviceRecipientLookupResult, () => {
                       <td class="border-b border-border px-4 py-3 align-top">
                         <div class="max-w-[320px] font-medium text-foreground">
                           {{ getApplicationServiceTypeLabel(row) }}
+                        </div>
+                        <div
+                          v-if="getApplicationCareQueueLabel(row)"
+                          class="mt-1 text-xs font-medium text-muted-foreground"
+                        >
+                          {{ getApplicationCareQueueLabel(row) }}
                         </div>
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
@@ -5937,7 +5996,7 @@ watch(serviceRecipientLookupResult, () => {
                   </div>
                 </div>
                 <button
-                  v-for="service in filterDropdownOptions(serviceEligibilityOptions, 'muruvvat-service-option', (item) => item.label)"
+                  v-for="service in filterDropdownOptions(serviceEligibilityOptions, 'muruvvat-service-option', (item) => `${item.shortName} ${item.fullName}`)"
                   :key="service.id"
                   type="button"
                   :disabled="!service.eligible"
@@ -5950,7 +6009,7 @@ watch(serviceRecipientLookupResult, () => {
                   @click.stop.prevent="handleServiceOptionChange(service.id)"
                 >
                   <div class="min-w-0 flex-1">
-                    <span class="block leading-6">{{ service.label }}</span>
+                    <span class="block leading-6">{{ getServiceOptionFullName(service) }}</span>
                     <p
                       v-if="service.eligible"
                       class="mt-1 text-xs text-emerald-600"
