@@ -185,6 +185,21 @@ interface ProtocolApplicationCandidate {
   step: ApplicationReportStep
 }
 
+interface ApplicationReportDrilldownSelection {
+  region: string
+  group: string
+  column: string
+  value: number
+}
+
+interface ApplicationReportDrilldownRecord extends ProtocolApplicationCandidate {
+  status: ApplicationReportStatus
+  diagnosis: string
+  disabilityGroup: string
+  gender: string
+  ageGroup: string
+}
+
 interface ConclusionRecord {
   id: string
   documentNumber: string
@@ -1834,6 +1849,7 @@ const feedback = ref<{ type: FeedbackType; title: string; message: string } | nu
 const notificationProgress = ref(100)
 const notificationRemaining = ref(NOTIFICATION_DURATION)
 const isTableLoading = ref(false)
+const isApplicationReportDrilldownLoading = ref(false)
 const actionLoadingKey = ref<string | null>(null)
 const isConfirmationLoading = ref(false)
 const documentFlowDialogKind = ref<DocumentFlowKind | null>(null)
@@ -1895,6 +1911,15 @@ const appliedApplicationReportSnapshotDateFilter = ref(defaultApplicationReportS
 const draftApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
 const appliedApplicationReportComparisonDateFilter = ref(defaultApplicationReportComparisonDate)
 const selectedApplicationReportCells = ref<Record<string, { label: string, value: number }>>({})
+const selectedApplicationReportDrilldown = ref<ApplicationReportDrilldownSelection | null>(null)
+const isApplicationReportCellDragging = ref(false)
+const suppressNextApplicationReportCellClick = ref(false)
+const applicationReportCellDragStart = ref<ApplicationReportDrilldownSelection | null>(null)
+const applicationReportCellDragAppend = ref(false)
+const applicationReportCellDragVisitedKeys = ref<Set<string>>(new Set())
+const applicationReportDrilldownRowsPerPage = ref(20)
+const applicationReportDrilldownCurrentPage = ref(1)
+const isApplicationReportDrilldownRowsPerPageOpen = ref(false)
 const draftStatusFilter = ref<CommissionStatus[]>([])
 const appliedStatusFilter = ref<CommissionStatus[]>([])
 const draftRegionFilter = ref<string[]>([])
@@ -1984,6 +2009,7 @@ let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let serviceTypeSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let diagnosisSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
+let applicationReportDrilldownLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let actionLoadingTimer: ReturnType<typeof setTimeout> | null = null
 let isHydratingEditForm = false
 let lockedBodyScrollY = 0
@@ -4324,6 +4350,106 @@ const applicationReportSelectionAnalytics = computed(() => {
     average: sum / values.length,
   }
 })
+const applicationReportDrilldownRows = computed<ApplicationReportDrilldownRecord[]>(() => {
+  const selection = selectedApplicationReportDrilldown.value
+  if (!selection) return []
+
+  const count = Math.max(0, selection.value)
+  const isRegionalTotal = selection.region.includes("bo'yicha jami")
+  const isDistrictView = Boolean(selectedApplicationReportRegion.value) && !isRegionalTotal
+  const baseRegion = selectedApplicationReportRegion.value || null
+  const selectedStatus = selection.group === 'status'
+    ? selection.column as ApplicationReportStatus
+    : null
+  const selectedStep = selection.group === 'step'
+    ? selection.column as ApplicationReportStep
+    : null
+  const selectedMetric = applicationReportMetricGroups.find((group) => group.key === selection.group)
+  const selectedMetricKey = selectedMetric?.key
+  const selectedMetricValue = selectedMetric ? selection.column : null
+  const stepsForStatus = selectedStatus
+    ? applicationReportSteps.filter((step) => applicationReportStepStatusMap[step] === selectedStatus)
+    : applicationReportSteps
+  const recipientNames = [
+    "Aliyev Azizbek Anvar o'g'li",
+    'Karimova Mohira Baxtiyor qizi',
+    "Rasulov Doston Elyor o'g'li",
+    'Tursunova Shahnoza Sherzod qizi',
+    "Qodirov Jamshid Shuhrat o'g'li",
+  ] as const
+  const fallbackRegion = applicationReportRegions[0] ?? selection.region
+  const fallbackStep = (applicationReportSteps[0] ?? 'Ariza yaratildi') as ApplicationReportStep
+  const stepPool = stepsForStatus.length ? stepsForStatus : applicationReportSteps
+
+  return Array.from({ length: count }, (_, index) => {
+    const step = selectedStep ?? stepPool[index % stepPool.length] ?? fallbackStep
+    const status = selectedStatus ?? applicationReportStepStatusMap[step]
+    const region = (isRegionalTotal
+      ? applicationReportRegions[index % applicationReportRegions.length]
+      : (baseRegion || selection.region)
+    ) ?? fallbackRegion
+    const districtOptions = applicationReportDistricts[region] ?? []
+    const district = isDistrictView
+      ? selection.region
+      : (districtOptions[index % Math.max(1, districtOptions.length)] ?? selection.region)
+    const serviceType = selectedMetricKey === 'serviceTypes'
+      ? selectedMetricValue || applicationReportServiceTypes[index % applicationReportServiceTypes.length] || 'G‘amxo‘rlik markazi'
+      : applicationReportServiceTypes[index % applicationReportServiceTypes.length] || 'G‘amxo‘rlik markazi'
+    const diagnosis = selectedMetricKey === 'diagnoses'
+      ? selectedMetricValue || applicationReportDiagnoses[index % applicationReportDiagnoses.length] || 'F71'
+      : applicationReportDiagnoses[index % applicationReportDiagnoses.length] || 'F71'
+    const disabilityGroup = selectedMetricKey === 'disabilityGroups'
+      ? selectedMetricValue || applicationReportDisabilityGroups[index % applicationReportDisabilityGroups.length] || 'I guruh'
+      : applicationReportDisabilityGroups[index % applicationReportDisabilityGroups.length] || 'I guruh'
+    const gender = selectedMetricKey === 'genders'
+      ? selectedMetricValue || applicationReportGenders[index % applicationReportGenders.length] || 'Erkak'
+      : applicationReportGenders[index % applicationReportGenders.length] || 'Erkak'
+    const ageGroup = selectedMetricKey === 'ageGroups'
+      ? selectedMetricValue || applicationReportAgeGroups[index % applicationReportAgeGroups.length] || '18-55/60'
+      : applicationReportAgeGroups[index % applicationReportAgeGroups.length] || '18-55/60'
+
+    return {
+      id: `report-drilldown-${index + 1}`,
+      documentNumber: `ARZ-${String(index + 1).padStart(6, '0')}`,
+      createdAt: `${String((index % 28) + 1).padStart(2, '0')}.${String((index % 12) + 1).padStart(2, '0')}.2026`,
+      serviceRecipient: normalizeFullName(recipientNames[index % recipientNames.length] ?? recipientNames[0]),
+      serviceRecipientPinfl: `1000000000${String(index + 1).padStart(4, '0')}`,
+      serviceType,
+      region,
+      district,
+      step,
+      status,
+      diagnosis,
+      disabilityGroup,
+      gender,
+      ageGroup,
+    }
+  })
+})
+const applicationReportDrilldownTotalRows = computed(() => applicationReportDrilldownRows.value.length)
+const applicationReportDrilldownTotalPages = computed(() => Math.max(1, Math.ceil(applicationReportDrilldownTotalRows.value / applicationReportDrilldownRowsPerPage.value)))
+const paginatedApplicationReportDrilldownRows = computed(() => {
+  const start = (applicationReportDrilldownCurrentPage.value - 1) * applicationReportDrilldownRowsPerPage.value
+  return applicationReportDrilldownRows.value.slice(start, start + applicationReportDrilldownRowsPerPage.value)
+})
+const applicationReportDrilldownPaginationRange = computed(() => {
+  const start = applicationReportDrilldownTotalRows.value === 0
+    ? 0
+    : (applicationReportDrilldownCurrentPage.value - 1) * applicationReportDrilldownRowsPerPage.value + 1
+  const end = Math.min(
+    applicationReportDrilldownCurrentPage.value * applicationReportDrilldownRowsPerPage.value,
+    applicationReportDrilldownTotalRows.value,
+  )
+
+  return { start, end }
+})
+const applicationReportDrilldownCurrentPageSummary = computed(() => `${applicationReportDrilldownCurrentPage.value}/${applicationReportDrilldownTotalPages.value}`)
+const applicationReportDrilldownTitle = computed(() => {
+  const selection = selectedApplicationReportDrilldown.value
+  if (!selection) return ''
+
+  return `${selection.region} / ${selection.column}`
+})
 
 const hasActiveFilters = computed(() => {
   return appliedStatusFilter.value.length
@@ -5238,6 +5364,7 @@ function setRowsPerPage(nextValue: number) {
     selectedRowsPerPage.value = nextValue
     currentPage.value = 1
   })
+  isRowsPerPageOpen.value = false
 }
 
 function handleAssessmentSearchInput(value: string) {
@@ -5273,6 +5400,7 @@ function setAssessmentRowsPerPage(nextValue: number) {
     assessmentRowsPerPage.value = nextValue
     assessmentCurrentPage.value = 1
   })
+  isAssessmentRowsPerPageOpen.value = false
 }
 
 function handleProtocolSearchInput(value: string) {
@@ -5308,6 +5436,7 @@ function setProtocolRowsPerPage(nextValue: number) {
     protocolRowsPerPage.value = nextValue
     protocolCurrentPage.value = 1
   })
+  isProtocolRowsPerPageOpen.value = false
 }
 
 function handleConclusionSearchInput(value: string) {
@@ -5351,6 +5480,7 @@ function setConclusionRowsPerPage(nextValue: number) {
     conclusionRowsPerPage.value = nextValue
     conclusionCurrentPage.value = 1
   })
+  isConclusionRowsPerPageOpen.value = false
 }
 
 function applyProtocolFilters() {
@@ -6088,7 +6218,7 @@ function closeAssessmentViewDialog() {
 
 function saveAssessmentFromDialog() {
   const record = selectedAssessmentViewRecord.value
-  if (!record || !isAssessmentComplete.value) return
+  if (!record) return
 
   runSaveLoading('assessment-save-edit', () => {
   record.answers = { ...assessmentAnswers.value }
@@ -6264,7 +6394,6 @@ async function downloadAssessments() {
       Sana: formatDateDisplay(record.createdAt),
       'Xizmat oluvchi': normalizeFullName(record.serviceRecipient),
       'Xizmat oluvchi JSHSHIR': record.serviceRecipientPinfl,
-      'Xizmat turi': record.serviceType,
       Natija: getAssessmentResultDisplay(record),
       Hudud: record.region,
       Tuman: record.district,
@@ -6307,6 +6436,20 @@ function runTableLoading(update: () => void) {
     isTableLoading.value = false
     loadingTimer = null
   }, 200)
+}
+
+function runApplicationReportDrilldownLoading(update: () => void) {
+  if (applicationReportDrilldownLoadingTimer) {
+    clearTimeout(applicationReportDrilldownLoadingTimer)
+  }
+
+  isApplicationReportDrilldownLoading.value = true
+
+  applicationReportDrilldownLoadingTimer = setTimeout(() => {
+    update()
+    isApplicationReportDrilldownLoading.value = false
+    applicationReportDrilldownLoadingTimer = null
+  }, 250)
 }
 
 async function downloadCommissions() {
@@ -6584,6 +6727,7 @@ function setServiceTypeRowsPerPageOpen(nextOpen: boolean) {
 function setServiceTypeRowsPerPage(nextValue: number) {
   serviceTypeRowsPerPage.value = nextValue
   serviceTypeCurrentPage.value = 1
+  isServiceTypeRowsPerPageOpen.value = false
 }
 
 function setServiceTypeActionMenuOpen(recordId: string, nextOpen: boolean) {
@@ -7002,6 +7146,7 @@ function setDiagnosisRowsPerPageOpen(nextOpen: boolean) {
 function setDiagnosisRowsPerPage(nextValue: number) {
   diagnosisRowsPerPage.value = nextValue
   diagnosisCurrentPage.value = 1
+  isDiagnosisRowsPerPageOpen.value = false
 }
 
 function setDiagnosisActionMenuOpen(recordId: string, nextOpen: boolean) {
@@ -7120,6 +7265,63 @@ async function downloadApplicationReport() {
   }
 }
 
+async function downloadApplicationReportDrilldown() {
+  const selection = selectedApplicationReportDrilldown.value
+  if (!selection) return
+
+  const stopLoading = startActionLoading('application-report-drilldown-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+    const exportRows = applicationReportDrilldownRows.value.map((record) => ({
+      Ariza: record.documentNumber,
+      Sana: record.createdAt,
+      'Xizmat oluvchi': record.serviceRecipient,
+      JSHSHIR: record.serviceRecipientPinfl,
+      'Xizmat turi': record.serviceType,
+      Hudud: record.region,
+      'Tuman yoki shahar': record.district,
+      Bosqich: record.step,
+      Status: record.status,
+      Tashxis: record.diagnosis,
+      'Nogironlik guruhi': record.disabilityGroup,
+      Jins: record.gender,
+      Yosh: record.ageGroup,
+    }))
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    worksheet['!cols'] = [
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 34 },
+      { wch: 18 },
+      { wch: 26 },
+      { wch: 24 },
+      { wch: 24 },
+      { wch: 30 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 12 },
+    ]
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Arizalar')
+    const reportDate = new Date().toISOString().slice(0, 10)
+    const scope = selection.column.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'tanlov'
+
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, `iptk-hisobot-arizalar-${scope}-${reportDate}.xlsx`)
+      pushFeedback('success', 'Tanlangan son bo‘yicha arizalar ro‘yxati Excel formatida yuklab olindi.', 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'application-report-drilldown-download') {
+      stopLoading()
+    }
+  }
+}
+
 async function downloadApplicationDashboard() {
   const stopLoading = startActionLoading('application-dashboard-download', 700)
   let downloadScheduled = false
@@ -7202,30 +7404,21 @@ function clearApplicationReportCellSelection() {
   selectedApplicationReportCells.value = {}
 }
 
-function handleApplicationReportCellClick(
-  event: MouseEvent,
-  region: string,
-  group: string,
-  column: string,
-  value: number,
-) {
-  event.preventDefault()
+function selectApplicationReportCell(region: string, group: string, column: string, value: number, append = true) {
   const key = getApplicationReportCellKey(region, group, column)
-  const hasSelectedCells = selectedApplicationReportCellValues.value.length > 0
-
-  if (!event.ctrlKey && !event.metaKey) {
-    selectedApplicationReportCells.value = {
-      [key]: {
-        label: `${region} / ${column}`,
-        value,
-      },
-    }
-    return
+  selectedApplicationReportCells.value = {
+    ...(append ? selectedApplicationReportCells.value : {}),
+    [key]: {
+      label: `${region} / ${column}`,
+      value,
+    },
   }
+}
 
-  if (!hasSelectedCells) return
-
+function toggleApplicationReportCell(region: string, group: string, column: string, value: number) {
+  const key = getApplicationReportCellKey(region, group, column)
   const nextSelectedCells = { ...selectedApplicationReportCells.value }
+
   if (nextSelectedCells[key]) {
     delete nextSelectedCells[key]
   } else {
@@ -7236,6 +7429,137 @@ function handleApplicationReportCellClick(
   }
 
   selectedApplicationReportCells.value = nextSelectedCells
+}
+
+function openApplicationReportDrilldown(region: string, group: string, column: string, value: number) {
+  applicationReportDrilldownCurrentPage.value = 1
+  selectedApplicationReportDrilldown.value = {
+    region,
+    group,
+    column,
+    value,
+  }
+}
+
+function closeApplicationReportDrilldown() {
+  selectedApplicationReportDrilldown.value = null
+  applicationReportDrilldownCurrentPage.value = 1
+  isApplicationReportDrilldownRowsPerPageOpen.value = false
+}
+
+function goToApplicationReportDrilldownPage(page: number) {
+  if (
+    page < 1
+    || page > applicationReportDrilldownTotalPages.value
+    || page === applicationReportDrilldownCurrentPage.value
+  ) return
+
+  runApplicationReportDrilldownLoading(() => {
+    applicationReportDrilldownCurrentPage.value = page
+  })
+}
+
+function setApplicationReportDrilldownRowsPerPageOpen(nextOpen: boolean) {
+  isApplicationReportDrilldownRowsPerPageOpen.value = nextOpen
+}
+
+function setApplicationReportDrilldownRowsPerPage(nextValue: number) {
+  isApplicationReportDrilldownRowsPerPageOpen.value = false
+  runApplicationReportDrilldownLoading(() => {
+    applicationReportDrilldownRowsPerPage.value = nextValue
+    applicationReportDrilldownCurrentPage.value = 1
+  })
+}
+
+function handleApplicationReportCellClick(
+  event: MouseEvent,
+  region: string,
+  group: string,
+  column: string,
+  value: number,
+) {
+  event.preventDefault()
+  if (suppressNextApplicationReportCellClick.value) {
+    suppressNextApplicationReportCellClick.value = false
+    return
+  }
+
+  const hasSelectedCells = selectedApplicationReportCellValues.value.length > 0
+
+  if ((event.ctrlKey || event.metaKey) && !hasSelectedCells) {
+    openApplicationReportDrilldown(region, group, column, value)
+    return
+  }
+
+  if (!event.ctrlKey && !event.metaKey) {
+    selectApplicationReportCell(region, group, column, value, false)
+    return
+  }
+
+  if (!hasSelectedCells) return
+
+  toggleApplicationReportCell(region, group, column, value)
+}
+
+function handleApplicationReportCellMouseDown(
+  event: MouseEvent,
+  region: string,
+  group: string,
+  column: string,
+  value: number,
+) {
+  if (event.button !== 0) return
+  const appendSelection = event.ctrlKey || event.metaKey
+  const hasSelectedCells = selectedApplicationReportCellValues.value.length > 0
+
+  if (appendSelection && !hasSelectedCells) return
+
+  event.preventDefault()
+  isApplicationReportCellDragging.value = true
+  suppressNextApplicationReportCellClick.value = appendSelection
+  applicationReportCellDragStart.value = { region, group, column, value }
+  applicationReportCellDragAppend.value = appendSelection
+  applicationReportCellDragVisitedKeys.value = new Set([getApplicationReportCellKey(region, group, column)])
+
+  if (appendSelection) {
+    toggleApplicationReportCell(region, group, column, value)
+  } else {
+    selectApplicationReportCell(region, group, column, value, false)
+  }
+}
+
+function handleApplicationReportCellMouseEnter(region: string, group: string, column: string, value: number) {
+  if (!isApplicationReportCellDragging.value) return
+
+  const startCell = applicationReportCellDragStart.value
+  if (startCell && !suppressNextApplicationReportCellClick.value) {
+    selectApplicationReportCell(
+      startCell.region,
+      startCell.group,
+      startCell.column,
+      startCell.value,
+      applicationReportCellDragAppend.value,
+    )
+  }
+
+  suppressNextApplicationReportCellClick.value = true
+  const key = getApplicationReportCellKey(region, group, column)
+  if (applicationReportCellDragVisitedKeys.value.has(key)) return
+
+  applicationReportCellDragVisitedKeys.value = new Set([...applicationReportCellDragVisitedKeys.value, key])
+
+  if (applicationReportCellDragAppend.value) {
+    toggleApplicationReportCell(region, group, column, value)
+  } else {
+    selectApplicationReportCell(region, group, column, value)
+  }
+}
+
+function stopApplicationReportCellDrag() {
+  isApplicationReportCellDragging.value = false
+  applicationReportCellDragStart.value = null
+  applicationReportCellDragAppend.value = false
+  applicationReportCellDragVisitedKeys.value = new Set()
 }
 
 function syncApplicationReportDraftFilters() {
@@ -7481,6 +7805,7 @@ function closeTransientUi() {
   closeAssessmentFilters()
   closeProtocolFilters()
   closeApplicationReportFilters()
+  closeApplicationReportDrilldown()
   clearApplicationReportCellSelection()
   openActionMenuId.value = null
   openServiceTypeActionMenuId.value = null
@@ -7506,6 +7831,11 @@ function closeTransientUi() {
 function closeTopLayer() {
   if (pendingConfirmation.value && !isConfirmationLoading.value) {
     closeConfirmation()
+    return
+  }
+
+  if (selectedApplicationReportDrilldown.value) {
+    closeApplicationReportDrilldown()
     return
   }
 
@@ -7667,10 +7997,12 @@ watch(isAnyDialogOpen, (isOpen) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('mouseup', stopApplicationReportCellDrag)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('mouseup', stopApplicationReportCellDrag)
   clearNotificationTimers()
   unlockBodyScroll()
 
@@ -7688,6 +8020,10 @@ onUnmounted(() => {
 
   if (loadingTimer) {
     clearTimeout(loadingTimer)
+  }
+
+  if (applicationReportDrilldownLoadingTimer) {
+    clearTimeout(applicationReportDrilldownLoadingTimer)
   }
 
   if (actionLoadingTimer) {
@@ -9361,7 +9697,10 @@ onUnmounted(() => {
           <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
             <div class="flex items-center gap-2">
               <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-              <DropdownMenuRoot @update:open="setRowsPerPageOpen($event)">
+              <DropdownMenuRoot
+                :open="isRowsPerPageOpen"
+                @update:open="setRowsPerPageOpen($event)"
+              >
                 <DropdownMenuTrigger as-child>
                   <Button
                     variant="outline"
@@ -10618,10 +10957,6 @@ onUnmounted(() => {
                         <p class="mt-1 text-sm text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
                       </div>
                       <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
-                        <p class="mt-1 text-sm text-foreground">{{ record.serviceType }}</p>
-                      </div>
-                      <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Natija') }}</p>
                         <span
                           v-if="getAssessmentResultDisplay(record) !== '-'"
@@ -10653,12 +10988,11 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <table class="min-w-[1240px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <table class="min-w-[1120px] border-separate border-spacing-0 text-sm xl:min-w-full">
                 <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                   <tr>
                     <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
-                    <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Natija') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
                     <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
@@ -10667,7 +11001,7 @@ onUnmounted(() => {
                 </thead>
                 <tbody>
                   <tr v-if="paginatedAssessments.length === 0">
-                    <td colspan="7" class="border-b border-border px-4 py-12 text-center">
+                    <td colspan="6" class="border-b border-border px-4 py-12 text-center">
                       <div class="mx-auto flex max-w-md flex-col items-center gap-2">
                         <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
                         <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
@@ -10694,9 +11028,6 @@ onUnmounted(() => {
                     <td class="border-b border-border px-4 py-3 align-top">
                       <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
                       <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
-                    </td>
-                    <td class="border-b border-border px-4 py-3 align-top text-foreground">
-                      {{ record.serviceType }}
                     </td>
                     <td class="border-b border-border px-4 py-3 align-top">
                       <span
@@ -10769,7 +11100,10 @@ onUnmounted(() => {
           <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
             <div class="flex items-center gap-2">
               <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-              <DropdownMenuRoot @update:open="setAssessmentRowsPerPageOpen($event)">
+              <DropdownMenuRoot
+                :open="isAssessmentRowsPerPageOpen"
+                @update:open="setAssessmentRowsPerPageOpen($event)"
+              >
                 <DropdownMenuTrigger as-child>
                   <Button
                     variant="outline"
@@ -11028,7 +11362,7 @@ onUnmounted(() => {
           <Button
             v-if="!selectedAssessmentReadonly"
             class="min-w-36 gap-2"
-            :disabled="!isAssessmentComplete || actionLoadingKey === 'assessment-save-edit'"
+            :disabled="actionLoadingKey === 'assessment-save-edit'"
             @click="saveAssessmentFromDialog"
           >
             <LoaderCircle
@@ -11731,7 +12065,10 @@ onUnmounted(() => {
             <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
               <div class="flex items-center gap-2">
                 <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-                <DropdownMenuRoot @update:open="setProtocolRowsPerPageOpen($event)">
+                <DropdownMenuRoot
+                  :open="isProtocolRowsPerPageOpen"
+                  @update:open="setProtocolRowsPerPageOpen($event)"
+                >
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="outline"
@@ -12338,7 +12675,10 @@ onUnmounted(() => {
             <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
               <div class="flex items-center gap-2">
                 <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-                <DropdownMenuRoot @update:open="setConclusionRowsPerPageOpen($event)">
+                <DropdownMenuRoot
+                  :open="isConclusionRowsPerPageOpen"
+                  @update:open="setConclusionRowsPerPageOpen($event)"
+                >
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="outline"
@@ -12699,7 +13039,10 @@ onUnmounted(() => {
             <div class="flex flex-wrap items-center gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-                <DropdownMenuRoot @update:open="setServiceTypeRowsPerPageOpen">
+                <DropdownMenuRoot
+                  :open="isServiceTypeRowsPerPageOpen"
+                  @update:open="setServiceTypeRowsPerPageOpen"
+                >
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="outline"
@@ -13589,7 +13932,10 @@ onUnmounted(() => {
             <div class="flex flex-wrap items-center gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
-                <DropdownMenuRoot @update:open="setDiagnosisRowsPerPageOpen">
+                <DropdownMenuRoot
+                  :open="isDiagnosisRowsPerPageOpen"
+                  @update:open="setDiagnosisRowsPerPageOpen"
+                >
                   <DropdownMenuTrigger as-child>
                     <Button
                       variant="outline"
@@ -14620,7 +14966,9 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center font-semibold text-foreground transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'total', 'Jami'),
                     ]"
-                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
+                    @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'total', 'Jami', row.total)"
+                    @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'total', 'Jami', row.total)"
                     @click="handleApplicationReportCellClick($event, row.region, 'total', 'Jami', row.total)"
                   >
                     {{ row.total }}
@@ -14632,7 +14980,9 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'status', status),
                     ]"
-                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
+                    @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'status', status, row.statuses[status] ?? 0)"
+                    @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'status', status, row.statuses[status] ?? 0)"
                     @click="handleApplicationReportCellClick($event, row.region, 'status', status, row.statuses[status] ?? 0)"
                   >
                     <span :class="cn('inline-flex min-w-10 justify-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[status])">
@@ -14646,7 +14996,9 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'step', step),
                     ]"
-                    title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
+                    @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'step', step, row.steps[step] ?? 0)"
+                    @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'step', step, row.steps[step] ?? 0)"
                     @click="handleApplicationReportCellClick($event, row.region, 'step', step, row.steps[step] ?? 0)"
                   >
                     {{ row.steps[step] ?? 0 }}
@@ -14662,7 +15014,9 @@ onUnmounted(() => {
                         'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out last:border-r-0',
                         getApplicationReportCellClass(row.region, group.key, option),
                       ]"
-                      title="Click: analitika, Ctrl + click: tanlovga qo'shish"
+                      title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
+                      @mousedown="handleApplicationReportCellMouseDown($event, row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
+                      @mouseenter="handleApplicationReportCellMouseEnter(row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
                       @click="handleApplicationReportCellClick($event, row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
                     >
                       {{ row.metrics[group.key][option] ?? 0 }}
@@ -14732,6 +15086,231 @@ onUnmounted(() => {
         description="This module is prepared for future implementation."
       />
     </SectionBlock>
+
+    <div
+      v-if="selectedApplicationReportDrilldown"
+      class="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4"
+      @click.stop
+      @mousedown.stop
+      @touchmove.prevent
+      @wheel.self.prevent
+    >
+      <div class="flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-foreground">{{ t("Tanlangan son bo'yicha arizalar") }}</h2>
+            <p class="mt-1 text-sm text-muted-foreground">
+              {{ applicationReportDrilldownTitle }}:
+              <span class="font-semibold text-foreground">{{ selectedApplicationReportDrilldown.value }}</span>
+            </p>
+          </div>
+          <div class="flex shrink-0 items-center gap-2">
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'application-report-drilldown-download'"
+              @click="downloadApplicationReportDrilldown"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'application-report-drilldown-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download
+                v-else
+                class="h-4 w-4"
+              />
+              {{ t('Yuklab olish') }}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              class="shrink-0"
+              @click="closeApplicationReportDrilldown"
+            >
+              <X class="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div class="min-h-0 flex-1 overflow-auto px-6 py-5">
+          <div
+            v-if="isApplicationReportDrilldownLoading"
+            class="flex min-h-64 items-center justify-center rounded-2xl border border-border bg-card text-sm text-muted-foreground"
+          >
+            <LoaderCircle class="mr-2 h-5 w-5 animate-spin text-primary" />
+            <span>{{ t('Yuklanmoqda') }}</span>
+          </div>
+
+          <div
+            v-else-if="applicationReportDrilldownRows.length === 0"
+            class="rounded-2xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground"
+          >
+            {{ t("Ma'lumot topilmadi") }}
+          </div>
+
+          <div
+            v-else-if="!isApplicationReportDrilldownLoading"
+            class="grid gap-3 md:grid-cols-2"
+          >
+            <article
+              v-for="record in paginatedApplicationReportDrilldownRows"
+              :key="record.id"
+              class="rounded-2xl border border-border bg-card p-4 text-sm transition-colors duration-200 ease-out hover:bg-muted/20"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="font-semibold text-foreground">{{ record.documentNumber }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.createdAt }}</p>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <span :class="cn('inline-flex max-w-44 items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                    <span class="truncate">{{ record.step }}</span>
+                  </span>
+
+                  <DropdownMenuRoot>
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-8 w-8 rounded-md p-0"
+                      >
+                        <Ellipsis class="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuPortal>
+                      <DropdownMenuContent
+                        side="left"
+                        align="start"
+                        :side-offset="6"
+                        :collision-padding="12"
+                        class="z-[70] min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                      >
+                        <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                          <Eye class="h-4 w-4 shrink-0" />
+                          <span>{{ t("Ko'rish") }}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuRoot>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2">
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Xizmat oluvchi') }}</p>
+                  <p class="mt-1 font-semibold uppercase text-foreground">{{ record.serviceRecipient }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                </div>
+
+                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2">
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
+                  <p class="mt-1 font-semibold text-foreground">{{ record.region }}</p>
+                  <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                </div>
+
+                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2 sm:col-span-2">
+                  <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
+                  <p class="mt-1 font-semibold text-foreground">{{ record.serviceType }}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-border bg-card/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
+              <DropdownMenuRoot
+                :open="isApplicationReportDrilldownRowsPerPageOpen"
+                @update:open="setApplicationReportDrilldownRowsPerPageOpen($event)"
+              >
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :class="isApplicationReportDrilldownRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    :disabled="isApplicationReportDrilldownLoading"
+                  >
+                    <span>{{ applicationReportDrilldownRowsPerPage }}</span>
+                    <ChevronRight class="h-4 w-4 rotate-90" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuContent
+                    align="start"
+                    :side-offset="6"
+                    class="z-[70] w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                  >
+                    <DropdownMenuItem
+                      v-for="option in rowsPerPageOptions"
+                      :key="option"
+                      class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                      @select.prevent="setApplicationReportDrilldownRowsPerPage(option)"
+                    >
+                      <span :class="option === applicationReportDrilldownRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                        {{ option }}
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenuPortal>
+              </DropdownMenuRoot>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
+              <span class="font-medium text-foreground">
+                {{ applicationReportDrilldownPaginationRange.start }}-{{ applicationReportDrilldownPaginationRange.end }} / {{ applicationReportDrilldownTotalRows }}
+              </span>
+            </div>
+          </div>
+
+          <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 sm:w-auto sm:justify-start">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isApplicationReportDrilldownLoading || applicationReportDrilldownCurrentPage === 1"
+              @click="goToApplicationReportDrilldownPage(1)"
+            >
+              <ChevronsLeft class="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isApplicationReportDrilldownLoading || applicationReportDrilldownCurrentPage === 1"
+              @click="goToApplicationReportDrilldownPage(applicationReportDrilldownCurrentPage - 1)"
+            >
+              <ChevronLeft class="h-5 w-5" />
+            </Button>
+            <span class="min-w-14 text-center text-sm font-semibold text-foreground">
+              {{ applicationReportDrilldownCurrentPageSummary }}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isApplicationReportDrilldownLoading || applicationReportDrilldownCurrentPage === applicationReportDrilldownTotalPages"
+              @click="goToApplicationReportDrilldownPage(applicationReportDrilldownCurrentPage + 1)"
+            >
+              <ChevronRight class="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              class="h-7 w-7 rounded-md p-0 self-center"
+              :disabled="isApplicationReportDrilldownLoading || applicationReportDrilldownCurrentPage === applicationReportDrilldownTotalPages"
+              @click="goToApplicationReportDrilldownPage(applicationReportDrilldownTotalPages)"
+            >
+              <ChevronsRight class="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div
       v-if="activeDocumentFlow"

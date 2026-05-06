@@ -1,4 +1,4 @@
-import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText } from 'lucide-vue-next'
+import { BarChart3, FileStack, Home, Info, ListChecks, NotebookText, Settings2 } from 'lucide-vue-next'
 import type { MuruvvatMenuItem, MuruvvatPageDefinition } from '@/features/muruvvat/types'
 
 export const iptkPages: MuruvvatPageDefinition[] = [
@@ -74,7 +74,7 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     title: 'Komissiyalar tarkibi',
     description: '',
     route: '/apps/iptk/applications/commissions',
-    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', 'Komissiyalar tarkibi'],
+    breadcrumb: ['Ilovalar', 'IPTK', 'Boshqaruv', 'Komissiyalar tarkibi'],
     sectionTitle: 'Komissiyalar tarkibi',
     sectionDescription: "Komissiya raisi, rais o'rinbosari, kotib va a'zolardan iborat tarkibni yaratish, tahrirlash va tasdiqlash oqimi.",
   },
@@ -156,6 +156,19 @@ export const iptkMenu: MuruvvatMenuItem[] = [
     ],
   },
   {
+    id: 'management',
+    title: 'Boshqaruv',
+    icon: Settings2,
+    children: [
+      {
+        id: 'commissions-composition',
+        title: 'Komissiyalar tarkibi',
+        route: '/apps/iptk/applications/commissions',
+        icon: NotebookText,
+      },
+    ],
+  },
+  {
     id: 'applications',
     title: 'Arizalar',
     icon: FileStack,
@@ -170,12 +183,6 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         id: 'applications-assessment',
         title: 'Baholash',
         route: '/apps/iptk/applications/assessment',
-        icon: NotebookText,
-      },
-      {
-        id: 'commissions-composition',
-        title: 'Komissiyalar tarkibi',
-        route: '/apps/iptk/applications/commissions',
         icon: NotebookText,
       },
       {

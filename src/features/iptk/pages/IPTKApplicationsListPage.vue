@@ -390,16 +390,11 @@ const serviceOptions: ServiceOption[] = [
   { id: 'yangi-kun', shortName: 'Yangi kun', fullName: 'Nogironligi bo‘lgan shaxsni “Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish' },
 ]
 const demoApplicationCases = [
-  { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi' },
-  { step: 'Ariza yaratildi', serviceId: 'social-holiday' },
+  { step: 'Ariza yaratildi', serviceId: 'madad' },
   { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi', careQueueCategory: 'Navbat asosida' },
-  { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi', careQueueCategory: 'Navbatsiz' },
-  ...applicationSteps
-    .filter((step) => step !== 'Ariza yaratildi')
-    .map((step, index) => ({
-      step,
-      serviceId: serviceOptions[(index + 1) % serviceOptions.length]?.id ?? 'gamxorlik-markazi',
-    })),
+  { step: 'Ariza yaratildi', serviceId: 'yangi-kun' },
+  { step: 'Qo‘shimcha hujjatlar yig‘ilmoqda', serviceId: 'gamxorlik-markazi', careQueueCategory: 'Navbatsiz' },
+  { step: 'Baholash jarayoni', serviceId: 'madad' },
 ] as const satisfies ReadonlyArray<{ step: ApplicationStep; serviceId: ServiceOption['id']; careQueueCategory?: CareQueueCategory }>
 const diagnosisOptions = [
   { code: 'F71', label: 'Mo‘tadil darajadagi aqliy zaiflik' },
@@ -3079,7 +3074,7 @@ function requiresAssessmentBeforeIptk(row: ApplicationRow) {
 }
 
 function isGamxorlikApplication(row: ApplicationRow) {
-  return row.serviceId === 'gamxorlik'
+  return row.serviceId === 'gamxorlik-markazi'
 }
 
 function canRequestAdditionalDocuments(row: ApplicationRow) {
@@ -3089,7 +3084,7 @@ function canRequestAdditionalDocuments(row: ApplicationRow) {
 }
 
 function canSendDirectlyToIptk(row: ApplicationRow) {
-  return row.step === 'Ariza yaratildi'
+  return ['Ariza yaratildi', 'Qo‘shimcha hujjatlar yig‘ilmoqda'].includes(row.step)
     && row.serviceId !== 'madad'
     && !canRequestAdditionalDocuments(row)
 }
@@ -3171,7 +3166,7 @@ function closeAssessmentCreateDialog() {
 function createAssessmentAndSendToIptk() {
   const row = selectedAssessmentCreateRow.value
 
-  if (!row || !isAssessmentComplete.value) {
+  if (!row) {
     return
   }
 
@@ -6389,7 +6384,6 @@ watch(serviceRecipientLookupResult, () => {
             Bekor qilish
           </Button>
           <Button
-            :disabled="!isAssessmentComplete"
             @click="createAssessmentAndSendToIptk"
           >
             Baholashni saqlash
