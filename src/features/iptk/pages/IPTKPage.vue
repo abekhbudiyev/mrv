@@ -5043,7 +5043,7 @@ function selectStatusFilter(value: 'all' | CommissionStatus) {
 function selectCommissionStatusTab(value: CommissionStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : appliedStatusFilter.value.includes(value) ? [] : [value]
+    : toggleDropdownMultiSelectValue(appliedStatusFilter.value, value)
   if (areApplicationReportFiltersEqual(appliedStatusFilter.value, nextStatuses)) return
 
   closeFilters()
@@ -5433,7 +5433,7 @@ function selectProtocolStatusFilter(value: 'all' | ProtocolStatus) {
 function selectProtocolStatusTab(value: ProtocolStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : appliedProtocolStatusFilter.value.includes(value) ? [] : [value]
+    : toggleDropdownMultiSelectValue(appliedProtocolStatusFilter.value, value)
   if (areApplicationReportFiltersEqual(appliedProtocolStatusFilter.value, nextStatuses)) return
 
   closeProtocolFilters()
@@ -5944,7 +5944,7 @@ function selectAssessmentStatusFilter(value: 'all' | AssessmentStatus) {
 function selectAssessmentStatusTab(value: AssessmentStatusTabValue) {
   const nextStatuses = value === 'all'
     ? []
-    : appliedAssessmentStatusFilter.value.includes(value) ? [] : [value]
+    : toggleDropdownMultiSelectValue(appliedAssessmentStatusFilter.value, value)
   if (areApplicationReportFiltersEqual(appliedAssessmentStatusFilter.value, nextStatuses)) return
 
   closeAssessmentFilters()

@@ -37,10 +37,12 @@ function isActive(value: string) {
 }
 
 function handleSelect(event: MouseEvent, value: string) {
+  const target = event.currentTarget as HTMLElement | null
+
   emit('select', value)
 
   window.setTimeout(() => {
-    (event.currentTarget as HTMLElement | null)?.blur()
+    target?.blur()
   }, 0)
 }
 </script>

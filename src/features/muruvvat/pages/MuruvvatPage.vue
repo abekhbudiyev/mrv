@@ -2083,7 +2083,7 @@ function selectStatusFilter(value: 'all' | ApplicationStatus) {
 function selectApplicationStepTab(value: ApplicationStepTabValue) {
   const nextStepFilter = value === 'all'
     ? []
-    : appliedStepFilter.value.includes(value) ? [] : [value]
+    : toggleFilterValue(appliedStepFilter.value, value)
 
   if (areFilterListsEqual(appliedStepFilter.value, nextStepFilter) && appliedStatusFilter.value.length === 0) {
     return
