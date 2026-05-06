@@ -292,25 +292,25 @@ const demoMahallas = [
   'Bunyodkor MFY',
   'Yoshlik MFY',
 ] as const
-const huzurMedicalDocumentFields: MedicalDocumentField[] = [
+const gamxorlikCenterMedicalDocumentFields: MedicalDocumentField[] = [
   {
-    id: 'huzur-027',
+    id: 'gamxorlik-center-027',
     label: 'Ambulator-poliklinika muassasasining bosh vrachi tomonidan imzolangan bemorning tibbiy kartasidan batafsil ko‘chirma (027-shakl), oilaviy shifokor va psixiatr xulosalari bilan',
   },
   {
-    id: 'huzur-medical-history',
+    id: 'gamxorlik-center-medical-history',
     label: 'Kasallik tarixidan ko‘chirma (ruhiy-asab kasalliklari shifoxonasida oxirgi 5 yil davomida davolanganligi to‘g‘risida)',
   },
   {
-    id: 'huzur-guardian-order',
+    id: 'gamxorlik-center-guardian-order',
     label: 'Nogironligi bo‘lgan shaxsga vasiy tayinlash to‘g‘risidagi qaror',
   },
   {
-    id: 'huzur-court-capacity',
+    id: 'gamxorlik-center-court-capacity',
     label: 'Shaxsni muomalaga layoqatsiz deb topish to‘g‘risidagi sud qarori',
   },
   {
-    id: 'huzur-psy-expertise',
+    id: 'gamxorlik-center-psy-expertise',
     label: 'Sud tomonidan tayinlangan sud-psixiatriya ekspertizasi xulosasi',
   },
 ]
@@ -391,7 +391,7 @@ const madadMedicalDocumentFields: MedicalDocumentField[] = [
   },
 ]
 const serviceOptions: ServiceOption[] = [
-  { id: 'huzur', label: 'Nogironligi bo‘lgan shaxsni “Huzur” markaziga joylashtirish', shortLabel: 'Huzur' },
+  { id: 'gamxorlik-markazi', label: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” markaziga joylashtirish', shortLabel: 'G‘amxo‘rlik markazi' },
   { id: 'madad', label: 'Nogironligi bo‘lgan shaxsni kichik hajmli “Madad” uylari xizmatiga joylashtirish', shortLabel: 'Madad' },
   { id: 'social-holiday', label: 'Nogironligi bo‘lgan shaxsni “Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish', shortLabel: 'Ijtimoiy ta’til' },
   { id: 'home-care', label: 'Nogironligi bo‘lgan shaxsni uy sharoitida qarab turish xizmatiga yo‘naltirish', shortLabel: 'Uy sharoitida qarab turish' },
@@ -399,7 +399,7 @@ const serviceOptions: ServiceOption[] = [
   { id: 'gamxorlik', label: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik” bo‘yicha joylashtirish', shortLabel: 'G‘amxo‘rlik' },
 ]
 const demoApplicationCases = [
-  { step: 'Ariza yaratildi', serviceId: 'huzur' },
+  { step: 'Ariza yaratildi', serviceId: 'gamxorlik-markazi' },
   { step: 'Ariza yaratildi', serviceId: 'social-holiday' },
   { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbat asosida' },
   { step: 'Ariza yaratildi', serviceId: 'gamxorlik', careQueueCategory: 'Navbatsiz' },
@@ -407,7 +407,7 @@ const demoApplicationCases = [
     .filter((step) => step !== 'Ariza yaratildi')
     .map((step, index) => ({
       step,
-      serviceId: serviceOptions[(index + 1) % serviceOptions.length]?.id ?? 'huzur',
+      serviceId: serviceOptions[(index + 1) % serviceOptions.length]?.id ?? 'gamxorlik-markazi',
     })),
 ] as const satisfies ReadonlyArray<{ step: ApplicationStep; serviceId: ServiceOption['id']; careQueueCategory?: CareQueueCategory }>
 const diagnosisOptions = [
@@ -420,7 +420,7 @@ const diagnosisOptions = [
 ] as const
 const disabilityGroupOptions = ['I guruh', 'II guruh', 'III guruh'] as const
 const serviceRequirements = {
-  huzur: {
+  'gamxorlik-markazi': {
     diagnosisCodes: ['F71', 'F72', 'F73', 'F00-F03'],
     diagnosisText: 'F71, F72, F73 yoki F00-F03',
     disabilityGroups: ['I guruh', 'II guruh'],
@@ -481,18 +481,18 @@ const iptkFlowSteps: FlowStepInfo[] = [
   {
     id: 'F',
     title: 'Funksionallik baholandi',
-    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'Huzur', 'Madad'],
+    services: ['Yangi kun', 'Uy sharoitida qarab turish', 'Ijtimoiy ta’til', 'G‘amxo‘rlik markazi', 'Madad'],
     description: 'Nogironligi bo‘lgan shaxsning funksionalligi avval baholanmagan yoki baholashdan 6 oydan ko‘p vaqt o‘tgan bo‘lsa, WHODAS 2.0 mezonlari asosida baholash o‘tkaziladi. G‘amxo‘rlik bo‘yicha ariza bu baholashdan o‘tkazilmaydi.',
     responsible: '“Inson” markazi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; WHODAS 2.0 baholashi',
-    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'Huzur va Madad bo‘yicha parvarish baholash bosqichiga o‘tiladi'],
+    outcomes: ['Funksionallik baholash natijasi axborot modulida shakllanadi', 'Yangi kun, uy sharoitida qarab turish va Ijtimoiy ta’til bo‘yicha hujjatlar IPTKga yuborishga tayyor bo‘ladi', 'G‘amxo‘rlik markazi va Madad bo‘yicha parvarish baholash bosqichiga o‘tiladi'],
   },
   {
     id: 'H',
     title: 'Parvarish baholandi',
-    services: ['Huzur', 'Madad'],
-    description: 'Huzur va Madad bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
+    services: ['G‘amxo‘rlik markazi', 'Madad'],
+    description: 'G‘amxo‘rlik markazi va Madad bo‘yicha multidisiplinar guruh shaxsning o‘zgalar parvarishiga muhtojlik darajasi va yashash sharoitlarini baholaydi.',
     responsible: '“Inson” markazi xodimi, oilaviy shifokor, FYO‘B organi raisi',
     duration: '5 ish kuni',
     legalBasis: '4-bob 1-§; VMQ-123 reglamenti; Barthel va Lawton shkalalari',
@@ -726,7 +726,7 @@ const iptkAssessmentGuides: IptkAssessmentInfo[] = [
     stepIds: ['F', 'H'],
     purpose: 'Shaxsning o‘ziga-o‘zi xizmat ko‘rsatish, kundalik faoliyatlarni bajara olish va parvarishga ehtiyoj darajasini aniqlash.',
     usage: [
-      'Huzur va Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
+      'G‘amxo‘rlik markazi va Madad bo‘yicha multidisiplinar guruh baholashida qo‘llanadi.',
       'G‘amxo‘rlik bo‘yicha navbat asosida/navbatsiz toifa baholash dialogisiz alohida aniqlanadi.',
       'Parvarishga muhtojlik darajasini tasdiqlashda ishlatiladi.',
     ],
@@ -781,7 +781,7 @@ flowchart TD
     E -->|"Yangi kun"| J["INSON MARKAZI<br/>ma'lumot va hujjatlarni IPTKga yuboradi<br/>Bosqich:<br/>IPTKga yuborildi"]
     E -->|"Uy sharoitida<br/>qarab turish"| J
     E -->|"Ijtimoiy ta'til"| J
-    E -->|"Huzur / Madad"| F["INSON MARKAZI<br/>baholash jarayonini boshlaydi<br/>Bosqich:<br/>Baholash jarayoni"]
+    E -->|"G'amxo'rlik markazi / Madad"| F["INSON MARKAZI<br/>baholash jarayonini boshlaydi<br/>Bosqich:<br/>Baholash jarayoni"]
     F --> H["ISHCHI GURUH<br/>parvarish va yashash sharoitini baholaydi<br/>Bosqich:<br/>Baholash jarayoni"]
     E -->|"G'amxo'rlik"| G{"G'amxo'rlik<br/>toifasi"}
 
@@ -878,7 +878,7 @@ const applicationRows = ref(demoApplicationCases.map((applicationCase, index) =>
     date: `${day}.${month}.${year}`,
     fullName: person,
     pinfl: pinflSeed,
-    serviceId: service?.id ?? 'huzur',
+    serviceId: service?.id ?? 'gamxorlik-markazi',
     serviceType: service?.label ?? 'Xizmat turi belgilanmagan',
     careQueueCategory,
     region,
@@ -1225,8 +1225,8 @@ const selectedServiceEligibility = computed(() => {
 
 function getMedicalDocumentsForService(serviceId: string) {
   switch (serviceId) {
-    case 'huzur':
-      return huzurMedicalDocumentFields
+    case 'gamxorlik-markazi':
+      return gamxorlikCenterMedicalDocumentFields
     case 'madad':
       return madadMedicalDocumentFields
     case 'social-holiday':
@@ -3052,7 +3052,7 @@ function canEditApplication(row: ApplicationRow) {
 }
 
 function requiresAssessmentBeforeIptk(row: ApplicationRow) {
-  return row.step === 'Ariza yaratildi' && ['huzur', 'madad'].includes(row.serviceId)
+  return row.step === 'Ariza yaratildi' && ['gamxorlik-markazi', 'madad'].includes(row.serviceId)
 }
 
 function isGamxorlikApplication(row: ApplicationRow) {
@@ -3067,7 +3067,7 @@ function canRequestAdditionalDocuments(row: ApplicationRow) {
 
 function canSendDirectlyToIptk(row: ApplicationRow) {
   return row.step === 'Ariza yaratildi'
-    && !['huzur', 'madad'].includes(row.serviceId)
+    && !['gamxorlik-markazi', 'madad'].includes(row.serviceId)
     && !canRequestAdditionalDocuments(row)
 }
 
