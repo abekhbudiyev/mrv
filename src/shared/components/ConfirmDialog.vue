@@ -29,7 +29,7 @@ const emit = defineEmits<{
 <template>
   <div
     v-if="open"
-    class="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+    class="pointer-events-auto fixed inset-0 z-[80] flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
     @click.stop
     @mousedown.stop
     @touchmove.self.prevent

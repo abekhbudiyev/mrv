@@ -58,6 +58,7 @@ type ApplicationReportStep =
   | 'Bekor qilindi'
   | 'Rad etildi'
 type ApplicationReportDateField = 'start' | 'end'
+type ApplicationReportCareQueueCategory = 'Navbat asosida' | 'Navbatsiz'
 
 type PendingConfirmation = {
   tone: 'success' | 'destructive'
@@ -198,6 +199,7 @@ interface ApplicationReportDrilldownRecord extends ProtocolApplicationCandidate 
   disabilityGroup: string
   gender: string
   ageGroup: string
+  careQueueCategory?: ApplicationReportCareQueueCategory
 }
 
 interface ConclusionRecord {
@@ -1917,6 +1919,7 @@ const suppressNextApplicationReportCellClick = ref(false)
 const applicationReportCellDragStart = ref<ApplicationReportDrilldownSelection | null>(null)
 const applicationReportCellDragAppend = ref(false)
 const applicationReportCellDragVisitedKeys = ref<Set<string>>(new Set())
+const applicationReportDrilldownRowOverrides = ref<Record<string, Partial<Pick<ApplicationReportDrilldownRecord, 'status' | 'step'>>>>({})
 const applicationReportDrilldownRowsPerPage = ref(20)
 const applicationReportDrilldownCurrentPage = ref(1)
 const isApplicationReportDrilldownRowsPerPageOpen = ref(false)
@@ -4395,6 +4398,9 @@ const applicationReportDrilldownRows = computed<ApplicationReportDrilldownRecord
     const serviceType = selectedMetricKey === 'serviceTypes'
       ? selectedMetricValue || applicationReportServiceTypes[index % applicationReportServiceTypes.length] || 'G‘amxo‘rlik markazi'
       : applicationReportServiceTypes[index % applicationReportServiceTypes.length] || 'G‘amxo‘rlik markazi'
+    const careQueueCategory = serviceType === 'G‘amxo‘rlik markazi'
+      ? (index % 2 === 0 ? 'Navbatsiz' : 'Navbat asosida') as ApplicationReportCareQueueCategory
+      : undefined
     const diagnosis = selectedMetricKey === 'diagnoses'
       ? selectedMetricValue || applicationReportDiagnoses[index % applicationReportDiagnoses.length] || 'F71'
       : applicationReportDiagnoses[index % applicationReportDiagnoses.length] || 'F71'
@@ -4408,7 +4414,7 @@ const applicationReportDrilldownRows = computed<ApplicationReportDrilldownRecord
       ? selectedMetricValue || applicationReportAgeGroups[index % applicationReportAgeGroups.length] || '18-55/60'
       : applicationReportAgeGroups[index % applicationReportAgeGroups.length] || '18-55/60'
 
-    return {
+    const record: ApplicationReportDrilldownRecord = {
       id: `report-drilldown-${index + 1}`,
       documentNumber: `ARZ-${String(index + 1).padStart(6, '0')}`,
       createdAt: `${String((index % 28) + 1).padStart(2, '0')}.${String((index % 12) + 1).padStart(2, '0')}.2026`,
@@ -4423,7 +4429,11 @@ const applicationReportDrilldownRows = computed<ApplicationReportDrilldownRecord
       disabilityGroup,
       gender,
       ageGroup,
+      careQueueCategory,
     }
+    const override = applicationReportDrilldownRowOverrides.value[record.id]
+
+    return override ? { ...record, ...override } : record
   })
 })
 const applicationReportDrilldownTotalRows = computed(() => applicationReportDrilldownRows.value.length)
@@ -7433,6 +7443,7 @@ function toggleApplicationReportCell(region: string, group: string, column: stri
 
 function openApplicationReportDrilldown(region: string, group: string, column: string, value: number) {
   applicationReportDrilldownCurrentPage.value = 1
+  applicationReportDrilldownRowOverrides.value = {}
   selectedApplicationReportDrilldown.value = {
     region,
     group,
@@ -7445,6 +7456,102 @@ function closeApplicationReportDrilldown() {
   selectedApplicationReportDrilldown.value = null
   applicationReportDrilldownCurrentPage.value = 1
   isApplicationReportDrilldownRowsPerPageOpen.value = false
+  applicationReportDrilldownRowOverrides.value = {}
+}
+
+function canEditApplicationReportDrilldownRecord(record: ApplicationReportDrilldownRecord) {
+  return [
+    'Ariza yaratildi',
+    'Qo‘shimcha hujjatlar yig‘ilmoqda',
+    'Qayta ishlashga qaytarildi',
+  ].includes(record.step)
+}
+
+function isMadadApplicationReportDrilldownRecord(record: ApplicationReportDrilldownRecord) {
+  return record.serviceType.toLowerCase().includes('madad')
+}
+
+function isGamxorlikApplicationReportDrilldownRecord(record: ApplicationReportDrilldownRecord) {
+  const normalizedServiceType = record.serviceType.toLowerCase()
+  return normalizedServiceType.includes('g‘amxo‘rlik') || normalizedServiceType.includes("g'amxo'rlik")
+}
+
+function requiresAssessmentBeforeApplicationReportDrilldownIptk(record: ApplicationReportDrilldownRecord) {
+  return record.step === 'Ariza yaratildi' && isMadadApplicationReportDrilldownRecord(record)
+}
+
+function canRequestApplicationReportDrilldownAdditionalDocuments(record: ApplicationReportDrilldownRecord) {
+  return record.step === 'Ariza yaratildi'
+    && isGamxorlikApplicationReportDrilldownRecord(record)
+    && record.careQueueCategory === 'Navbatsiz'
+}
+
+function canSendApplicationReportDrilldownDirectlyToIptk(record: ApplicationReportDrilldownRecord) {
+  return ['Ariza yaratildi', 'Qo‘shimcha hujjatlar yig‘ilmoqda'].includes(record.step)
+    && !isMadadApplicationReportDrilldownRecord(record)
+    && !canRequestApplicationReportDrilldownAdditionalDocuments(record)
+}
+
+function canApproveApplicationReportDrilldownRecord(record: ApplicationReportDrilldownRecord) {
+  return record.step === 'IPTK tekshiruvi o‘tkazildi'
+}
+
+function canRejectApplicationReportDrilldownRecord(record: ApplicationReportDrilldownRecord) {
+  return ![
+    'Tasdiqlandi',
+    'Boshqa xizmat tavsiya qilindi',
+    'Bekor qilindi',
+    'Rad etildi',
+  ].includes(record.step)
+}
+
+function updateApplicationReportDrilldownRecordStep(recordId: string, step: ApplicationReportStep) {
+  applicationReportDrilldownRowOverrides.value = {
+    ...applicationReportDrilldownRowOverrides.value,
+    [recordId]: {
+      ...(applicationReportDrilldownRowOverrides.value[recordId] ?? {}),
+      step,
+      status: applicationReportStepStatusMap[step],
+    },
+  }
+}
+
+function runApplicationReportDrilldownAction(
+  record: ApplicationReportDrilldownRecord,
+  actionKey: string,
+  actionTitle: string,
+  actionName: string,
+  feedbackType: FeedbackType = 'success',
+  nextStep?: ApplicationReportStep,
+) {
+  runActionIconLoading(`application-report-drilldown-${actionKey}-${record.id}`, () => {
+    openActionMenuId.value = null
+    if (nextStep) {
+      updateApplicationReportDrilldownRecordStep(record.id, nextStep)
+    }
+    const notification = buildOperationNotification(actionTitle, actionName, 'Ariza', record.documentNumber)
+    pushFeedback(feedbackType, notification.message, notification.title)
+  })
+}
+
+function confirmApplicationReportDrilldownAction(
+  record: ApplicationReportDrilldownRecord,
+  tone: PendingConfirmation['tone'],
+  actionTitleStem: string,
+  actionBodyName: string,
+  confirmLabel: string,
+  actionTitle: string,
+  actionName: string,
+  nextStep: ApplicationReportStep,
+) {
+  const copy = buildConfirmationCopy('Ariza', actionTitleStem, actionBodyName, record.documentNumber)
+  openConfirmation({
+    tone,
+    title: copy.title,
+    description: copy.description,
+    confirmLabel,
+    action: () => runApplicationReportDrilldownAction(record, actionName, actionTitle, actionName, 'success', nextStep),
+  })
 }
 
 function goToApplicationReportDrilldownPage(page: number) {
@@ -15074,6 +15181,17 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        :open="Boolean(pendingConfirmation)"
+        :tone="pendingConfirmation?.tone"
+        :title="pendingConfirmation?.title ?? ''"
+        :description="pendingConfirmation?.description ?? ''"
+        :confirm-label="pendingConfirmation?.confirmLabel ?? ''"
+        :loading="isConfirmationLoading"
+        @cancel="closeConfirmation"
+        @confirm="confirmPendingAction"
+      />
     </template>
 
     <SectionBlock
@@ -15168,14 +15286,21 @@ onUnmounted(() => {
                     <span class="truncate">{{ record.step }}</span>
                   </span>
 
-                  <DropdownMenuRoot>
+                  <DropdownMenuRoot @update:open="setActionMenuOpen(`application-report-drilldown-${record.id}`, $event)">
                     <DropdownMenuTrigger as-child>
                       <Button
                         variant="outline"
                         size="sm"
-                        class="h-8 w-8 rounded-md p-0"
+                        :class="openActionMenuId === `application-report-drilldown-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
                       >
-                        <Ellipsis class="h-4 w-4" />
+                        <LoaderCircle
+                          v-if="isActionButtonLoading(`application-report-drilldown-view-${record.id}`, `application-report-drilldown-edit-${record.id}`, `application-report-drilldown-assessment-${record.id}`)"
+                          class="h-4 w-4 animate-spin"
+                        />
+                        <Ellipsis
+                          v-else
+                          class="h-4 w-4"
+                        />
                       </Button>
                     </DropdownMenuTrigger>
 
@@ -15187,9 +15312,60 @@ onUnmounted(() => {
                         :collision-padding="12"
                         class="z-[70] min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
                       >
-                        <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted">
+                        <DropdownMenuItem
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="runApplicationReportDrilldownAction(record, 'view', `Ko'rish`, `ko'rish`, 'info')"
+                        >
                           <Eye class="h-4 w-4 shrink-0" />
                           <span>{{ t("Ko'rish") }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="canEditApplicationReportDrilldownRecord(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="runApplicationReportDrilldownAction(record, 'edit', 'Tahrirlash', 'tahrirlash')"
+                        >
+                          <Pencil class="h-4 w-4 shrink-0" />
+                          <span>{{ t('Tahrirlash') }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="requiresAssessmentBeforeApplicationReportDrilldownIptk(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="runApplicationReportDrilldownAction(record, 'assessment', `Baholashdan o'tkazish`, `baholashdan o'tkazish`, 'success', 'Baholash jarayoni')"
+                        >
+                          <CalendarDays class="h-4 w-4 shrink-0" />
+                          <span>{{ t("Baholashdan o'tkazish") }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="canSendApplicationReportDrilldownDirectlyToIptk(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="confirmApplicationReportDrilldownAction(record, 'success', 'IPTKga yuboril', 'IPTKga yuborish', 'IPTKga yuborish', 'IPTKga yuborish', 'IPTKga yuborish', 'IPTKga yuborildi')"
+                        >
+                          <Check class="h-4 w-4 shrink-0" />
+                          <span>{{ t('IPTKga yuborish') }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="canRequestApplicationReportDrilldownAdditionalDocuments(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="confirmApplicationReportDrilldownAction(record, 'success', `hujjat so'ral`, `qo'shimcha hujjat so'rash`, `Hujjat so'rash`, `Hujjat so'rash`, `qo'shimcha hujjat so'rash`, 'Qo‘shimcha hujjatlar yig‘ilmoqda')"
+                        >
+                          <Pencil class="h-4 w-4 shrink-0" />
+                          <span>{{ t("Hujjat so'rash") }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="canApproveApplicationReportDrilldownRecord(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @click="confirmApplicationReportDrilldownAction(record, 'success', 'tasdiqlan', 'tasdiqlash', 'Tasdiqlash', 'Tasdiqlash', 'tasdiqlash', 'Tasdiqlandi')"
+                        >
+                          <Check class="h-4 w-4 shrink-0" />
+                          <span>{{ t('Tasdiqlash') }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          v-if="canRejectApplicationReportDrilldownRecord(record)"
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                          @click="confirmApplicationReportDrilldownAction(record, 'destructive', 'bekor qilin', 'bekor qilish', 'Bekor qilish', 'Bekor qilish', 'bekor qilish', 'Bekor qilindi')"
+                        >
+                          <X class="h-4 w-4 shrink-0" />
+                          <span>{{ t('Bekor qilish') }}</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenuPortal>
