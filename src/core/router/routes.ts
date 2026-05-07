@@ -212,6 +212,21 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/iptk/applications/questionnaire',
+        name: 'iptk-applications-questionnaire',
+        component: IPTKPage,
+        props: {
+          pageKey: 'applications-questionnaire',
+        },
+        meta: {
+          title: "So'rovnoma",
+          requiresAuth: true,
+          moduleKey: 'iptk',
+          moduleTitle: 'IPTK',
+          breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', "So'rovnoma"],
+        },
+      },
+      {
         path: 'apps/iptk/applications/conclusions',
         name: 'iptk-applications-conclusions',
         component: IPTKPage,

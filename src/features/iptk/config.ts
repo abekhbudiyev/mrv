@@ -88,6 +88,15 @@ export const iptkPages: MuruvvatPageDefinition[] = [
     sectionDescription: '',
   },
   {
+    key: 'applications-questionnaire',
+    title: "So'rovnoma",
+    description: '',
+    route: '/apps/iptk/applications/questionnaire',
+    breadcrumb: ['Ilovalar', 'IPTK', 'Arizalar', "So'rovnoma"],
+    sectionTitle: "So'rovnoma",
+    sectionDescription: '',
+  },
+  {
     key: 'applications-conclusions',
     title: 'Xulosalar',
     description: '',
@@ -189,6 +198,12 @@ export const iptkMenu: MuruvvatMenuItem[] = [
         id: 'applications-protocol',
         title: 'Bayonnoma',
         route: '/apps/iptk/applications/protocol',
+        icon: NotebookText,
+      },
+      {
+        id: 'applications-questionnaire',
+        title: "So'rovnoma",
+        route: '/apps/iptk/applications/questionnaire',
         icon: NotebookText,
       },
       {

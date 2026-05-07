@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { LocationQueryRaw } from 'vue-router'
 import { Activity, BadgeCheck, BarChart3, CalendarDays, Check, CheckCheck, ChevronsLeft, ChevronsRight, ChevronDown, ChevronLeft, ChevronRight, Clock3, Download, Ellipsis, Eye, FileCheck2, Filter, Info, LoaderCircle, Pencil, Plus, Search, TrendingUp, Trash2, UsersRound, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
@@ -38,8 +40,12 @@ type ProtocolStatus =
 type ProtocolStatusTabValue = 'all' | ProtocolStatus
 type ConclusionStatus = 'Yangi' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type ConclusionResult = 'Ijobiy' | 'Salbiy'
+type ConclusionResultTabValue = 'all' | ConclusionResult
+type QuestionnaireStatus = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+type QuestionnaireStatusTabValue = 'all' | QuestionnaireStatus
 type CommissionWorkflowStage = 'Yangi' | 'Tahrirlangan' | 'Yuborilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 type DocumentFlowKind = 'commission' | 'assessment' | 'protocol'
+type PersistedDialogKind = 'commission' | 'assessment' | 'protocol' | 'conclusion'
 type ServiceTypeStatus = 'Faol' | 'Nofaol'
 type FeedbackType = 'success' | 'error' | 'info'
 type AssessmentAnswers = Record<string, string>
@@ -209,6 +215,9 @@ interface ConclusionRecord {
   applicationNumber: string
   serviceRecipient: string
   serviceRecipientPinfl: string
+  serviceRecipientBirthDate: string
+  diagnosis: string
+  disabilityGroup: string
   serviceType: string
   recommendedService: string
   validityPeriod: string
@@ -216,6 +225,25 @@ interface ConclusionRecord {
   district: string
   result: ConclusionResult
   status: ConclusionStatus
+  protocolNumber: string
+  commissionName: string
+  chair: string
+  secretary: string
+  membersCount: number
+  approvedAt: string
+}
+
+interface QuestionnaireRecord {
+  id: string
+  documentNumber: string
+  createdAt: string
+  serviceRecipient: string
+  serviceRecipientPinfl: string
+  serviceType: string
+  resultScore: number
+  region: string
+  district: string
+  status: QuestionnaireStatus
 }
 
 interface LocalizedValue {
@@ -318,12 +346,15 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 const page = computed(() => getIPTKPage(props.pageKey))
 const isDashboardPage = computed(() => props.pageKey === 'dashboard')
 const isCommissionCompositionPage = computed(() => props.pageKey === 'commissions-composition')
 const isAssessmentPage = computed(() => props.pageKey === 'applications-assessment')
 const isProtocolPage = computed(() => props.pageKey === 'applications-protocol')
+const isQuestionnairePage = computed(() => props.pageKey === 'applications-questionnaire')
 const isConclusionsPage = computed(() => props.pageKey === 'applications-conclusions')
 const isServiceTypesPage = computed(() => props.pageKey === 'info-1')
 const isDiagnosesPage = computed(() => props.pageKey === 'info-2')
@@ -375,7 +406,7 @@ const protocolDistrictOptions: Record<string, string[]> = {
   'Toshkent shahri': ['Yunusobod tumani', 'Mirzo Ulug‘bek tumani'],
 }
 
-const statusClassMap: Record<CommissionStatus | AssessmentStatus | ApplicationReportStatus, string> = {
+const statusClassMap: Record<CommissionStatus | AssessmentStatus | QuestionnaireStatus | ApplicationReportStatus, string> = {
   Yangi: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300',
   Tahrirlangan: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
@@ -686,6 +717,8 @@ const applicationReportDistricts: Record<string, string[]> = {
 
 const assessmentStatusOptions: AssessmentStatus[] = ['Yangi', 'Tahrirlangan', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
 const commissionStatusOptions: CommissionStatus[] = ['Yangi', 'Tahrirlangan', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const questionnaireStatusOptions: QuestionnaireStatus[] = ['Yangi', 'Tahrirlangan', 'Yuborilgan', 'Bekor qilingan', 'Tasdiqlangan']
+const conclusionResultOptions: ConclusionResult[] = ['Ijobiy', 'Salbiy']
 const protocolStatusOptions: ProtocolStatus[] = [
   'Yangi',
   'Tahrirlangan',
@@ -1213,6 +1246,9 @@ const conclusions = ref<ConclusionRecord[]>([
     applicationNumber: 'ARZ-000006',
     serviceRecipient: 'SAIDOVA NILUFAR AKMAL QIZI',
     serviceRecipientPinfl: '1000000000685',
+    serviceRecipientBirthDate: '06.06.1974',
+    diagnosis: 'Demensiya (F00-F03)',
+    disabilityGroup: 'I guruh',
     serviceType: 'G‘amxo‘rlik markazi',
     recommendedService: 'Nogironligi bo‘lgan shaxsni “G‘amxo‘rlik markazi”ga joylashtirish',
     validityPeriod: '12 oy',
@@ -1220,6 +1256,12 @@ const conclusions = ref<ConclusionRecord[]>([
     district: 'Buxoro shahri',
     result: 'Ijobiy',
     status: 'Yangi',
+    protocolNumber: 'IPTK-BAYON-2026-006',
+    commissionName: 'Buxoro viloyati IPTK',
+    chair: 'ABDULLAYEV KOMILJON ZAFAROVICH',
+    secretary: 'KARIMOVA DILNOZA BAHROM QIZI',
+    membersCount: 7,
+    approvedAt: '2026-04-18 17:30',
   },
   {
     id: '2',
@@ -1228,6 +1270,9 @@ const conclusions = ref<ConclusionRecord[]>([
     applicationNumber: 'ARZ-000007',
     serviceRecipient: "YULDASHEV BEKZOD ILHOM O'G'LI",
     serviceRecipientPinfl: '1000000000822',
+    serviceRecipientBirthDate: '07.07.1978',
+    diagnosis: "Mo'tadil darajadagi aqliy zaiflik (F71)",
+    disabilityGroup: 'II guruh',
     serviceType: 'Madad uylari',
     recommendedService: 'Kichik hajmli “Madad” uylari xizmatiga joylashtirish',
     validityPeriod: '6 oy',
@@ -1235,6 +1280,12 @@ const conclusions = ref<ConclusionRecord[]>([
     district: 'Qarshi shahri',
     result: 'Ijobiy',
     status: 'Yuborilgan',
+    protocolNumber: 'IPTK-BAYON-2026-007',
+    commissionName: 'Qashqadaryo viloyati IPTK',
+    chair: 'RAXIMOV OYBEK JALOLOVICH',
+    secretary: "JO'RAYEVA SEVARA IKROM QIZI",
+    membersCount: 6,
+    approvedAt: '2026-04-19 16:40',
   },
   {
     id: '3',
@@ -1243,6 +1294,9 @@ const conclusions = ref<ConclusionRecord[]>([
     applicationNumber: 'ARZ-000008',
     serviceRecipient: "ABDULLAYEVA MADINA ULUG'BEK QIZI",
     serviceRecipientPinfl: '1000000000959',
+    serviceRecipientBirthDate: '08.08.2018',
+    diagnosis: "Og'ir darajadagi aqliy zaiflik (F72)",
+    disabilityGroup: 'II guruh',
     serviceType: 'Ijtimoiy ta’til',
     recommendedService: '“Ijtimoiy ta’til” qisqa muddatli joylashtirish xizmatiga yo‘naltirish',
     validityPeriod: '3 oy',
@@ -1250,6 +1304,12 @@ const conclusions = ref<ConclusionRecord[]>([
     district: 'Termiz shahri',
     result: 'Ijobiy',
     status: 'Tasdiqlangan',
+    protocolNumber: 'IPTK-BAYON-2026-008',
+    commissionName: 'Surxondaryo viloyati IPTK',
+    chair: 'SHARIPOV BOBUR ALISHEROVICH',
+    secretary: 'QOBILOVA SHAHNOZA RUSTAM QIZI',
+    membersCount: 7,
+    approvedAt: '2026-04-20 18:10',
   },
   {
     id: '4',
@@ -1258,12 +1318,84 @@ const conclusions = ref<ConclusionRecord[]>([
     applicationNumber: 'ARZ-000009',
     serviceRecipient: "MAMATOV SANJAR DILSHOD O'G'LI",
     serviceRecipientPinfl: '1000000001096',
+    serviceRecipientBirthDate: '09.09.1968',
+    diagnosis: 'Shizofreniya, shizotipik va alahlashli buzilishlar (F20-F29)',
+    disabilityGroup: 'I guruh',
     serviceType: 'Yangi kun',
     recommendedService: '“Yangi kun” kunduzgi qarab turish xizmatiga yo‘naltirish',
     validityPeriod: '12 oy',
     region: 'Navoiy viloyati',
     district: 'Navoiy shahri',
     result: 'Salbiy',
+    status: 'Bekor qilingan',
+    protocolNumber: 'IPTK-BAYON-2026-008',
+    commissionName: 'Navoiy viloyati IPTK',
+    chair: 'TURSUNOV JAVLON KOMILOVICH',
+    secretary: 'NORBAYEVA GULBAHOR AZIZ QIZI',
+    membersCount: 5,
+    approvedAt: '2026-04-21 15:00',
+  },
+])
+
+const questionnaires = ref<QuestionnaireRecord[]>([
+  {
+    id: '1',
+    documentNumber: "IPTK-SO'R-2026-001",
+    createdAt: '2026-04-18 10:20',
+    serviceRecipient: 'ALIYEV AZIZBEK ANVAR O‘G‘LI',
+    serviceRecipientPinfl: '1000000000000',
+    serviceType: "G'amxo'rlik markazi",
+    resultScore: 54,
+    region: 'Toshkent viloyati',
+    district: 'Zangiota tumani',
+    status: 'Yangi',
+  },
+  {
+    id: '2',
+    documentNumber: "IPTK-SO'R-2026-002",
+    createdAt: '2026-04-19 11:40',
+    serviceRecipient: 'KARIMOVA MOHIRA BAXTIYOR QIZI',
+    serviceRecipientPinfl: '1000000000137',
+    serviceType: 'Madad uylari',
+    resultScore: 62,
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    status: 'Tahrirlangan',
+  },
+  {
+    id: '3',
+    documentNumber: "IPTK-SO'R-2026-003",
+    createdAt: '2026-04-20 15:10',
+    serviceRecipient: "RASULOV DOSTON ELYOR O'G'LI",
+    serviceRecipientPinfl: '1000000000274',
+    serviceType: "Ijtimoiy ta'til",
+    resultScore: 48,
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    status: 'Yuborilgan',
+  },
+  {
+    id: '4',
+    documentNumber: "IPTK-SO'R-2026-004",
+    createdAt: '2026-04-21 09:30',
+    serviceRecipient: 'TURSUNOVA SHAHNOZA SHERZOD QIZI',
+    serviceRecipientPinfl: '1000000000411',
+    serviceType: 'Uyda qarab turish',
+    resultScore: 71,
+    region: "Farg'ona viloyati",
+    district: "Qo'qon shahri",
+    status: 'Tasdiqlangan',
+  },
+  {
+    id: '5',
+    documentNumber: "IPTK-SO'R-2026-005",
+    createdAt: '2026-04-22 14:15',
+    serviceRecipient: "QODIROV JAMSHID SHUHRAT O'G'LI",
+    serviceRecipientPinfl: '1000000000548',
+    serviceType: 'Yangi kun',
+    resultScore: 39,
+    region: 'Namangan viloyati',
+    district: 'Chortoq tumani',
     status: 'Bekor qilingan',
   },
 ])
@@ -1845,6 +1977,7 @@ const openActionMenuId = ref<string | null>(null)
 const selectedViewRecord = ref<CommissionRecord | null>(null)
 const selectedAssessmentViewRecord = ref<AssessmentRecord | null>(null)
 const selectedAssessmentViewMode = ref<'view' | 'edit'>('view')
+const selectedConclusionRecord = ref<ConclusionRecord | null>(null)
 const assessmentAnswers = ref<AssessmentAnswers>({})
 const pendingConfirmation = ref<PendingConfirmation | null>(null)
 const feedback = ref<{ type: FeedbackType; title: string; message: string } | null>(null)
@@ -1862,8 +1995,12 @@ const assessmentSearchInput = ref('')
 const assessmentSearchQuery = ref('')
 const protocolSearchInput = ref('')
 const protocolSearchQuery = ref('')
+const questionnaireSearchInput = ref('')
+const questionnaireSearchQuery = ref('')
+const appliedQuestionnaireStatusFilter = ref<QuestionnaireStatus[]>([])
 const conclusionSearchInput = ref('')
 const conclusionSearchQuery = ref('')
+const appliedConclusionResultFilter = ref<ConclusionResult[]>([])
 const isProtocolFilterOpen = ref(false)
 const openProtocolFilterField = ref<'status' | 'region' | null>(null)
 const openProtocolCalendarField = ref<'start' | 'end' | 'meeting' | null>(null)
@@ -1941,6 +2078,9 @@ const isAssessmentRowsPerPageOpen = ref(false)
 const protocolRowsPerPage = ref(20)
 const protocolCurrentPage = ref(1)
 const isProtocolRowsPerPageOpen = ref(false)
+const questionnaireRowsPerPage = ref(20)
+const questionnaireCurrentPage = ref(1)
+const isQuestionnaireRowsPerPageOpen = ref(false)
 const conclusionRowsPerPage = ref(20)
 const conclusionCurrentPage = ref(1)
 const isConclusionRowsPerPageOpen = ref(false)
@@ -1999,6 +2139,7 @@ const isAnyDialogOpen = computed(() => (
   || Boolean(documentFlowDialogKind.value)
   || Boolean(selectedViewRecord.value)
   || Boolean(selectedAssessmentViewRecord.value)
+  || Boolean(selectedConclusionRecord.value)
   || Boolean(selectedServiceTypeRecord.value)
   || Boolean(selectedDiagnosisRecord.value)
   || Boolean(pendingConfirmation.value)
@@ -2298,6 +2439,16 @@ function preventInvalidPhonePaste(event: ClipboardEvent) {
 
 function normalizeFullName(value: string) {
   return value.trim().toLocaleUpperCase('uz-UZ')
+}
+
+function maskPinfl(value: string) {
+  const digits = String(value ?? '').replace(/\D/g, '')
+
+  if (digits.length <= 4) {
+    return digits || '-'
+  }
+
+  return `${digits.slice(0, 2)}${'*'.repeat(Math.max(digits.length - 4, 0))}${digits.slice(-2)}`
 }
 
 const serviceTypeStatusClassMap: Record<ServiceTypeStatus, string> = {
@@ -3063,6 +3214,8 @@ const filteredConclusions = computed(() => {
   const query = conclusionSearchQuery.value.trim().toLowerCase()
 
   return conclusions.value.filter((record) => {
+    const matchesResult = !appliedConclusionResultFilter.value.length
+      || appliedConclusionResultFilter.value.includes(record.result)
     const matchesQuery = !query || [
       record.documentNumber,
       record.createdAt,
@@ -3079,9 +3232,84 @@ const filteredConclusions = computed(() => {
       record.status,
     ].some((value) => value.toLowerCase().includes(query))
 
-    return matchesQuery
+    return matchesResult && matchesQuery
   })
 })
+
+const conclusionResultTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: conclusions.value.length,
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+  },
+  ...conclusionResultOptions.map((result) => ({
+    label: result,
+    value: result,
+    count: conclusions.value.filter((record) => record.result === result).length,
+    dotClass: {
+      Ijobiy: 'bg-emerald-500',
+      Salbiy: 'bg-rose-500',
+    }[result],
+    badgeClass: {
+      Ijobiy: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+      Salbiy: 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+    }[result],
+  })),
+])
+
+const filteredQuestionnaires = computed(() => {
+  const query = questionnaireSearchQuery.value.trim().toLowerCase()
+
+  return questionnaires.value.filter((record) => {
+    const matchesStatus = !appliedQuestionnaireStatusFilter.value.length
+      || appliedQuestionnaireStatusFilter.value.includes(record.status)
+    const matchesQuery = !query || [
+      record.documentNumber,
+      record.createdAt,
+      formatDateDisplay(record.createdAt),
+      record.serviceRecipient,
+      record.serviceRecipientPinfl,
+      record.serviceType,
+      String(record.resultScore),
+      record.region,
+      record.district,
+      record.status,
+    ].some((value) => value.toLowerCase().includes(query))
+
+    return matchesStatus && matchesQuery
+  })
+})
+
+const questionnaireStatusTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all' as const,
+    count: questionnaires.value.length,
+    dotClass: 'bg-slate-500',
+    badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+  },
+  ...questionnaireStatusOptions.map((status) => ({
+    label: status,
+    value: status,
+    count: questionnaires.value.filter((record) => record.status === status).length,
+    dotClass: {
+      Yangi: 'bg-slate-500',
+      Tahrirlangan: 'bg-amber-500',
+      Yuborilgan: 'bg-sky-500',
+      'Bekor qilingan': 'bg-rose-500',
+      Tasdiqlangan: 'bg-emerald-500',
+    }[status],
+    badgeClass: {
+      Yangi: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
+      Tahrirlangan: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200',
+      Yuborilgan: 'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-200',
+      'Bekor qilingan': 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200',
+      Tasdiqlangan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-200',
+    }[status],
+  })),
+])
 
 const totalRows = computed(() => filteredCommissions.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
@@ -3119,6 +3347,22 @@ const protocolPaginationRange = computed(() => {
   return { start, end }
 })
 const protocolCurrentPageSummary = computed(() => `${protocolCurrentPage.value}/${protocolTotalPages.value}`)
+const questionnaireTotalRows = computed(() => filteredQuestionnaires.value.length)
+const questionnaireTotalPages = computed(() => Math.max(1, Math.ceil(questionnaireTotalRows.value / questionnaireRowsPerPage.value)))
+const paginatedQuestionnaires = computed(() => {
+  const start = (questionnaireCurrentPage.value - 1) * questionnaireRowsPerPage.value
+  return filteredQuestionnaires.value.slice(start, start + questionnaireRowsPerPage.value)
+})
+const questionnairePaginationRange = computed(() => {
+  const start = questionnaireTotalRows.value === 0 ? 0 : (questionnaireCurrentPage.value - 1) * questionnaireRowsPerPage.value + 1
+  const end = Math.min(questionnaireCurrentPage.value * questionnaireRowsPerPage.value, questionnaireTotalRows.value)
+  return { start, end }
+})
+const questionnaireCurrentPageSummary = computed(() => `${questionnaireCurrentPage.value}/${questionnaireTotalPages.value}`)
+const questionnaireHasActiveFilters = computed(() => (
+  Boolean(questionnaireSearchQuery.value)
+  || appliedQuestionnaireStatusFilter.value.length > 0
+))
 const conclusionTotalRows = computed(() => filteredConclusions.value.length)
 const conclusionTotalPages = computed(() => Math.max(1, Math.ceil(conclusionTotalRows.value / conclusionRowsPerPage.value)))
 const paginatedConclusions = computed(() => {
@@ -3131,7 +3375,10 @@ const conclusionPaginationRange = computed(() => {
   return { start, end }
 })
 const conclusionCurrentPageSummary = computed(() => `${conclusionCurrentPage.value}/${conclusionTotalPages.value}`)
-const conclusionHasActiveFilters = computed(() => Boolean(conclusionSearchQuery.value))
+const conclusionHasActiveFilters = computed(() => (
+  Boolean(conclusionSearchQuery.value)
+  || appliedConclusionResultFilter.value.length > 0
+))
 const protocolActiveFilterCount = computed(() => {
   let count = 0
   if (appliedProtocolStatusFilter.value.length) count += 1
@@ -4940,11 +5187,16 @@ function viewCommission(record: CommissionRecord) {
   runActionIconLoading(`commission-view-${record.id}`, () => {
     selectedViewRecord.value = record
     openActionMenuId.value = null
+    setPersistedDialogQuery('commission', record.documentNumber)
   })
 }
 
-function closeViewDialog() {
+function closeViewDialog(updateQuery = true) {
   selectedViewRecord.value = null
+
+  if (updateQuery) {
+    clearPersistedDialogQuery('commission')
+  }
 }
 
 function openConfirmation(confirmation: PendingConfirmation) {
@@ -5017,6 +5269,116 @@ function runSaveLoading(key: string, action: () => void) {
 
 function isActionButtonLoading(...keys: string[]) {
   return Boolean(actionLoadingKey.value && keys.includes(actionLoadingKey.value))
+}
+
+function getQueryValue(value: unknown) {
+  return Array.isArray(value) ? String(value[0] ?? '') : String(value ?? '')
+}
+
+function replaceRouteQuery(query: LocationQueryRaw) {
+  void router.replace({ query }).catch(() => {})
+}
+
+function setPersistedDialogQuery(kind: PersistedDialogKind, id: string, mode?: 'view' | 'edit') {
+  const nextQuery: LocationQueryRaw = {
+    ...route.query,
+    dialog: kind,
+    id,
+  }
+
+  if (mode) {
+    nextQuery.mode = mode
+  } else {
+    delete nextQuery.mode
+  }
+
+  if (
+    getQueryValue(route.query.dialog) === kind
+    && getQueryValue(route.query.id) === id
+    && getQueryValue(route.query.mode) === (mode ?? '')
+  ) {
+    return
+  }
+
+  replaceRouteQuery(nextQuery)
+}
+
+function clearPersistedDialogQuery(kind?: PersistedDialogKind) {
+  if (kind && getQueryValue(route.query.dialog) !== kind) return
+
+  const nextQuery: LocationQueryRaw = { ...route.query }
+  delete nextQuery.dialog
+  delete nextQuery.id
+  delete nextQuery.mode
+  replaceRouteQuery(nextQuery)
+}
+
+function isDialogQueryRecord(record: { id: string; documentNumber?: string }, queryId: string) {
+  return record.id === queryId || record.documentNumber === queryId
+}
+
+function closePersistedDialogsFromRoute() {
+  if (selectedViewRecord.value) {
+    closeViewDialog(false)
+  }
+
+  if (selectedAssessmentViewRecord.value) {
+    closeAssessmentViewDialog(false)
+  }
+
+  if (selectedConclusionRecord.value) {
+    closeConclusionDialog(false)
+  }
+
+  if (isProtocolDialogOpen.value && protocolDialogMode.value !== 'create') {
+    closeProtocolDialog(false)
+  }
+}
+
+function syncPersistedDialogFromRoute() {
+  const dialog = getQueryValue(route.query.dialog) as PersistedDialogKind | ''
+  const id = getQueryValue(route.query.id)
+  const mode = getQueryValue(route.query.mode)
+
+  if (!dialog || !id) {
+    closePersistedDialogsFromRoute()
+    return
+  }
+
+  if (dialog === 'commission' && isCommissionCompositionPage.value) {
+    const record = commissions.value.find((item) => isDialogQueryRecord(item, id))
+    if (!record) return
+    selectedViewRecord.value = record
+    return
+  }
+
+  if (dialog === 'assessment' && isAssessmentPage.value) {
+    const record = assessments.value.find((item) => isDialogQueryRecord(item, id))
+    if (!record) return
+    assessmentAnswers.value = { ...(record.answers ?? {}) }
+    selectedAssessmentViewMode.value = mode === 'edit' ? 'edit' : 'view'
+    selectedAssessmentViewRecord.value = record
+    return
+  }
+
+  if (dialog === 'protocol' && isProtocolPage.value) {
+    const record = protocols.value.find((item) => isDialogQueryRecord(item, id))
+    if (!record) return
+    protocolDialogMode.value = mode === 'edit' && canEditProtocol(record) ? 'edit' : 'view'
+    editingProtocolId.value = record.id
+    fillProtocolForm(record)
+    isProtocolDialogOpen.value = true
+    return
+  }
+
+  if (dialog === 'conclusion' && isConclusionsPage.value) {
+    const record = conclusions.value.find((item) => isDialogQueryRecord(item, id))
+    if (!record) return
+    selectedConclusionRecord.value = record
+    return
+  }
+
+  closePersistedDialogsFromRoute()
 }
 
 function requestApproveCommission(record: CommissionRecord) {
@@ -5449,6 +5811,63 @@ function setProtocolRowsPerPage(nextValue: number) {
   isProtocolRowsPerPageOpen.value = false
 }
 
+function handleQuestionnaireSearchInput(value: string) {
+  questionnaireSearchInput.value = value
+
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer)
+  }
+
+  searchDebounceTimer = setTimeout(() => {
+    runTableLoading(() => {
+      questionnaireSearchQuery.value = questionnaireSearchInput.value
+      questionnaireCurrentPage.value = 1
+    })
+    searchDebounceTimer = null
+  }, 1000)
+}
+
+function resetQuestionnaireSearch() {
+  questionnaireSearchInput.value = ''
+  questionnaireSearchQuery.value = ''
+  appliedQuestionnaireStatusFilter.value = []
+  runTableLoading(() => {
+    questionnaireCurrentPage.value = 1
+  })
+}
+
+function selectQuestionnaireStatusTab(value: QuestionnaireStatusTabValue) {
+  const nextStatuses = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(appliedQuestionnaireStatusFilter.value, value)
+  if (areApplicationReportFiltersEqual(appliedQuestionnaireStatusFilter.value, nextStatuses)) return
+
+  runTableLoading(() => {
+    appliedQuestionnaireStatusFilter.value = [...nextStatuses]
+    questionnaireCurrentPage.value = 1
+  })
+}
+
+function goToQuestionnairePage(page: number) {
+  if (page < 1 || page > questionnaireTotalPages.value || page === questionnaireCurrentPage.value) return
+
+  runTableLoading(() => {
+    questionnaireCurrentPage.value = page
+  })
+}
+
+function setQuestionnaireRowsPerPageOpen(nextOpen: boolean) {
+  isQuestionnaireRowsPerPageOpen.value = nextOpen
+}
+
+function setQuestionnaireRowsPerPage(nextValue: number) {
+  runTableLoading(() => {
+    questionnaireRowsPerPage.value = nextValue
+    questionnaireCurrentPage.value = 1
+  })
+  isQuestionnaireRowsPerPageOpen.value = false
+}
+
 function handleConclusionSearchInput(value: string) {
   conclusionSearchInput.value = value
 
@@ -5468,7 +5887,20 @@ function handleConclusionSearchInput(value: string) {
 function resetConclusionSearch() {
   conclusionSearchInput.value = ''
   conclusionSearchQuery.value = ''
+  appliedConclusionResultFilter.value = []
   runTableLoading(() => {
+    conclusionCurrentPage.value = 1
+  })
+}
+
+function selectConclusionResultTab(value: ConclusionResultTabValue) {
+  const nextResults = value === 'all'
+    ? []
+    : toggleDropdownMultiSelectValue(appliedConclusionResultFilter.value, value)
+  if (areApplicationReportFiltersEqual(appliedConclusionResultFilter.value, nextResults)) return
+
+  runTableLoading(() => {
+    appliedConclusionResultFilter.value = [...nextResults]
     conclusionCurrentPage.value = 1
   })
 }
@@ -5706,12 +6138,16 @@ function openCreateProtocolDialog() {
   isProtocolDialogOpen.value = true
 }
 
-function closeProtocolDialog() {
+function closeProtocolDialog(updateQuery = true) {
   openProtocolFormField.value = null
   openProtocolCalendarField.value = null
   isProtocolDialogOpen.value = false
   protocolDialogMode.value = 'create'
   editingProtocolId.value = null
+
+  if (updateQuery) {
+    clearPersistedDialogQuery('protocol')
+  }
 }
 
 function canEditProtocol(record: ProtocolRecord) {
@@ -5761,6 +6197,7 @@ function viewProtocol(record: ProtocolRecord) {
     editingProtocolId.value = record.id
     fillProtocolForm(record)
     isProtocolDialogOpen.value = true
+    setPersistedDialogQuery('protocol', record.documentNumber, 'view')
   })
 }
 
@@ -5774,6 +6211,7 @@ function editProtocol(record: ProtocolRecord) {
     editingProtocolId.value = record.id
     fillProtocolForm(record)
     isProtocolDialogOpen.value = true
+    setPersistedDialogQuery('protocol', record.documentNumber, 'edit')
   })
 }
 
@@ -6209,6 +6647,7 @@ function viewAssessment(record: AssessmentRecord) {
     selectedAssessmentViewMode.value = 'view'
     selectedAssessmentViewRecord.value = record
     openActionMenuId.value = null
+    setPersistedDialogQuery('assessment', record.documentNumber, 'view')
   })
 }
 
@@ -6218,12 +6657,17 @@ function editAssessment(record: AssessmentRecord) {
     selectedAssessmentViewMode.value = 'edit'
     selectedAssessmentViewRecord.value = record
     openActionMenuId.value = null
+    setPersistedDialogQuery('assessment', record.documentNumber, 'edit')
   })
 }
 
-function closeAssessmentViewDialog() {
+function closeAssessmentViewDialog(updateQuery = true) {
   selectedAssessmentViewRecord.value = null
   resetAssessmentDialogState()
+
+  if (updateQuery) {
+    clearPersistedDialogQuery('assessment')
+  }
 }
 
 function saveAssessmentFromDialog() {
@@ -6567,11 +7011,61 @@ async function downloadConclusions() {
   }
 }
 
+async function downloadQuestionnaires() {
+  const stopLoading = startActionLoading('questionnaire-download', 700)
+  let downloadScheduled = false
+
+  try {
+    const xlsx = await import('xlsx')
+
+    const exportRows = filteredQuestionnaires.value.map((record) => ({
+      ID: record.documentNumber,
+      Sana: formatDateDisplay(record.createdAt),
+      'Xizmat oluvchi': record.serviceRecipient,
+      JSHSHIR: record.serviceRecipientPinfl,
+      'Xizmat turi': record.serviceType,
+      Natija: record.resultScore,
+      Hudud: record.region,
+      Tuman: record.district,
+      Status: record.status,
+    }))
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, "So'rovnoma")
+    downloadScheduled = true
+    stopLoading(() => {
+      xlsx.writeFile(workbook, 'iptk-sorovnoma.xlsx')
+      pushFeedback('success', "So'rovnoma ro'yxati Excel formatida yuklab olindi.", 'Yuklab olish bajarildi')
+    })
+  } finally {
+    if (!downloadScheduled && actionLoadingKey.value === 'questionnaire-download') {
+      stopLoading()
+    }
+  }
+}
+
+function viewQuestionnaire(record: QuestionnaireRecord) {
+  runActionIconLoading(`questionnaire-view-${record.id}`, () => {
+    openActionMenuId.value = null
+    pushFeedback('info', `${record.documentNumber} raqamli so'rovnoma ko'rish uchun ochildi.`, "Ma'lumot")
+  })
+}
+
 function viewConclusion(record: ConclusionRecord) {
   runActionIconLoading(`conclusion-view-${record.id}`, () => {
-    pushFeedback('info', `${record.documentNumber} raqamli xulosa ko‘rish uchun ochildi.`)
+    selectedConclusionRecord.value = record
     openActionMenuId.value = null
+    setPersistedDialogQuery('conclusion', record.documentNumber)
   })
+}
+
+function closeConclusionDialog(updateQuery = true) {
+  selectedConclusionRecord.value = null
+
+  if (updateQuery) {
+    clearPersistedDialogQuery('conclusion')
+  }
 }
 
 function nextServiceTypeId() {
@@ -7951,6 +8445,11 @@ function closeTopLayer() {
     return
   }
 
+  if (selectedConclusionRecord.value) {
+    closeConclusionDialog()
+    return
+  }
+
   if (selectedViewRecord.value) {
     closeViewDialog()
     return
@@ -8077,6 +8576,12 @@ watch(assessmentTotalPages, (nextTotal) => {
   }
 })
 
+watch(questionnaireTotalPages, (nextTotal) => {
+  if (questionnaireCurrentPage.value > nextTotal) {
+    questionnaireCurrentPage.value = nextTotal
+  }
+})
+
 watch(serviceTypeTotalPages, (nextTotal) => {
   if (serviceTypeCurrentPage.value > nextTotal) {
     serviceTypeCurrentPage.value = nextTotal
@@ -8092,6 +8597,14 @@ watch(diagnosisTotalPages, (nextTotal) => {
 watch(() => props.pageKey, () => {
   runTableLoading(() => {})
 }, { immediate: true })
+
+watch(
+  () => [props.pageKey, route.query.dialog, route.query.id, route.query.mode],
+  () => {
+    syncPersistedDialogFromRoute()
+  },
+  { immediate: true },
+)
 
 watch(isAnyDialogOpen, (isOpen) => {
   if (isOpen) {
@@ -9917,7 +10430,7 @@ onUnmounted(() => {
 
             <button
               class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-              @click="closeViewDialog"
+              @click="closeViewDialog()"
             >
               <X class="h-5 w-5" />
             </button>
@@ -10089,7 +10602,7 @@ onUnmounted(() => {
           <div class="flex justify-end border-t border-border px-6 py-4">
             <Button
               variant="outline"
-              @click="closeViewDialog"
+              @click="closeViewDialog()"
             >
               Yopish
             </Button>
@@ -11310,7 +11823,7 @@ onUnmounted(() => {
             {{ selectedAssessmentViewRecord.documentNumber }} bo'yicha parvarishga muhtojlik va kundalik mustaqillik baholanadi.
           </p>
         </div>
-        <Button variant="ghost" size="sm" class="h-9 w-9 p-0" aria-label="Oynani yopish" @click="closeAssessmentViewDialog">
+        <Button variant="ghost" size="sm" class="h-9 w-9 p-0" aria-label="Oynani yopish" @click="closeAssessmentViewDialog()">
           <X class="h-4 w-4" />
         </Button>
       </div>
@@ -11463,7 +11976,7 @@ onUnmounted(() => {
           {{ isAssessmentComplete ? "Barcha savollar to'ldirildi." : `${Object.keys(assessmentAnswers).length}/${allAssessmentQuestions.length} savol to'ldirildi.` }}
         </p>
         <div class="flex items-center gap-2">
-          <Button variant="outline" @click="closeAssessmentViewDialog">
+          <Button variant="outline" @click="closeAssessmentViewDialog()">
             {{ selectedAssessmentReadonly ? t('Yopish') : t('Bekor qilish') }}
           </Button>
           <Button
@@ -11501,7 +12014,7 @@ onUnmounted(() => {
             {{ selectedAssessmentViewRecord?.documentNumber }} raqamli baholash hujjati.
           </p>
         </div>
-        <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="closeAssessmentViewDialog">
+        <Button variant="ghost" size="sm" class="h-8 w-8 p-0" @click="closeAssessmentViewDialog()">
           <X class="h-4 w-4" />
         </Button>
       </div>
@@ -12283,7 +12796,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              @click="closeProtocolDialog"
+              @click="closeProtocolDialog()"
             >
               <X class="h-5 w-5" />
             </button>
@@ -12509,6 +13022,384 @@ onUnmounted(() => {
       </div>
     </template>
 
+    <template v-else-if="isQuestionnairePage">
+      <div
+        v-if="feedback"
+        :class="[
+          'fixed right-4 top-4 z-[70] flex max-w-sm items-start gap-3 overflow-hidden rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-lg',
+          feedback.type === 'success' && 'border-emerald-200 dark:border-emerald-900/60',
+          feedback.type === 'error' && 'border-rose-200 dark:border-rose-900/60',
+          feedback.type === 'info' && 'border-sky-200 dark:border-sky-900/60',
+        ]"
+        @mouseenter="pauseNotificationCountdown"
+        @mouseleave="resumeNotificationCountdown"
+      >
+        <div
+          class="absolute left-0 top-0 h-1"
+          :class="[
+            feedback.type === 'success' && 'bg-emerald-500',
+            feedback.type === 'error' && 'bg-rose-500',
+            feedback.type === 'info' && 'bg-sky-500',
+          ]"
+          :style="{ width: `${notificationProgress}%` }"
+        />
+        <span
+          :class="[
+            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
+            feedback.type === 'success' && 'bg-emerald-600',
+            feedback.type === 'error' && 'bg-rose-600',
+            feedback.type === 'info' && 'bg-sky-600',
+          ]"
+        />
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ feedback.title }}</p>
+          <p class="mt-1 text-muted-foreground">{{ feedback.message }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
+          @click="closeNotification"
+        >
+          <X class="h-4 w-4" />
+        </button>
+      </div>
+
+      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              :model-value="questionnaireSearchInput"
+              class="pl-9"
+              :placeholder="t('Qidirish')"
+              @update:model-value="handleQuestionnaireSearchInput(String($event ?? ''))"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              :disabled="actionLoadingKey === 'questionnaire-download'"
+              @click="downloadQuestionnaires"
+            >
+              <LoaderCircle
+                v-if="actionLoadingKey === 'questionnaire-download'"
+                class="h-4 w-4 animate-spin"
+              />
+              <Download
+                v-else
+                class="h-4 w-4"
+              />
+              {{ t('Yuklab olish') }}
+            </Button>
+          </div>
+        </div>
+
+        <StatusTabs
+          :tabs="questionnaireStatusTabs"
+          :selected-values="appliedQuestionnaireStatusFilter"
+          item-key-prefix="questionnaire-status-tab"
+          @select="selectQuestionnaireStatusTab($event as QuestionnaireStatusTabValue)"
+        />
+
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+          <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <div v-if="paginatedQuestionnaires.length === 0" class="flex min-h-80 items-center justify-center p-6 text-center">
+              <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  :disabled="isTableLoading || !questionnaireHasActiveFilters"
+                  @click="resetQuestionnaireSearch"
+                >
+                  {{ t('Tozalash') }}
+                </Button>
+              </div>
+            </div>
+
+            <div v-else class="grid gap-3 p-3 md:grid-cols-2 xl:hidden">
+              <Card
+                v-for="record in paginatedQuestionnaires"
+                :key="record.id"
+                class="rounded-xl border-border bg-card"
+              >
+                <CardContent class="p-4">
+                  <div class="mb-4 flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="font-semibold text-foreground">{{ record.documentNumber }}</p>
+                      <p class="mt-1 text-sm text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                        {{ record.status }}
+                      </span>
+                      <DropdownMenuRoot @update:open="setActionMenuOpen(`questionnaire-${record.id}`, $event)">
+                        <DropdownMenuTrigger as-child>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            :class="openActionMenuId === `questionnaire-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                          >
+                            <LoaderCircle
+                              v-if="isActionButtonLoading(`questionnaire-view-${record.id}`)"
+                              class="h-4 w-4 animate-spin"
+                            />
+                            <Ellipsis v-else class="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuContent
+                            side="left"
+                            align="start"
+                            :side-offset="6"
+                            :collision-padding="12"
+                            class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                          >
+                            <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewQuestionnaire(record)">
+                              <Eye class="h-4 w-4 shrink-0" />
+                              <span>{{ t("Ko'rish") }}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuRoot>
+                    </div>
+                  </div>
+
+                  <div class="grid gap-3 text-sm">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat oluvchi') }}</p>
+                      <p class="mt-1 font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
+                        <p class="mt-1 font-medium text-foreground">{{ record.serviceType }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Natija') }}</p>
+                        <p class="mt-1 font-medium text-foreground">{{ record.resultScore }} ball</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
+                      <p class="mt-1 font-medium text-foreground">{{ record.region }}</p>
+                      <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <div
+              v-if="isTableLoading"
+              class="absolute inset-0 z-20 flex items-center justify-center bg-background/70"
+            >
+              <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-sm">
+                <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                <span>{{ t('Yuklanmoqda...') }}</span>
+              </div>
+            </div>
+
+            <table class="min-w-[1160px] border-separate border-spacing-0 text-sm xl:min-w-full">
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat turi') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Natija') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Status') }}</th>
+                  <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Amallar') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedQuestionnaires.length === 0">
+                  <td colspan="7" class="border-b border-border px-4 py-12 text-center">
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">{{ t("Ma'lumot topilmadi") }}</p>
+                      <p class="text-sm text-muted-foreground">{{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="isTableLoading || !questionnaireHasActiveFilters"
+                        @click="resetQuestionnaireSearch"
+                      >
+                        {{ t('Tozalash') }}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedQuestionnaires"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.documentNumber }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ formatDateDisplay(record.createdAt) }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium uppercase text-foreground">{{ normalizeFullName(record.serviceRecipient) }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.serviceType }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.resultScore }} ball</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <p class="font-medium text-foreground">{{ record.region }}</p>
+                    <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', statusClassMap[record.status])">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(`questionnaire-${record.id}`, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === `questionnaire-${record.id}` ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <LoaderCircle
+                            v-if="isActionButtonLoading(`questionnaire-view-${record.id}`)"
+                            class="h-4 w-4 animate-spin"
+                          />
+                          <Ellipsis v-else class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="right"
+                          align="start"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted" @click="viewQuestionnaire(record)">
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>{{ t("Ko'rish") }}</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
+                <DropdownMenuRoot
+                  :open="isQuestionnaireRowsPerPageOpen"
+                  @update:open="setQuestionnaireRowsPerPageOpen($event)"
+                >
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isQuestionnaireRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    >
+                      <span>{{ questionnaireRowsPerPage }}</span>
+                      <ChevronRight class="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @select.prevent="setQuestionnaireRowsPerPage(option)"
+                      >
+                        <span :class="option === questionnaireRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                          {{ option }}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+
+              <div class="flex items-center gap-2 text-sm">
+                <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
+                <span class="font-medium text-foreground">{{ questionnairePaginationRange.start }}-{{ questionnairePaginationRange.end }} / {{ questionnaireTotalRows }}</span>
+              </div>
+            </div>
+
+            <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || questionnaireCurrentPage === 1"
+                @click="goToQuestionnairePage(1)"
+              >
+                <ChevronsLeft class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || questionnaireCurrentPage === 1"
+                @click="goToQuestionnairePage(questionnaireCurrentPage - 1)"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </Button>
+              <span class="min-w-14 text-center text-sm font-semibold text-foreground">
+                {{ questionnaireCurrentPageSummary }}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || questionnaireCurrentPage === questionnaireTotalPages"
+                @click="goToQuestionnairePage(questionnaireCurrentPage + 1)"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="isTableLoading || questionnaireCurrentPage === questionnaireTotalPages"
+                @click="goToQuestionnairePage(questionnaireTotalPages)"
+              >
+                <ChevronsRight class="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <template v-else-if="isConclusionsPage">
       <div
         v-if="feedback"
@@ -12582,6 +13473,13 @@ onUnmounted(() => {
             </Button>
           </div>
         </div>
+
+        <StatusTabs
+          :tabs="conclusionResultTabs"
+          :selected-values="appliedConclusionResultFilter"
+          item-key-prefix="conclusion-result-tab"
+          @select="selectConclusionResultTab($event as ConclusionResultTabValue)"
+        />
 
         <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
           <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
@@ -12864,6 +13762,163 @@ onUnmounted(() => {
                 <ChevronsRight class="h-5 w-5" />
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedConclusionRecord"
+        class="pointer-events-auto fixed inset-0 z-50 flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
+        @click.stop
+        @mousedown.stop
+        @touchmove.self.prevent
+        @wheel.self.prevent
+      >
+        <div class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-3">
+                <h2 class="text-xl font-semibold text-foreground">
+                  {{ t('Komissiya xulosasi') }}
+                </h2>
+                <span :class="cn('inline-flex rounded-full border px-3 py-1 text-xs font-semibold', conclusionResultClassMap[selectedConclusionRecord.result])">
+                  {{ selectedConclusionRecord.result }}
+                </span>
+              </div>
+              <p class="mt-1 text-sm text-muted-foreground">
+                {{ selectedConclusionRecord.documentNumber }} · {{ formatDateDisplay(selectedConclusionRecord.createdAt) }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+              @click="closeConclusionDialog()"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-6">
+            <div class="grid gap-3 md:grid-cols-3">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Hujjat') }}</p>
+                <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.documentNumber }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ t('Ariza') }}: {{ selectedConclusionRecord.applicationNumber }}</p>
+              </div>
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Bayonnoma') }}</p>
+                <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.protocolNumber }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ selectedConclusionRecord.commissionName }}</p>
+              </div>
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Tasdiqlangan sana') }}</p>
+                <p class="mt-1 font-semibold text-foreground">{{ formatDateDisplay(selectedConclusionRecord.approvedAt) }}</p>
+                <p class="mt-1 text-sm text-muted-foreground">{{ selectedConclusionRecord.status }}</p>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <h3 class="text-base font-semibold text-foreground">{{ t('Xizmat oluvchi') }}</h3>
+              <div class="mt-4 overflow-hidden rounded-xl border border-border">
+                <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">FIO</div>
+                  <div class="px-4 py-3 font-medium uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.serviceRecipient) }}</div>
+                </div>
+                <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">JSHSHIR</div>
+                  <div class="px-4 py-3 text-foreground">{{ maskPinfl(selectedConclusionRecord.serviceRecipientPinfl) }}</div>
+                </div>
+                <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">{{ t("Tug'ilgan sanasi") }}</div>
+                  <div class="px-4 py-3 text-foreground">{{ selectedConclusionRecord.serviceRecipientBirthDate }}</div>
+                </div>
+                <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">{{ t('Tashxis') }}</div>
+                  <div class="px-4 py-3 text-foreground">{{ selectedConclusionRecord.diagnosis }}</div>
+                </div>
+                <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">{{ t('Nogironlik guruhi') }}</div>
+                  <div class="px-4 py-3 text-foreground">{{ selectedConclusionRecord.disabilityGroup }}</div>
+                </div>
+                <div class="grid sm:grid-cols-[14rem_minmax(0,1fr)]">
+                  <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">{{ t('Manzil') }}</div>
+                  <div class="px-4 py-3 text-foreground">{{ selectedConclusionRecord.region }}, {{ selectedConclusionRecord.district }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="text-base font-semibold text-foreground">{{ t('Xizmat ma’lumoti') }}</h3>
+                <div class="mt-4 space-y-3">
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Tanlangan xizmat') }}</p>
+                    <p class="mt-1 font-medium text-foreground">{{ selectedConclusionRecord.serviceType }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Tavsiya etilgan xizmat') }}</p>
+                    <p class="mt-1 font-medium text-foreground">{{ selectedConclusionRecord.recommendedService }}</p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Foydalanish muddati') }}</p>
+                    <p class="mt-1 font-medium text-foreground">{{ selectedConclusionRecord.validityPeriod }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-border bg-card p-4">
+                <h3 class="text-base font-semibold text-foreground">{{ t('Xulosa') }}</h3>
+                <div class="mt-4 space-y-3">
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Natija') }}</p>
+                    <span :class="cn('mt-1 inline-flex rounded-full border px-3 py-1 text-xs font-semibold', conclusionResultClassMap[selectedConclusionRecord.result])">
+                      {{ selectedConclusionRecord.result }}
+                    </span>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Qaror') }}</p>
+                    <p class="mt-1 font-medium text-foreground">
+                      {{ selectedConclusionRecord.result === 'Ijobiy' ? t("Ijtimoiy xizmatga yo'naltirish tavsiya etildi.") : t("Ijtimoiy xizmatga yo'naltirish rad etildi.") }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Asos') }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      {{ selectedConclusionRecord.result === 'Ijobiy' ? t('IPTK tekshiruvi natijalari bo‘yicha mos deb topildi.') : t('IPTK tekshiruvi natijalari bo‘yicha mos emas deb topildi.') }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-border bg-card p-4">
+              <h3 class="text-base font-semibold text-foreground">{{ t('Komissiya ma’lumoti') }}</h3>
+              <div class="mt-4 grid gap-3 md:grid-cols-3">
+                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Rais') }}</p>
+                  <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.chair) }}</p>
+                </div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Kotib') }}</p>
+                  <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.secretary) }}</p>
+                </div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                  <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t("A'zolar soni") }}</p>
+                  <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.membersCount }} ta</p>
+                </div>
+              </div>
+            </div>
+
+            <p class="rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              {{ t("Public ko'rinishda shaxsga doir sezgir ma'lumotlar qisqartirib ko'rsatiladi.") }}
+            </p>
+          </div>
+
+          <div class="flex items-center justify-end border-t border-border px-6 py-4">
+            <Button variant="outline" @click="closeConclusionDialog()">
+              {{ t('Yopish') }}
+            </Button>
           </div>
         </div>
       </div>
@@ -15073,7 +16128,6 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center font-semibold text-foreground transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'total', 'Jami'),
                     ]"
-                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
                     @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'total', 'Jami', row.total)"
                     @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'total', 'Jami', row.total)"
                     @click="handleApplicationReportCellClick($event, row.region, 'total', 'Jami', row.total)"
@@ -15087,7 +16141,6 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'status', status),
                     ]"
-                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
                     @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'status', status, row.statuses[status] ?? 0)"
                     @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'status', status, row.statuses[status] ?? 0)"
                     @click="handleApplicationReportCellClick($event, row.region, 'status', status, row.statuses[status] ?? 0)"
@@ -15103,7 +16156,6 @@ onUnmounted(() => {
                       'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out',
                       getApplicationReportCellClass(row.region, 'step', step),
                     ]"
-                    title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
                     @mousedown="handleApplicationReportCellMouseDown($event, row.region, 'step', step, row.steps[step] ?? 0)"
                     @mouseenter="handleApplicationReportCellMouseEnter(row.region, 'step', step, row.steps[step] ?? 0)"
                     @click="handleApplicationReportCellClick($event, row.region, 'step', step, row.steps[step] ?? 0)"
@@ -15121,7 +16173,6 @@ onUnmounted(() => {
                         'select-none border-b border-r border-border px-4 py-3 text-center text-foreground transition-colors duration-150 ease-out last:border-r-0',
                         getApplicationReportCellClass(row.region, group.key, option),
                       ]"
-                      title="Click: analitika, Ctrl + click: ro'yxat, bosib surish: tanlash"
                       @mousedown="handleApplicationReportCellMouseDown($event, row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
                       @mouseenter="handleApplicationReportCellMouseEnter(row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
                       @click="handleApplicationReportCellClick($event, row.region, group.key, option, row.metrics[group.key][option] ?? 0)"
