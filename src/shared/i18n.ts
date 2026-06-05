@@ -56,6 +56,7 @@ const translationKeys: Record<string, string> = {
   'Info 3': 'nav.info3',
   'Internat uylari': 'nav.homes',
   'IPTK': 'module.iptk',
+  'Ijtimoiy navigator': 'module.snav',
   'IPTKga yuborish': 'action.sendToIptk',
   'Kirish': 'page.login',
   'Komissiyalar tarkibi': 'page.commissions',
@@ -92,6 +93,7 @@ const translationKeys: Record<string, string> = {
   'Qidiruv shartlariga mos yozuv topilmadi.': 'common.noSearchResults',
   "Qisqa nomi": 'common.shortName',
   'Qabul qilingan arizalar': 'common.acceptedApplications',
+  'Qabul jadvallari': 'page.receptionSchedules',
   "Qo'llash": 'action.apply',
   "Ro'yxatga olinganlar": 'page.registered',
   "Ro'yxatdan chiqqanlar": 'page.removed',
@@ -105,6 +107,8 @@ const translationKeys: Record<string, string> = {
   'Tanlovni tozalash': 'action.clearSelection',
   'Tasdiqlash': 'action.approve',
   'Tahrirlash': 'action.edit',
+  'Tashkilotlar': 'page.organizations',
+  'Tashkilot turlari': 'page.organizationTypes',
   "To'lovlar": 'module.payments',
   "Toifa guruhlari": 'page.categoryGroups',
   "To'liq nomi": 'common.fullName',
@@ -485,6 +489,11 @@ const translations: Record<string, TranslationMap> = {
     ru: 'Муравват',
     i18n: 'module.muruvvat',
   },
+  'module.snav': {
+    en: 'Social navigator',
+    ru: 'Социальный навигатор',
+    i18n: 'module.snav',
+  },
   'module.payments': {
     en: 'Payments',
     ru: 'Платежи',
@@ -529,6 +538,21 @@ const translations: Record<string, TranslationMap> = {
     en: 'References',
     ru: 'Инфо',
     i18n: 'nav.info',
+  },
+  'nav.organizations': {
+    en: 'Organizations',
+    ru: 'Организации',
+    i18n: 'nav.organizations',
+  },
+  'nav.organizationTypes': {
+    en: 'Organization types',
+    ru: 'Типы организаций',
+    i18n: 'nav.organizationTypes',
+  },
+  'nav.receptionSchedules': {
+    en: 'Reception schedules',
+    ru: 'Reception schedules',
+    i18n: 'nav.receptionSchedules',
   },
   'nav.info1': {
     en: 'Reference 1',
@@ -629,6 +653,21 @@ const translations: Record<string, TranslationMap> = {
     en: 'Login',
     ru: 'Вход',
     i18n: 'page.login',
+  },
+  'page.organizations': {
+    en: 'Organizations',
+    ru: 'Организации',
+    i18n: 'page.organizations',
+  },
+  'page.organizationTypes': {
+    en: 'Organization types',
+    ru: 'Типы организаций',
+    i18n: 'page.organizationTypes',
+  },
+  'page.receptionSchedules': {
+    en: 'Reception schedules',
+    ru: 'Reception schedules',
+    i18n: 'page.receptionSchedules',
   },
   'page.queues': {
     en: 'Queues',

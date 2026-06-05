@@ -16,6 +16,8 @@ const UsersPage = () => import('@/features/users/pages/UsersPage.vue')
 const IPTKPage = () => import('@/features/iptk/pages/IPTKPage.vue')
 const IPTKApplicationsListPage = () => import('@/features/iptk/pages/IPTKApplicationsListPage.vue')
 const MuruvvatPage = () => import('@/features/muruvvat/pages/MuruvvatPage.vue')
+const SnavPage = () => import('@/features/snav/pages/SnavPage.vue')
+const ErrorPage = () => import('@/features/errors/pages/ErrorPage.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -437,6 +439,66 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/snav',
+        name: 'snav-dashboard',
+        component: SnavPage,
+        props: {
+          pageKey: 'dashboard',
+        },
+        meta: {
+          title: 'Ijtimoiy navigator',
+          requiresAuth: true,
+          moduleKey: 'snav',
+          moduleTitle: 'Ijtimoiy navigator',
+          breadcrumb: ['Ilovalar', 'Ijtimoiy navigator', 'Dashboard'],
+        },
+      },
+      {
+        path: 'apps/snav/info/organization-types',
+        name: 'snav-organization-types',
+        component: SnavPage,
+        props: {
+          pageKey: 'organization-types',
+        },
+        meta: {
+          title: 'Tashkilot turlari',
+          requiresAuth: true,
+          moduleKey: 'snav',
+          moduleTitle: 'Ijtimoiy navigator',
+          breadcrumb: ['Ilovalar', 'Ijtimoiy navigator', "Ma'lumotnomalar", 'Tashkilot turlari'],
+        },
+      },
+      {
+        path: 'apps/snav/info/organizations',
+        name: 'snav-organizations',
+        component: SnavPage,
+        props: {
+          pageKey: 'organizations',
+        },
+        meta: {
+          title: 'Tashkilotlar',
+          requiresAuth: true,
+          moduleKey: 'snav',
+          moduleTitle: 'Ijtimoiy navigator',
+          breadcrumb: ['Ilovalar', 'Ijtimoiy navigator', "Ma'lumotnomalar", 'Tashkilotlar'],
+        },
+      },
+      {
+        path: 'apps/snav/info/reception-schedules',
+        name: 'snav-reception-schedules',
+        component: SnavPage,
+        props: {
+          pageKey: 'reception-schedules',
+        },
+        meta: {
+          title: 'Qabul jadvallari',
+          requiresAuth: true,
+          moduleKey: 'snav',
+          moduleTitle: 'Ijtimoiy navigator',
+          breadcrumb: ['Ilovalar', 'Ijtimoiy navigator', "Ma'lumotnomalar", 'Qabul jadvallari'],
+        },
+      },
+      {
         path: 'apps/dashboard',
         name: 'dashboard',
         component: DashboardPage,
@@ -549,7 +611,33 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/403',
+    name: 'forbidden',
+    component: ErrorPage,
+    props: {
+      status: 403,
+    },
+    meta: {
+      title: 'Ruxsat cheklangan',
+      requiresAuth: true,
+      breadcrumb: ['403'],
+    },
+  },
+  {
+    path: '/404',
+    name: 'not-found',
+    component: ErrorPage,
+    props: {
+      status: 404,
+    },
+    meta: {
+      title: 'Sahifa topilmadi',
+      requiresAuth: true,
+      breadcrumb: ['404'],
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
-    redirect: '/apps',
+    redirect: '/404',
   },
 ]

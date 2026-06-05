@@ -75,6 +75,20 @@ type ApplicationRow = {
   statusClass: string
 }
 
+type RegisteredResidentStatus = 'Ro‘yxatda' | 'Vaqtincha chiqqan' | 'Ko‘chirilgan'
+
+type RegisteredResidentRow = {
+  id: string
+  date: string
+  fullName: string
+  pinfl: string
+  organization: string
+  organizationRegion: string
+  region: string
+  district: string
+  status: RegisteredResidentStatus
+}
+
 type ApplicantLookupResult = {
   fullName: string
   pinfl: string
@@ -176,6 +190,8 @@ type PendingConfirmation = {
 type AssessmentAnswers = Record<string, string>
 
 const isApplicationsListPage = computed(() => props.pageKey === 'applications-list')
+const isRegisteredPage = computed(() => props.pageKey === 'registered')
+const isDataTablePage = computed(() => isApplicationsListPage.value || isRegisteredPage.value)
 const isIptkApplicationsListPage = computed(() => isApplicationsListPage.value && route.meta.moduleKey === 'iptk')
 const page = computed(() => (
   isIptkApplicationsListPage.value
@@ -187,6 +203,12 @@ const statusStyles = {
   Jarayonda: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
   Tasdiqlangan: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
   'Bekor qilingan': 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300',
+} as const
+
+const registeredStatusStyles = {
+  'Ro‘yxatda': 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-300',
+  'Vaqtincha chiqqan': 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300',
+  'Ko‘chirilgan': 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/20 dark:text-sky-300',
 } as const
 const statusTabDotStyles: Record<ApplicationStatus, string> = {
   Jarayonda: 'bg-amber-500',
@@ -889,9 +911,81 @@ const applicationRows = ref(demoApplicationCases.map((applicationCase, index) =>
   }
 }) as ApplicationRow[])
 
+const registeredResidentRows = ref<RegisteredResidentRow[]>([
+  {
+    id: 'REG-2026-0001',
+    date: '12.01.2026',
+    fullName: "ALIYEV AZIZBEK ANVAR O'G'LI",
+    pinfl: '10000000000000',
+    organization: 'Muruvvat internat uyi 1',
+    organizationRegion: 'Toshkent viloyati',
+    region: 'Toshkent viloyati',
+    district: 'Zangiota tumani',
+    status: 'Ro‘yxatda',
+  },
+  {
+    id: 'REG-2026-0002',
+    date: '26.01.2026',
+    fullName: 'KARIMOVA MOHIRA BAXTIYOR QIZI',
+    pinfl: '10000000000137',
+    organization: 'Saxovat uyi markazi',
+    organizationRegion: 'Samarqand viloyati',
+    region: 'Samarqand viloyati',
+    district: 'Samarqand shahri',
+    status: 'Ro‘yxatda',
+  },
+  {
+    id: 'REG-2026-0003',
+    date: '04.02.2026',
+    fullName: "RASULOV DOSTON ELYOR O'G'LI",
+    pinfl: '10000000000274',
+    organization: 'Muruvvat internat uyi 2',
+    organizationRegion: 'Andijon viloyati',
+    region: 'Andijon viloyati',
+    district: 'Andijon shahri',
+    status: 'Vaqtincha chiqqan',
+  },
+  {
+    id: 'REG-2026-0004',
+    date: '19.02.2026',
+    fullName: 'TURSUNOVA SHAHNOZA SHERZOD QIZI',
+    pinfl: '10000000000411',
+    organization: 'Muruvvat internat uyi 3',
+    organizationRegion: "Farg'ona viloyati",
+    region: "Farg'ona viloyati",
+    district: "Qo'qon shahri",
+    status: 'Ko‘chirilgan',
+  },
+  {
+    id: 'REG-2026-0005',
+    date: '08.03.2026',
+    fullName: "QODIROV JAMSHID SHUHRAT O'G'LI",
+    pinfl: '10000000000548',
+    organization: 'Namangan Muruvvat uyi',
+    organizationRegion: 'Namangan viloyati',
+    region: 'Namangan viloyati',
+    district: 'Chortoq tumani',
+    status: 'Ro‘yxatda',
+  },
+  {
+    id: 'REG-2026-0006',
+    date: '21.03.2026',
+    fullName: 'SAIDOVA NILUFAR AKMAL QIZI',
+    pinfl: '10000000000685',
+    organization: 'Buxoro Muruvvat internat uyi',
+    organizationRegion: 'Buxoro viloyati',
+    region: 'Buxoro viloyati',
+    district: 'Buxoro shahri',
+    status: 'Ro‘yxatda',
+  },
+])
+
 const rowsPerPageOptions = [20, 50, 100, 200, 500]
 const selectedRowsPerPage = ref(20)
 const currentPage = ref(1)
+const registeredSelectedRowsPerPage = ref(20)
+const registeredCurrentPage = ref(1)
+const isRegisteredRowsPerPageOpen = ref(false)
 const searchInput = ref('')
 const searchQuery = ref('')
 const isFiltersOpen = ref(false)
@@ -1077,6 +1171,31 @@ const filteredRows = computed(() => {
     const matchesEndDate = !appliedEndDateFilter.value || (rowDate !== null && rowDate <= appliedEndDateFilter.value)
 
     return matchesQuery && matchesStatus && matchesStep && matchesRegion && matchesDistrict && matchesStartDate && matchesEndDate
+  })
+})
+
+const filteredRegisteredRows = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  return registeredResidentRows.value.filter((row) => {
+    if (!query) {
+      return true
+    }
+
+    return [
+      row.id,
+      row.date,
+      row.fullName,
+      row.pinfl,
+      row.organization,
+      row.organizationRegion,
+      row.region,
+      row.district,
+      row.status,
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(query)
   })
 })
 
@@ -1865,6 +1984,10 @@ function setRowsPerPageOpen(nextOpen: boolean) {
   isRowsPerPageOpen.value = nextOpen
 }
 
+function setRegisteredRowsPerPageOpen(nextOpen: boolean) {
+  isRegisteredRowsPerPageOpen.value = nextOpen
+}
+
 function setActionMenuOpen(rowId: string, nextOpen: boolean) {
   openActionMenuId.value = nextOpen ? rowId : null
 }
@@ -2549,6 +2672,7 @@ function clearSearchAndFilters() {
     appliedStartDateFilter.value = ''
     appliedEndDateFilter.value = ''
     currentPage.value = 1
+    registeredCurrentPage.value = 1
   })
 }
 
@@ -2567,6 +2691,21 @@ const paginationSummary = computed(() => {
   return `${start}-${end} / ${totalRows.value}`
 })
 const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
+const registeredTotalRows = computed(() => filteredRegisteredRows.value.length)
+const registeredTotalPages = computed(() => Math.max(1, Math.ceil(registeredTotalRows.value / registeredSelectedRowsPerPage.value)))
+const paginatedRegisteredRows = computed(() => {
+  const start = (registeredCurrentPage.value - 1) * registeredSelectedRowsPerPage.value
+  const end = start + registeredSelectedRowsPerPage.value
+
+  return filteredRegisteredRows.value.slice(start, end)
+})
+const registeredPaginationSummary = computed(() => {
+  const start = registeredTotalRows.value === 0 ? 0 : (registeredCurrentPage.value - 1) * registeredSelectedRowsPerPage.value + 1
+  const end = Math.min(registeredCurrentPage.value * registeredSelectedRowsPerPage.value, registeredTotalRows.value)
+
+  return `${start}-${end} / ${registeredTotalRows.value}`
+})
+const registeredCurrentPageSummary = computed(() => `${registeredCurrentPage.value}/${registeredTotalPages.value}`)
 const filterPanelBodyStyle = computed(() => {
   if (!desktopFilterMaxHeight.value) {
     return undefined
@@ -2601,6 +2740,13 @@ function setRowsPerPage(nextValue: number) {
   })
 }
 
+function setRegisteredRowsPerPage(nextValue: number) {
+  runTableLoading(() => {
+    registeredSelectedRowsPerPage.value = nextValue
+    registeredCurrentPage.value = 1
+  })
+}
+
 function handleSearchInput(value: string) {
   searchInput.value = value
 
@@ -2612,9 +2758,20 @@ function handleSearchInput(value: string) {
     runTableLoading(() => {
       searchQuery.value = searchInput.value
       currentPage.value = 1
+      registeredCurrentPage.value = 1
     })
     searchDebounceTimer = null
   }, 1000)
+}
+
+function goToRegisteredPage(page: number) {
+  if (page < 1 || page > registeredTotalPages.value || page === registeredCurrentPage.value) {
+    return
+  }
+
+  runTableLoading(() => {
+    registeredCurrentPage.value = page
+  })
 }
 
 function showNotification(notification: PageNotification) {
@@ -4165,10 +4322,10 @@ watch(serviceRecipientLookupResult, () => {
       </div>
 
       <SectionBlock
-        :class="isApplicationsListPage
+        :class="isDataTablePage
           ? 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible'
           : 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden'"
-        :content-class="isApplicationsListPage
+        :content-class="isDataTablePage
           ? 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5'
           : 'flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-hidden p-5'"
         :title="page.sectionTitle ?? ''"
@@ -5247,6 +5404,295 @@ watch(serviceRecipientLookupResult, () => {
                     <ChevronsRight class="h-5 w-5" />
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <template v-else-if="isRegisteredPage">
+          <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="relative w-full lg:max-w-sm">
+              <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                :model-value="searchInput"
+                :placeholder="t('Qidirish')"
+                class="pl-9"
+                @update:model-value="handleSearchInput"
+              />
+            </div>
+          </div>
+
+          <div class="flex min-h-0 min-w-0 flex-1 flex-col rounded-lg border border-border bg-card">
+            <div class="relative min-h-0 min-w-0 flex-1">
+              <div
+                v-if="isTableLoading"
+                class="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-sm"
+              >
+                <div class="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+                  <span>{{ t('Yuklanmoqda...') }}</span>
+                </div>
+              </div>
+
+              <div class="grid gap-3 p-4 xl:hidden md:grid-cols-2">
+                <Card
+                  v-for="row in paginatedRegisteredRows"
+                  :key="row.id"
+                  class="overflow-hidden border-border bg-card"
+                >
+                  <CardContent class="space-y-4 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="font-semibold text-foreground">
+                          {{ row.id }}
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                          {{ row.date }}
+                        </p>
+                      </div>
+                      <span
+                        :class="[
+                          'inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium',
+                          registeredStatusStyles[row.status],
+                        ]"
+                      >
+                        {{ row.status }}
+                      </span>
+                    </div>
+
+                    <div class="grid gap-3 text-sm">
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {{ t('Xizmat oluvchi') }}
+                        </p>
+                        <p class="mt-1 font-medium uppercase text-foreground">
+                          {{ normalizeFullName(row.fullName) }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          {{ row.pinfl }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {{ t('Tashkilot') }}
+                        </p>
+                        <p class="mt-1 font-medium text-foreground">
+                          {{ row.organization }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          {{ row.organizationRegion }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {{ t('Manzil') }}
+                        </p>
+                        <p class="mt-1 font-medium text-foreground">
+                          {{ row.region }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          {{ row.district }}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div
+                  v-if="paginatedRegisteredRows.length === 0"
+                  class="col-span-full rounded-lg border border-dashed border-border p-8 text-center"
+                >
+                  <p class="text-sm font-medium text-foreground">
+                    {{ t("Ma'lumot topilmadi") }}
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    {{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="mt-3"
+                    @click="clearSearchAndFilters"
+                  >
+                    {{ t('Tozalash') }}
+                  </Button>
+                </div>
+              </div>
+
+              <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+                <table class="min-w-[1180px] border-separate border-spacing-0 text-sm xl:min-w-full">
+                  <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                    <tr>
+                      <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Hujjat') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Xizmat oluvchi') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Tashkilot') }}</th>
+                      <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Manzil') }}</th>
+                      <th class="rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">{{ t('Holat') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-if="paginatedRegisteredRows.length === 0">
+                      <td
+                        colspan="5"
+                        class="border-b border-border px-4 py-12 text-center"
+                      >
+                        <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                          <p class="text-sm font-medium text-foreground">
+                            {{ t("Ma'lumot topilmadi") }}
+                          </p>
+                          <p class="text-sm text-muted-foreground">
+                            {{ t('Qidiruv yoki filter shartlariga mos yozuv topilmadi.') }}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            class="mt-2"
+                            @click="clearSearchAndFilters"
+                          >
+                            {{ t('Tozalash') }}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <tr
+                      v-for="row in paginatedRegisteredRows"
+                      :key="row.id"
+                      class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                    >
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium text-foreground">
+                          {{ row.id }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.date }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium uppercase text-foreground">
+                          {{ normalizeFullName(row.fullName) }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.pinfl }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium text-foreground">
+                          {{ row.organization }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.organizationRegion }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <div class="font-medium text-foreground">
+                          {{ row.region }}
+                        </div>
+                        <div class="mt-1 text-muted-foreground">
+                          {{ row.district }}
+                        </div>
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top">
+                        <span
+                          :class="[
+                            'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
+                            registeredStatusStyles[row.status],
+                          ]"
+                        >
+                          {{ row.status }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+              <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-muted-foreground">{{ t('Qatorlar soni') }}</span>
+                  <DropdownMenuRoot @update:open="setRegisteredRowsPerPageOpen($event)">
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        :class="isRegisteredRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                      >
+                        <span>{{ registeredSelectedRowsPerPage }}</span>
+                        <ChevronRight class="h-4 w-4 rotate-90" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuPortal>
+                      <DropdownMenuContent
+                        align="start"
+                        :side-offset="6"
+                        class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                      >
+                        <DropdownMenuItem
+                          v-for="option in rowsPerPageOptions"
+                          :key="option"
+                          class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                          @select.prevent="setRegisteredRowsPerPage(option)"
+                        >
+                          <span :class="option === registeredSelectedRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                            {{ option }}
+                          </span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuRoot>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-muted-foreground">{{ t('Sahifada:') }}</span>
+                  <span class="font-medium text-foreground">{{ registeredPaginationSummary }}</span>
+                </div>
+              </div>
+
+              <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 rounded-md p-0 self-center"
+                  :disabled="isTableLoading || registeredCurrentPage === 1"
+                  @click="goToRegisteredPage(1)"
+                >
+                  <ChevronsLeft class="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 rounded-md p-0 self-center"
+                  :disabled="isTableLoading || registeredCurrentPage === 1"
+                  @click="goToRegisteredPage(registeredCurrentPage - 1)"
+                >
+                  <ChevronLeft class="h-5 w-5" />
+                </Button>
+                <div class="mx-1 flex h-7 min-w-14 items-center justify-center text-center text-sm font-semibold text-foreground">
+                  {{ registeredCurrentPageSummary }}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 rounded-md p-0 self-center"
+                  :disabled="isTableLoading || registeredCurrentPage === registeredTotalPages"
+                  @click="goToRegisteredPage(registeredCurrentPage + 1)"
+                >
+                  <ChevronRight class="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 rounded-md p-0 self-center"
+                  :disabled="isTableLoading || registeredCurrentPage === registeredTotalPages"
+                  @click="goToRegisteredPage(registeredTotalPages)"
+                >
+                  <ChevronsRight class="h-5 w-5" />
+                </Button>
               </div>
             </div>
           </div>

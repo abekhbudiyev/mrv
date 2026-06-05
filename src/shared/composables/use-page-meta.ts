@@ -28,6 +28,10 @@ const pageI18nKeysByRoute: Record<string, string> = {
   '/apps/muruvvat/homes/removed': 'page.removed',
   '/apps/muruvvat/reports/applications': 'page.applications.report',
   '/apps/muruvvat/reports/homes': 'page.homes.report',
+  '/apps/snav': 'module.snav',
+  '/apps/snav/info/organization-types': 'page.organizationTypes',
+  '/apps/snav/info/organizations': 'page.organizations',
+  '/apps/snav/info/reception-schedules': 'page.receptionSchedules',
   '/apps/dashboard': 'nav.dashboard',
   '/apps/citizens': 'module.citizens',
   '/apps/applications': 'nav.applications',
@@ -54,9 +58,13 @@ const breadcrumbI18nKeys: Record<string, string> = {
   "Ma'lumotnomalar": 'nav.info',
   'Internat uylari': 'nav.homes',
   'IPTK': 'module.iptk',
+  'Ijtimoiy navigator': 'module.snav',
   'Kirish': 'page.login',
   'Modullar': 'nav.modules',
   'Muruvvat': 'module.muruvvat',
+  'Tashkilotlar': 'page.organizations',
+  'Qabul jadvallari': 'page.receptionSchedules',
+  'Tashkilot turlari': 'page.organizationTypes',
 }
 
 export function usePageMeta() {

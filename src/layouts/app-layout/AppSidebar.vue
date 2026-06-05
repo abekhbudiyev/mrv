@@ -6,6 +6,7 @@ import logoMark from '@/assets/logo-mark.svg'
 import { appModules } from '@/features/apps/registry/apps'
 import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
+import { snavMenu } from '@/features/snav/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { useI18n } from '@/shared/i18n'
@@ -60,6 +61,10 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
     return muruvvatMenu
   }
 
+  if (activeModuleKey.value === 'snav') {
+    return snavMenu
+  }
+
   return []
 })
 
@@ -88,6 +93,10 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/muruvvat/homes/removed': 'nav.removed',
   '/apps/muruvvat/reports/applications': 'nav.applicationsReport',
   '/apps/muruvvat/reports/homes': 'nav.homesReport',
+  '/apps/snav': 'nav.dashboard',
+  '/apps/snav/info/organization-types': 'nav.organizationTypes',
+  '/apps/snav/info/organizations': 'nav.organizations',
+  '/apps/snav/info/reception-schedules': 'nav.receptionSchedules',
 }
 
 const sidebarGroupI18nKeys: Record<string, string> = {

@@ -23,7 +23,9 @@ export function setupAuthGuard(router: Router, pinia: Pinia) {
         : undefined)
 
     if (routePermission && !authStore.hasPermission(routePermission)) {
-      return DEFAULT_AUTH_REDIRECT
+      return {
+        name: 'forbidden',
+      }
     }
 
     if (to.meta.guestOnly && authStore.isAuthenticated) {
