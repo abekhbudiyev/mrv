@@ -22,6 +22,8 @@ import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
 import { cn } from '@/shared/lib/utils'
+import applicantManPhoto from '@/assets/applicant-man.png'
+import applicantWomanPhoto from '@/assets/applicant-woman.png'
 
 const props = withDefaults(defineProps<{
   pageKey?: string
@@ -30,8 +32,83 @@ const props = withDefaults(defineProps<{
 })
 
 const rowsPerPageOptions = [20, 50, 100, 200, 500]
-const providerApplicationOrganizationTypes = ['MCHJ', 'NNT', 'YTT', 'Xususiy korxona', 'Boshqa']
 const editableConclusionStatuses = ['Yangi', 'Tahrirlangan', 'Qaytarilgan']
+
+type ProviderApplicationApplicantLookup = {
+  fullName: string
+  birthDate: string
+  gender: string
+  photo: string
+}
+
+type ProviderApplicationBusinessLookup = {
+  organizationName: string
+  director: string
+  registeredAt: string
+  activityType: string
+  status: string
+  region: string
+  district: string
+  mahalla: string
+  address: string
+}
+
+const providerApplicationApplicantsByPinfl: Record<string, ProviderApplicationApplicantLookup> = {
+  '30401876543210': {
+    fullName: 'Rahimov Abror Anvar o‘g‘li',
+    birthDate: '1990-04-01',
+    gender: 'Erkak',
+    photo: applicantManPhoto,
+  },
+  '40502876543211': {
+    fullName: 'Madaminova Dilfuza Karimovna',
+    birthDate: '1988-05-12',
+    gender: 'Ayol',
+    photo: applicantWomanPhoto,
+  },
+  '30603876543212': {
+    fullName: 'Abdullayev Javlon Bahodir o‘g‘li',
+    birthDate: '1992-03-18',
+    gender: 'Erkak',
+    photo: applicantManPhoto,
+  },
+}
+
+const providerApplicationBusinessesByTin: Record<string, ProviderApplicationBusinessLookup> = {
+  '309845672': {
+    organizationName: 'Mehrli Qadam MCHJ',
+    director: 'Rahimov Abror Anvar o‘g‘li',
+    registeredAt: '2021-09-14',
+    activityType: 'Reabilitatsiya va korreksion pedagogik xizmatlar',
+    status: 'Faol',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    mahalla: 'Bog‘ishamol MFY',
+    address: 'Yunusobod tumani, 7-mavze, 12-uy',
+  },
+  '302471895': {
+    organizationName: 'Kelajak Reabilitatsiya NNT',
+    director: 'Madaminova Dilfuza Karimovna',
+    registeredAt: '2020-02-21',
+    activityType: 'Nodavlat notijorat reabilitatsiya xizmati',
+    status: 'Faol',
+    region: 'Samarqand',
+    district: 'Samarqand shahri',
+    mahalla: 'Universitet MFY',
+    address: 'Universitet xiyoboni, 18-uy',
+  },
+  '614923780': {
+    organizationName: 'Bolajon Terapiya Markazi',
+    director: 'Abdullayev Javlon Bahodir o‘g‘li',
+    registeredAt: '2022-07-05',
+    activityType: 'Yakka tartibdagi pedagogik va terapiya xizmatlari',
+    status: 'Faol',
+    region: 'Farg‘ona',
+    district: 'Qo‘qon',
+    mahalla: 'Istiqlol MFY',
+    address: 'Istiqlol ko‘chasi, 24-uy',
+  },
+}
 
 const searchQuery = ref('')
 const selectedStatuses = ref<string[]>([])
@@ -46,13 +123,23 @@ const providerApplicationDrafts = ref<EiRecord[]>([])
 type ProviderApplicationForm = {
   applicantFullName: string
   applicantPinfl: string
+  applicantBirthDate: string
+  applicantGender: string
+  applicantPhoto: string
+  applicantAddressRegion: string
+  applicantAddressDistrict: string
+  applicantAddressMahalla: string
+  applicantAddressFull: string
   organizationName: string
   tin: string
-  organizationType: string
-  region: string
-  district: string
-  serviceAddress: string
-  employeeCount: string
+  organizationDirector: string
+  organizationRegisteredAt: string
+  organizationActivityType: string
+  organizationStatus: string
+  organizationRegion: string
+  organizationDistrict: string
+  organizationMahalla: string
+  organizationAddress: string
   owner: string
   submittedAt: string
   summary: string
@@ -79,13 +166,23 @@ function getDefaultProviderApplicationForm(): ProviderApplicationForm {
   return {
     applicantFullName: '',
     applicantPinfl: '',
+    applicantBirthDate: '',
+    applicantGender: '',
+    applicantPhoto: '',
+    applicantAddressRegion: '',
+    applicantAddressDistrict: '',
+    applicantAddressMahalla: '',
+    applicantAddressFull: '',
     organizationName: '',
     tin: '',
-    organizationType: 'MCHJ',
-    region: '',
-    district: '',
-    serviceAddress: '',
-    employeeCount: '',
+    organizationDirector: '',
+    organizationRegisteredAt: '',
+    organizationActivityType: '',
+    organizationStatus: '',
+    organizationRegion: '',
+    organizationDistrict: '',
+    organizationMahalla: '',
+    organizationAddress: '',
     owner: 'Ishchi guruh',
     submittedAt: toInputDate(),
     summary: '',
@@ -325,12 +422,105 @@ function closeCreateProviderApplicationDialog() {
   providerApplicationFormErrors.value = {}
 }
 
+function resetProviderApplicationApplicantFields() {
+  providerApplicationForm.value.applicantFullName = ''
+  providerApplicationForm.value.applicantBirthDate = ''
+  providerApplicationForm.value.applicantGender = ''
+  providerApplicationForm.value.applicantPhoto = ''
+}
+
+function resetProviderApplicationBusinessFields() {
+  providerApplicationForm.value.organizationName = ''
+  providerApplicationForm.value.organizationDirector = ''
+  providerApplicationForm.value.organizationRegisteredAt = ''
+  providerApplicationForm.value.organizationActivityType = ''
+  providerApplicationForm.value.organizationStatus = ''
+  providerApplicationForm.value.organizationRegion = ''
+  providerApplicationForm.value.organizationDistrict = ''
+  providerApplicationForm.value.organizationMahalla = ''
+  providerApplicationForm.value.organizationAddress = ''
+}
+
 function updateProviderApplicationTin(value: string) {
   providerApplicationForm.value.tin = value.replace(/\D/g, '').slice(0, 9)
+  resetProviderApplicationBusinessFields()
+  delete providerApplicationFormErrors.value.tin
 }
 
 function updateProviderApplicationPinfl(value: string) {
   providerApplicationForm.value.applicantPinfl = value.replace(/\D/g, '').slice(0, 14)
+  resetProviderApplicationApplicantFields()
+  delete providerApplicationFormErrors.value.applicantPinfl
+}
+
+function searchProviderApplicationApplicant() {
+  const pinfl = providerApplicationForm.value.applicantPinfl
+  const applicant = providerApplicationApplicantsByPinfl[pinfl]
+
+  if (!/^\d{14}$/.test(pinfl)) {
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      applicantPinfl: 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak',
+    }
+    return
+  }
+
+  if (!applicant) {
+    resetProviderApplicationApplicantFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      applicantPinfl: 'Ushbu JSHSHIR bo‘yicha ma’lumot topilmadi',
+    }
+    return
+  }
+
+  providerApplicationForm.value.applicantFullName = applicant.fullName
+  providerApplicationForm.value.applicantBirthDate = applicant.birthDate
+  providerApplicationForm.value.applicantGender = applicant.gender
+  providerApplicationForm.value.applicantPhoto = applicant.photo
+  delete providerApplicationFormErrors.value.applicantPinfl
+  delete providerApplicationFormErrors.value.applicantFullName
+}
+
+function searchProviderApplicationBusiness() {
+  const tin = providerApplicationForm.value.tin
+  const business = providerApplicationBusinessesByTin[tin]
+
+  if (!/^\d{9}$/.test(tin)) {
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      tin: 'STIR 9 ta raqamdan iborat bo‘lishi kerak',
+    }
+    return
+  }
+
+  if (!business) {
+    resetProviderApplicationBusinessFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      tin: 'Ushbu STIR bo‘yicha ma’lumot topilmadi',
+    }
+    return
+  }
+
+  providerApplicationForm.value.organizationName = business.organizationName
+  providerApplicationForm.value.organizationDirector = business.director
+  providerApplicationForm.value.organizationRegisteredAt = business.registeredAt
+  providerApplicationForm.value.organizationActivityType = business.activityType
+  providerApplicationForm.value.organizationStatus = business.status
+  providerApplicationForm.value.organizationRegion = business.region
+  providerApplicationForm.value.organizationDistrict = business.district
+  providerApplicationForm.value.organizationMahalla = business.mahalla
+  providerApplicationForm.value.organizationAddress = business.address
+  delete providerApplicationFormErrors.value.tin
+  delete providerApplicationFormErrors.value.organizationName
+}
+
+function formatProviderAddress(region: string, district: string, mahalla: string, address: string) {
+  return [region, district, mahalla, address]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(', ')
 }
 
 function validateProviderApplicationForm() {
@@ -338,35 +528,35 @@ function validateProviderApplicationForm() {
   const errors: ProviderApplicationFormErrors = {}
 
   if (!form.applicantFullName.trim()) {
-    errors.applicantFullName = 'Ariza beruvchi FIOni kiriting'
+    errors.applicantFullName = 'JSHSHIR bo‘yicha ariza beruvchini qidiring'
   }
 
   if (!/^\d{14}$/.test(form.applicantPinfl)) {
     errors.applicantPinfl = 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak'
   }
 
-  if (!form.organizationName.trim()) {
-    errors.organizationName = 'Tadbirkor nomini kiriting'
+  if (!form.applicantAddressRegion.trim()) {
+    errors.applicantAddressRegion = 'Hududni kiriting'
+  }
+
+  if (!form.applicantAddressDistrict.trim()) {
+    errors.applicantAddressDistrict = 'Tuman yoki shaharni kiriting'
+  }
+
+  if (!form.applicantAddressMahalla.trim()) {
+    errors.applicantAddressMahalla = 'MFYni kiriting'
+  }
+
+  if (!form.applicantAddressFull.trim()) {
+    errors.applicantAddressFull = 'To‘liq manzilni kiriting'
   }
 
   if (!/^\d{9}$/.test(form.tin)) {
     errors.tin = 'STIR 9 ta raqamdan iborat bo‘lishi kerak'
   }
 
-  if (!form.region.trim()) {
-    errors.region = 'Hududni kiriting'
-  }
-
-  if (!form.district.trim()) {
-    errors.district = 'Tuman yoki shaharni kiriting'
-  }
-
-  if (!form.serviceAddress.trim()) {
-    errors.serviceAddress = 'Xizmat manzilini kiriting'
-  }
-
-  if (!form.employeeCount.trim()) {
-    errors.employeeCount = 'Xodimlar sonini kiriting'
+  if (!form.organizationName.trim()) {
+    errors.organizationName = 'STIR bo‘yicha tadbirkorlik subyektini qidiring'
   }
 
   if (!form.submittedAt) {
@@ -397,6 +587,18 @@ function submitProviderApplicationForm() {
   const form = providerApplicationForm.value
   const submittedAt = form.submittedAt
   const normalizedTitle = formatName(form.organizationName.trim())
+  const applicantAddress = formatProviderAddress(
+    form.applicantAddressRegion,
+    form.applicantAddressDistrict,
+    form.applicantAddressMahalla,
+    form.applicantAddressFull,
+  )
+  const businessAddress = formatProviderAddress(
+    form.organizationRegion,
+    form.organizationDistrict,
+    form.organizationMahalla,
+    form.organizationAddress,
+  )
   const newRecord: EiRecord = {
     id: generateNextProviderApplicationId(),
     title: normalizedTitle,
@@ -405,9 +607,9 @@ function submitProviderApplicationForm() {
       fullName: formatName(form.applicantFullName.trim()),
       pinfl: form.applicantPinfl,
     },
-    subject: `${form.organizationType} arizasi`,
-    region: form.region.trim(),
-    district: form.district.trim(),
+    subject: 'Tadbirkorlik subyekti arizasi',
+    region: form.organizationRegion.trim(),
+    district: form.organizationDistrict.trim(),
     owner: form.owner.trim() || 'Ishchi guruh',
     status: 'Yangi',
     tone: 'info',
@@ -416,9 +618,12 @@ function submitProviderApplicationForm() {
     nextAction: 'Hujjatlarni birlamchi tekshirish',
     summary: form.summary.trim() || `${normalizedTitle} erta aralashuv xizmatini ko‘rsatish uchun ariza yubordi.`,
     metadata: [
-      { label: 'Tashkilot turi', value: form.organizationType },
-      { label: 'Xizmat manzili', value: form.serviceAddress.trim() },
-      { label: 'Xodimlar', value: `${form.employeeCount.trim()} nafar mutaxassis` },
+      { label: 'Ariza beruvchi manzili', value: applicantAddress },
+      { label: 'Direktor', value: form.organizationDirector.trim() },
+      { label: 'Ro‘yxatdan o‘tgan sana', value: formatDate(form.organizationRegisteredAt) },
+      { label: 'Faoliyat turi', value: form.organizationActivityType.trim() },
+      { label: 'Tadbirkorlik subyekti holati', value: form.organizationStatus.trim() },
+      { label: 'Tadbirkorlik subyekti manzili', value: businessAddress },
     ],
     history: [
       { label: 'Ariza yaratildi', date: formatDate(submittedAt) },
@@ -1109,7 +1314,7 @@ function formatDate(value: string) {
       @click.self="closeCreateProviderApplicationDialog"
     >
       <form
-        class="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
+        class="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
         @submit.prevent="submitProviderApplicationForm"
       >
         <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
@@ -1118,7 +1323,7 @@ function formatDate(value: string) {
               Xizmat ko‘rsatuvchi arizasini yaratish
             </h2>
             <p class="mt-1 text-sm text-muted-foreground">
-              Nodavlat tashkilot yoki tadbirkor arizasining asosiy ma'lumotlarini kiriting.
+              Ariza beruvchi JSHSHIR va tadbirkorlik subyekti STIR orqali aniqlanadi.
             </p>
           </div>
 
@@ -1133,185 +1338,330 @@ function formatDate(value: string) {
         </div>
 
         <div class="max-h-[calc(92vh-9rem)] overflow-y-auto px-5 py-5 sm:px-6">
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium text-foreground">Hujjat raqami</span>
-              <Input
-                :model-value="generateNextProviderApplicationId()"
-                readonly
-                :clearable="false"
-                class="font-semibold"
-              />
-            </label>
+          <div class="space-y-5">
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="space-y-2 md:col-span-2">
+                <span class="text-sm font-medium text-foreground">Hujjat raqami</span>
+                <Input
+                  :model-value="generateNextProviderApplicationId()"
+                  readonly
+                  :clearable="false"
+                  class="font-semibold"
+                />
+              </label>
+            </div>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Ariza beruvchi FIO</span>
-              <Input
-                v-model="providerApplicationForm.applicantFullName"
-                placeholder="Masalan: Rahimov Abror Anvar o‘g‘li"
-              />
-              <p
-                v-if="providerApplicationFormErrors.applicantFullName"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.applicantFullName }}
-              </p>
-            </label>
+            <section class="rounded-lg border border-border bg-background/60 p-4">
+              <div class="mb-4">
+                <h3 class="text-sm font-semibold text-foreground">Ariza beruvchi ma'lumoti</h3>
+              </div>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">JSHSHIR</span>
-              <Input
-                :model-value="providerApplicationForm.applicantPinfl"
-                inputmode="numeric"
-                maxlength="14"
-                placeholder="14 xonali JSHSHIR"
-                @update:model-value="updateProviderApplicationPinfl(String($event ?? ''))"
-              />
-              <p
-                v-if="providerApplicationFormErrors.applicantPinfl"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.applicantPinfl }}
-              </p>
-            </label>
+              <div class="grid gap-4 lg:grid-cols-[10rem_1fr]">
+                <div class="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3">
+                  <div class="flex h-32 w-28 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+                    <img
+                      v-if="providerApplicationForm.applicantPhoto"
+                      :src="providerApplicationForm.applicantPhoto"
+                      alt="Ariza beruvchi rasmi"
+                      class="h-full w-full object-cover"
+                    >
+                    <span
+                      v-else
+                      class="text-xs font-medium uppercase text-muted-foreground"
+                    >
+                      Rasm
+                    </span>
+                  </div>
+                </div>
 
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium text-foreground">Tadbirkor nomi</span>
-              <Input
-                v-model="providerApplicationForm.organizationName"
-                placeholder="Masalan: Mehrli Qadam MCHJ"
-              />
-              <p
-                v-if="providerApplicationFormErrors.organizationName"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.organizationName }}
-              </p>
-            </label>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="space-y-2 md:col-span-2">
+                    <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        :model-value="providerApplicationForm.applicantPinfl"
+                        inputmode="numeric"
+                        maxlength="14"
+                        placeholder="30401876543210"
+                        @update:model-value="updateProviderApplicationPinfl(String($event ?? ''))"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        class="gap-2 sm:w-32"
+                        :disabled="providerApplicationForm.applicantPinfl.length !== 14"
+                        @click="searchProviderApplicationApplicant"
+                      >
+                        <Search class="h-4 w-4" />
+                        <span>Qidirish</span>
+                      </Button>
+                    </div>
+                    <p
+                      v-if="providerApplicationFormErrors.applicantPinfl"
+                      class="text-xs text-destructive"
+                    >
+                      {{ providerApplicationFormErrors.applicantPinfl }}
+                    </p>
+                  </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">STIR</span>
-              <Input
-                :model-value="providerApplicationForm.tin"
-                inputmode="numeric"
-                maxlength="9"
-                placeholder="9 xonali STIR"
-                @update:model-value="updateProviderApplicationTin(String($event ?? ''))"
-              />
-              <p
-                v-if="providerApplicationFormErrors.tin"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.tin }}
-              </p>
-            </label>
+                  <label class="space-y-2 md:col-span-2">
+                    <span class="text-sm font-medium text-foreground">FIO</span>
+                    <Input
+                      v-model="providerApplicationForm.applicantFullName"
+                      readonly
+                      :clearable="false"
+                      placeholder="JSHSHIR orqali aniqlanadi"
+                    />
+                    <p
+                      v-if="providerApplicationFormErrors.applicantFullName"
+                      class="text-xs text-destructive"
+                    >
+                      {{ providerApplicationFormErrors.applicantFullName }}
+                    </p>
+                  </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Tashkilot turi</span>
-              <select
-                v-model="providerApplicationForm.organizationType"
-                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option
-                  v-for="type in providerApplicationOrganizationTypes"
-                  :key="type"
-                  :value="type"
-                >
-                  {{ type }}
-                </option>
-              </select>
-            </label>
+                  <label class="space-y-2">
+                    <span class="text-sm font-medium text-foreground">Tug‘ilgan sana</span>
+                    <Input
+                      v-model="providerApplicationForm.applicantBirthDate"
+                      readonly
+                      :clearable="false"
+                    />
+                  </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Hudud</span>
-              <Input
-                v-model="providerApplicationForm.region"
-                placeholder="Masalan: Toshkent shahri"
-              />
-              <p
-                v-if="providerApplicationFormErrors.region"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.region }}
-              </p>
-            </label>
+                  <label class="space-y-2">
+                    <span class="text-sm font-medium text-foreground">Jinsi</span>
+                    <Input
+                      v-model="providerApplicationForm.applicantGender"
+                      readonly
+                      :clearable="false"
+                    />
+                  </label>
+                </div>
+              </div>
+            </section>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Tuman/shahar</span>
-              <Input
-                v-model="providerApplicationForm.district"
-                placeholder="Masalan: Yunusobod"
-              />
-              <p
-                v-if="providerApplicationFormErrors.district"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.district }}
-              </p>
-            </label>
+            <section class="rounded-lg border border-border bg-background/60 p-4">
+              <div class="mb-4">
+                <h3 class="text-sm font-semibold text-foreground">Manzil ma'lumoti</h3>
+              </div>
 
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium text-foreground">Xizmat manzili</span>
-              <Input
-                v-model="providerApplicationForm.serviceAddress"
-                placeholder="Ko‘cha, uy yoki mo‘ljal"
-              />
-              <p
-                v-if="providerApplicationFormErrors.serviceAddress"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.serviceAddress }}
-              </p>
-            </label>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Hudud</span>
+                  <Input
+                    v-model="providerApplicationForm.applicantAddressRegion"
+                    placeholder="Masalan: Toshkent shahri"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.applicantAddressRegion"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.applicantAddressRegion }}
+                  </p>
+                </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Xodimlar soni</span>
-              <Input
-                v-model="providerApplicationForm.employeeCount"
-                type="number"
-                min="1"
-                placeholder="Masalan: 6"
-              />
-              <p
-                v-if="providerApplicationFormErrors.employeeCount"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.employeeCount }}
-              </p>
-            </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Tuman (shahar)</span>
+                  <Input
+                    v-model="providerApplicationForm.applicantAddressDistrict"
+                    placeholder="Masalan: Yunusobod"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.applicantAddressDistrict"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.applicantAddressDistrict }}
+                  </p>
+                </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-medium text-foreground">Ariza sanasi</span>
-              <Input
-                v-model="providerApplicationForm.submittedAt"
-                type="date"
-                :clearable="false"
-              />
-              <p
-                v-if="providerApplicationFormErrors.submittedAt"
-                class="text-xs text-destructive"
-              >
-                {{ providerApplicationFormErrors.submittedAt }}
-              </p>
-            </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">MFY</span>
+                  <Input
+                    v-model="providerApplicationForm.applicantAddressMahalla"
+                    placeholder="Masalan: Bog‘ishamol MFY"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.applicantAddressMahalla"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.applicantAddressMahalla }}
+                  </p>
+                </label>
 
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium text-foreground">Mas'ul</span>
-              <Input
-                v-model="providerApplicationForm.owner"
-                placeholder="Masalan: Ishchi guruh"
-              />
-            </label>
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">To‘liq manzil</span>
+                  <Input
+                    v-model="providerApplicationForm.applicantAddressFull"
+                    placeholder="Ko‘cha, uy yoki mo‘ljal"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.applicantAddressFull"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.applicantAddressFull }}
+                  </p>
+                </label>
+              </div>
+            </section>
 
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-medium text-foreground">Izoh</span>
-              <textarea
-                v-model="providerApplicationForm.summary"
-                rows="4"
-                class="min-h-24 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="Ariza bo‘yicha qisqa izoh"
-              />
-            </label>
+            <section class="rounded-lg border border-border bg-background/60 p-4">
+              <div class="mb-4">
+                <h3 class="text-sm font-semibold text-foreground">Tadbirkorlik subyekti ma'lumoti</h3>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-2 md:col-span-2">
+                  <span class="text-sm font-medium text-foreground">STIR</span>
+                  <div class="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      :model-value="providerApplicationForm.tin"
+                      inputmode="numeric"
+                      maxlength="9"
+                      placeholder="309845672"
+                      @update:model-value="updateProviderApplicationTin(String($event ?? ''))"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      class="gap-2 sm:w-32"
+                      :disabled="providerApplicationForm.tin.length !== 9"
+                      @click="searchProviderApplicationBusiness"
+                    >
+                      <Search class="h-4 w-4" />
+                      <span>Qidirish</span>
+                    </Button>
+                  </div>
+                  <p
+                    v-if="providerApplicationFormErrors.tin"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.tin }}
+                  </p>
+                </label>
+
+                <label class="space-y-2 md:col-span-2">
+                  <span class="text-sm font-medium text-foreground">Tadbirkorlik subyekti nomi</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationName"
+                    readonly
+                    :clearable="false"
+                    placeholder="STIR orqali aniqlanadi"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.organizationName"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.organizationName }}
+                  </p>
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Direktori</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationDirector"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Ro‘yxatdan o‘tkazilgan sanasi</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationRegisteredAt"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Faoliyat turi</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationActivityType"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Holati</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationStatus"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Hudud</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationRegion"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Tuman (shahar)</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationDistrict"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">MFY</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationMahalla"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Manzil</span>
+                  <Input
+                    v-model="providerApplicationForm.organizationAddress"
+                    readonly
+                    :clearable="false"
+                  />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Ariza sanasi</span>
+                  <Input
+                    v-model="providerApplicationForm.submittedAt"
+                    type="date"
+                    :clearable="false"
+                  />
+                  <p
+                    v-if="providerApplicationFormErrors.submittedAt"
+                    class="text-xs text-destructive"
+                  >
+                    {{ providerApplicationFormErrors.submittedAt }}
+                  </p>
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-medium text-foreground">Mas'ul</span>
+                  <Input
+                    v-model="providerApplicationForm.owner"
+                    placeholder="Masalan: Ishchi guruh"
+                  />
+                </label>
+
+                <label class="space-y-2 md:col-span-2">
+                  <span class="text-sm font-medium text-foreground">Izoh</span>
+                  <textarea
+                    v-model="providerApplicationForm.summary"
+                    rows="3"
+                    class="min-h-20 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                    placeholder="Ariza bo‘yicha qisqa izoh"
+                  />
+                </label>
+              </div>
+            </section>
           </div>
         </div>
 
