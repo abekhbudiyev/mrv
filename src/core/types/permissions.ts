@@ -13,6 +13,7 @@ export type PermissionKey =
   | 'users.view'
   | 'muruvvat.view'
   | 'snav.view'
+  | 'ei.view'
 
 export interface RoleDefinition {
   id: string

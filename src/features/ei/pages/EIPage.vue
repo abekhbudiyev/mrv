@@ -1,0 +1,1333 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send, X } from 'lucide-vue-next'
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuTrigger,
+} from 'reka-ui'
+import {
+  buildEiStatusTabs,
+  eiStatusClasses,
+  getEiDashboardRecords,
+  getEiRecords,
+  type EiRecord,
+} from '@/features/ei/data'
+import PageContainer from '@/shared/components/PageContainer.vue'
+import SectionBlock from '@/shared/components/SectionBlock.vue'
+import StatusTabs from '@/shared/components/StatusTabs.vue'
+import { Button } from '@/shared/ui/shadcn/button'
+import { Card, CardContent } from '@/shared/ui/shadcn/card'
+import { Input } from '@/shared/ui/shadcn/input'
+import { cn } from '@/shared/lib/utils'
+
+const props = withDefaults(defineProps<{
+  pageKey?: string
+}>(), {
+  pageKey: 'dashboard',
+})
+
+const rowsPerPageOptions = [20, 50, 100, 200, 500]
+const providerApplicationOrganizationTypes = ['MCHJ', 'NNT', 'YTT', 'Xususiy korxona', 'Boshqa']
+const editableConclusionStatuses = ['Yangi', 'Tahrirlangan', 'Qaytarilgan']
+
+const searchQuery = ref('')
+const selectedStatuses = ref<string[]>([])
+const selectedRowsPerPage = ref(20)
+const currentPage = ref(1)
+const isRowsPerPageOpen = ref(false)
+const openActionMenuId = ref<string | null>(null)
+const isCreateProviderApplicationDialogOpen = ref(false)
+const isExportingRecords = ref(false)
+const providerApplicationDrafts = ref<EiRecord[]>([])
+
+type ProviderApplicationForm = {
+  applicantFullName: string
+  applicantPinfl: string
+  organizationName: string
+  tin: string
+  organizationType: string
+  region: string
+  district: string
+  serviceAddress: string
+  employeeCount: string
+  owner: string
+  submittedAt: string
+  summary: string
+}
+
+type ProviderApplicationFormErrors = Partial<Record<keyof ProviderApplicationForm, string>>
+
+function toInputDate(value = new Date()) {
+  const year = value.getFullYear()
+  const month = String(value.getMonth() + 1).padStart(2, '0')
+  const day = String(value.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function addDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00`)
+  date.setDate(date.getDate() + days)
+
+  return toInputDate(date)
+}
+
+function getDefaultProviderApplicationForm(): ProviderApplicationForm {
+  return {
+    applicantFullName: '',
+    applicantPinfl: '',
+    organizationName: '',
+    tin: '',
+    organizationType: 'MCHJ',
+    region: '',
+    district: '',
+    serviceAddress: '',
+    employeeCount: '',
+    owner: 'Ishchi guruh',
+    submittedAt: toInputDate(),
+    summary: '',
+  }
+}
+
+const providerApplicationForm = ref<ProviderApplicationForm>(getDefaultProviderApplicationForm())
+const providerApplicationFormErrors = ref<ProviderApplicationFormErrors>({})
+
+const isProvidersApplicationsPage = computed(() => props.pageKey === 'providers-applications')
+const isProvidersConclusionsPage = computed(() => props.pageKey === 'providers-conclusions')
+const isProvidersRegistryPage = computed(() => props.pageKey === 'providers-registry')
+const usesProviderApplicationsTable = computed(() => (
+  isProvidersApplicationsPage.value || isProvidersConclusionsPage.value
+))
+const pageRecords = computed(() => {
+  if (props.pageKey === 'dashboard') {
+    return getEiDashboardRecords()
+  }
+
+  const records = getEiRecords(props.pageKey)
+
+  if (props.pageKey === 'providers-applications') {
+    return [...providerApplicationDrafts.value, ...records]
+  }
+
+  return records
+})
+
+const statusTabs = computed(() => buildEiStatusTabs(pageRecords.value))
+const filteredRecords = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  return pageRecords.value.filter((record) => {
+    const matchesStatus = selectedStatuses.value.length === 0 || selectedStatuses.value.includes(record.status)
+    const matchesQuery = !query || [
+      record.id,
+      record.applicant?.fullName ?? '',
+      record.applicant?.pinfl ?? '',
+      record.title,
+      record.tin ?? '',
+      record.subject,
+      record.region,
+      record.district,
+      record.owner,
+      record.status,
+      record.result ?? '',
+      record.nextAction,
+    ].some((value) => value.toLowerCase().includes(query))
+
+    return matchesStatus && matchesQuery
+  })
+})
+
+const totalRows = computed(() => filteredRecords.value.length)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / selectedRowsPerPage.value)))
+const paginatedRecords = computed(() => {
+  const startIndex = (currentPage.value - 1) * selectedRowsPerPage.value
+
+  return filteredRecords.value.slice(startIndex, startIndex + selectedRowsPerPage.value)
+})
+const paginationSummary = computed(() => {
+  const start = totalRows.value === 0 ? 0 : (currentPage.value - 1) * selectedRowsPerPage.value + 1
+  const end = Math.min(currentPage.value * selectedRowsPerPage.value, totalRows.value)
+
+  return `${start}-${end} / ${totalRows.value}`
+})
+const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
+const exportFileName = computed(() => `ei-${props.pageKey}-${toInputDate()}.xlsx`)
+
+watch(() => props.pageKey, () => {
+  searchQuery.value = ''
+  selectedStatuses.value = []
+  currentPage.value = 1
+  closeCreateProviderApplicationDialog()
+}, { immediate: true })
+
+watch(filteredRecords, () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value
+  }
+}, { immediate: true })
+
+function handleStatusSelect(value: string) {
+  selectedStatuses.value = value === 'all' || selectedStatuses.value.includes(value)
+    ? []
+    : [value]
+  currentPage.value = 1
+}
+
+function setRowsPerPageOpen(nextOpen: boolean) {
+  isRowsPerPageOpen.value = nextOpen
+}
+
+function setActionMenuOpen(recordId: string, nextOpen: boolean) {
+  openActionMenuId.value = nextOpen ? recordId : null
+}
+
+function closeActionMenu() {
+  openActionMenuId.value = null
+}
+
+function setRowsPerPage(nextValue: number) {
+  selectedRowsPerPage.value = nextValue
+  currentPage.value = 1
+}
+
+function goToPage(pageNumber: number) {
+  if (pageNumber < 1 || pageNumber > totalPages.value || pageNumber === currentPage.value) {
+    return
+  }
+
+  currentPage.value = pageNumber
+}
+
+function clearSearchAndFilters() {
+  searchQuery.value = ''
+  selectedStatuses.value = []
+  currentPage.value = 1
+}
+
+function formatName(value: string) {
+  return value.toLocaleUpperCase('uz-UZ')
+}
+
+function getApplicantName(record: EiRecord) {
+  return record.applicant?.fullName ? formatName(record.applicant.fullName) : '-'
+}
+
+function getApplicantPinfl(record: EiRecord) {
+  return record.applicant?.pinfl ?? '-'
+}
+
+function getConclusionResult(record: EiRecord) {
+  return record.result ?? record.metadata.find((item) => item.label === 'Xulosa turi')?.value ?? '-'
+}
+
+function getConclusionResultClasses(record: EiRecord) {
+  const result = getConclusionResult(record).toLocaleLowerCase('uz-UZ')
+
+  if (result.includes('salbiy')) {
+    return eiStatusClasses.danger
+  }
+
+  if (result.includes('ijobiy')) {
+    return eiStatusClasses.success
+  }
+
+  return eiStatusClasses.neutral
+}
+
+function canEditAndSendConclusion(record: EiRecord) {
+  return isProvidersConclusionsPage.value && editableConclusionStatuses.includes(record.status)
+}
+
+function canReviewConclusion(record: EiRecord) {
+  return isProvidersConclusionsPage.value && record.status === 'Yuborilgan'
+}
+
+function getProviderExportRows() {
+  return filteredRecords.value.map((record, index) => {
+    const row: Record<string, string | number> = {
+      '№': index + 1,
+      'Hujjat': record.id,
+      'Sana': formatDate(record.submittedAt),
+      'Ariza beruvchi FIO': getApplicantName(record),
+      'JSHSHIR': getApplicantPinfl(record),
+      'Tadbirkor': formatName(record.title),
+      'STIR': record.tin ?? '',
+      'Hudud': record.region,
+      'Tuman/shahar': record.district,
+    }
+
+    if (isProvidersConclusionsPage.value) {
+      row.Natija = getConclusionResult(record)
+    }
+
+    row.Holat = record.status
+
+    return row
+  })
+}
+
+function getGenericExportRows() {
+  return filteredRecords.value.map((record, index) => ({
+    '№': index + 1,
+    'Yozuv': formatName(record.title),
+    'Hujjat': record.id,
+    'Hujjat turi': record.subject,
+    'Hudud': record.region,
+    'Tuman/shahar': record.district,
+    'Mas’ul': record.owner,
+    'Holat': record.status,
+    'Sana': formatDate(record.submittedAt),
+    'Muddat': formatDate(record.dueAt),
+  }))
+}
+
+async function downloadRecordsAsExcel() {
+  if (isExportingRecords.value || filteredRecords.value.length === 0) {
+    return
+  }
+
+  isExportingRecords.value = true
+
+  try {
+    const xlsx = await import('xlsx')
+    const exportRows = props.pageKey.startsWith('providers-')
+      ? getProviderExportRows()
+      : getGenericExportRows()
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    worksheet['!cols'] = Object.keys(exportRows[0] ?? {}).map((key) => ({
+      wch: Math.min(Math.max(key.length + 2, 12), 32),
+    }))
+
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Arizalar')
+    xlsx.writeFile(workbook, exportFileName.value, { compression: true })
+  }
+  finally {
+    isExportingRecords.value = false
+  }
+}
+
+function openCreateDialog() {
+  if (!isProvidersApplicationsPage.value) {
+    return
+  }
+
+  providerApplicationForm.value = getDefaultProviderApplicationForm()
+  providerApplicationFormErrors.value = {}
+  isCreateProviderApplicationDialogOpen.value = true
+}
+
+function closeCreateProviderApplicationDialog() {
+  isCreateProviderApplicationDialogOpen.value = false
+  providerApplicationFormErrors.value = {}
+}
+
+function updateProviderApplicationTin(value: string) {
+  providerApplicationForm.value.tin = value.replace(/\D/g, '').slice(0, 9)
+}
+
+function updateProviderApplicationPinfl(value: string) {
+  providerApplicationForm.value.applicantPinfl = value.replace(/\D/g, '').slice(0, 14)
+}
+
+function validateProviderApplicationForm() {
+  const form = providerApplicationForm.value
+  const errors: ProviderApplicationFormErrors = {}
+
+  if (!form.applicantFullName.trim()) {
+    errors.applicantFullName = 'Ariza beruvchi FIOni kiriting'
+  }
+
+  if (!/^\d{14}$/.test(form.applicantPinfl)) {
+    errors.applicantPinfl = 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak'
+  }
+
+  if (!form.organizationName.trim()) {
+    errors.organizationName = 'Tadbirkor nomini kiriting'
+  }
+
+  if (!/^\d{9}$/.test(form.tin)) {
+    errors.tin = 'STIR 9 ta raqamdan iborat bo‘lishi kerak'
+  }
+
+  if (!form.region.trim()) {
+    errors.region = 'Hududni kiriting'
+  }
+
+  if (!form.district.trim()) {
+    errors.district = 'Tuman yoki shaharni kiriting'
+  }
+
+  if (!form.serviceAddress.trim()) {
+    errors.serviceAddress = 'Xizmat manzilini kiriting'
+  }
+
+  if (!form.employeeCount.trim()) {
+    errors.employeeCount = 'Xodimlar sonini kiriting'
+  }
+
+  if (!form.submittedAt) {
+    errors.submittedAt = 'Ariza sanasini kiriting'
+  }
+
+  providerApplicationFormErrors.value = errors
+
+  return Object.keys(errors).length === 0
+}
+
+function generateNextProviderApplicationId() {
+  const currentYear = new Date().getFullYear()
+  const sequence = pageRecords.value.reduce((maxSequence, record) => {
+    const match = record.id.match(/^EA-PRA-\d{4}-(\d+)$/)
+
+    return match ? Math.max(maxSequence, Number(match[1])) : maxSequence
+  }, 0) + 1
+
+  return `EA-PRA-${currentYear}-${String(sequence).padStart(4, '0')}`
+}
+
+function submitProviderApplicationForm() {
+  if (!validateProviderApplicationForm()) {
+    return
+  }
+
+  const form = providerApplicationForm.value
+  const submittedAt = form.submittedAt
+  const normalizedTitle = formatName(form.organizationName.trim())
+  const newRecord: EiRecord = {
+    id: generateNextProviderApplicationId(),
+    title: normalizedTitle,
+    tin: form.tin,
+    applicant: {
+      fullName: formatName(form.applicantFullName.trim()),
+      pinfl: form.applicantPinfl,
+    },
+    subject: `${form.organizationType} arizasi`,
+    region: form.region.trim(),
+    district: form.district.trim(),
+    owner: form.owner.trim() || 'Ishchi guruh',
+    status: 'Yangi',
+    tone: 'info',
+    submittedAt,
+    dueAt: addDays(submittedAt, 7),
+    nextAction: 'Hujjatlarni birlamchi tekshirish',
+    summary: form.summary.trim() || `${normalizedTitle} erta aralashuv xizmatini ko‘rsatish uchun ariza yubordi.`,
+    metadata: [
+      { label: 'Tashkilot turi', value: form.organizationType },
+      { label: 'Xizmat manzili', value: form.serviceAddress.trim() },
+      { label: 'Xodimlar', value: `${form.employeeCount.trim()} nafar mutaxassis` },
+    ],
+    history: [
+      { label: 'Ariza yaratildi', date: formatDate(submittedAt) },
+    ],
+  }
+
+  providerApplicationDrafts.value = [newRecord, ...providerApplicationDrafts.value]
+  selectedStatuses.value = []
+  searchQuery.value = ''
+  currentPage.value = 1
+  closeCreateProviderApplicationDialog()
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat('uz-UZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(value))
+}
+</script>
+
+<template>
+  <PageContainer>
+    <SectionBlock
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
+      title=""
+      description=""
+    >
+      <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="relative w-full lg:max-w-sm">
+          <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            v-model="searchQuery"
+            placeholder="Qidirish"
+            class="pl-9"
+            @update:model-value="currentPage = 1"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <Button
+            v-if="isProvidersApplicationsPage"
+            class="order-2 h-10 gap-2"
+            @click="openCreateDialog"
+          >
+            <Plus class="h-4 w-4" />
+            <span>Yaratish</span>
+          </Button>
+          <Button
+            variant="outline"
+            class="order-1 h-10 gap-2"
+            :disabled="isExportingRecords || filteredRecords.length === 0"
+            @click="downloadRecordsAsExcel"
+          >
+            <Download class="h-4 w-4" />
+            <span>{{ isExportingRecords ? 'Yuklanmoqda' : 'Yuklab olish' }}</span>
+          </Button>
+        </div>
+      </div>
+
+      <StatusTabs
+        :tabs="statusTabs"
+        :selected-values="selectedStatuses"
+        item-key-prefix="ei-status"
+        @select="handleStatusSelect"
+      />
+
+      <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
+        <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
+          <div class="relative flex-1 xl:hidden">
+            <div
+              v-if="paginatedRecords.length === 0"
+              class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
+            >
+              <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                <p class="text-sm font-medium text-foreground">
+                  Ma'lumot topilmadi
+                </p>
+                <p class="text-sm text-muted-foreground">
+                  Qidiruv yoki status filteriga mos yozuv topilmadi.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="mt-2"
+                  @click="clearSearchAndFilters"
+                >
+                  Tozalash
+                </Button>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2"
+            >
+              <Card
+                v-for="record in paginatedRecords"
+                :key="record.id"
+                class="border-border"
+              >
+                <CardContent class="space-y-4 p-4">
+                  <div
+                    v-if="usesProviderApplicationsTable"
+                    class="space-y-4"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Hujjat
+                        </p>
+                        <p class="mt-1 font-semibold text-foreground">
+                          {{ record.id }}
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                          {{ formatDate(record.submittedAt) }}
+                        </p>
+                      </div>
+
+                      <span :class="cn('inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[record.tone])">
+                        {{ record.status }}
+                      </span>
+                    </div>
+
+                    <div class="grid gap-3 text-sm">
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Ariza beruvchi
+                        </p>
+                        <p class="mt-1 font-medium text-foreground">
+                          {{ getApplicantName(record) }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          JSHSHIR: {{ getApplicantPinfl(record) }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Tadbirkor
+                        </p>
+                        <p class="mt-1 font-medium text-foreground">
+                          {{ formatName(record.title) }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          STIR: {{ record.tin ?? '-' }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Manzil
+                        </p>
+                        <p class="mt-1 font-medium text-foreground">
+                          {{ record.region }}
+                        </p>
+                        <p class="mt-1 text-muted-foreground">
+                          {{ record.district }}
+                        </p>
+                      </div>
+
+                      <div v-if="isProvidersConclusionsPage">
+                        <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          Natija
+                        </p>
+                        <span :class="cn('mt-1 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getConclusionResultClasses(record))">
+                          {{ getConclusionResult(record) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <template v-else>
+                    <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Yozuv
+                      </p>
+                      <p class="mt-1 font-semibold text-foreground">
+                        {{ formatName(record.title) }}
+                      </p>
+                      <p class="mt-1 text-sm text-muted-foreground">
+                        {{ record.id }}
+                      </p>
+                    </div>
+
+                    <span :class="cn('inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[record.tone])">
+                      {{ record.status }}
+                    </span>
+                  </div>
+
+                  <div class="grid gap-3 text-sm">
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Hujjat turi
+                      </p>
+                      <p class="mt-1 font-medium text-foreground">
+                        {{ record.subject }}
+                      </p>
+                    </div>
+
+                    <div v-if="isProvidersRegistryPage">
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Ariza beruvchi
+                      </p>
+                      <p class="mt-1 font-medium text-foreground">
+                        {{ getApplicantName(record) }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        JSHSHIR: {{ getApplicantPinfl(record) }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Hudud
+                      </p>
+                      <p class="mt-1 font-medium text-foreground">
+                        {{ record.region }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ record.district }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Mas'ul
+                      </p>
+                      <p class="mt-1 font-medium text-foreground">
+                        {{ record.owner }}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Muddat
+                      </p>
+                      <p class="mt-1 font-medium text-foreground">
+                        {{ formatDate(record.dueAt) }}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">
+                        {{ formatDate(record.submittedAt) }} dan
+                      </p>
+                    </div>
+                  </div>
+                  </template>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+            <table
+              v-if="usesProviderApplicationsTable"
+              class="border-separate border-spacing-0 text-sm xl:min-w-full"
+              :class="isProvidersConclusionsPage ? 'min-w-[1240px]' : 'min-w-[1140px]'"
+            >
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Hujjat
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Ariza beruvchi
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Tadbirkor
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Manzil
+                  </th>
+                  <th
+                    v-if="isProvidersConclusionsPage"
+                    class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Natija
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Holat
+                  </th>
+                  <th class="w-24 rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Amallar
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedRecords.length === 0">
+                  <td
+                    :colspan="isProvidersConclusionsPage ? 7 : 6"
+                    class="border-b border-border px-4 py-12 text-center"
+                  >
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">
+                        Ma'lumot topilmadi
+                      </p>
+                      <p class="text-sm text-muted-foreground">
+                        Qidiruv yoki status filteriga mos yozuv topilmadi.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="mt-2"
+                        @click="clearSearchAndFilters"
+                      >
+                        Tozalash
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedRecords"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ record.id }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ formatDate(record.submittedAt) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ getApplicantName(record) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      JSHSHIR: {{ getApplicantPinfl(record) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ formatName(record.title) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      STIR: {{ record.tin ?? '-' }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ record.region }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ record.district }}
+                    </div>
+                  </td>
+                  <td
+                    v-if="isProvidersConclusionsPage"
+                    class="border-b border-border px-4 py-3 align-top"
+                  >
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getConclusionResultClasses(record))">
+                      {{ getConclusionResult(record) }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[record.tone])">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="isProvidersApplicationsPage && record.status === 'Yangi'"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <FilePenLine class="h-4 w-4 shrink-0" />
+                            <span>O‘rganish uchun yuborish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canEditAndSendConclusion(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <FilePenLine class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canEditAndSendConclusion(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <Send class="h-4 w-4 shrink-0" />
+                            <span>Yuborish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canReviewConclusion(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <RotateCcw class="h-4 w-4 shrink-0" />
+                            <span>Qaytarish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canReviewConclusion(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <Check class="h-4 w-4 shrink-0" />
+                            <span>Qabul qilish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table
+              v-else
+              class="border-separate border-spacing-0 text-sm xl:min-w-full"
+              :class="isProvidersRegistryPage ? 'min-w-[1380px]' : 'min-w-[1220px]'"
+            >
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Yozuv
+                  </th>
+                  <th
+                    v-if="isProvidersRegistryPage"
+                    class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Ariza beruvchi
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Hudud
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Mas'ul
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Status
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Muddat
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Keyingi amal
+                  </th>
+                  <th class="w-24 rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Amallar
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedRecords.length === 0">
+                  <td
+                    :colspan="isProvidersRegistryPage ? 8 : 7"
+                    class="border-b border-border px-4 py-12 text-center"
+                  >
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">
+                        Ma'lumot topilmadi
+                      </p>
+                      <p class="text-sm text-muted-foreground">
+                        Qidiruv yoki status filteriga mos yozuv topilmadi.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="mt-2"
+                        @click="clearSearchAndFilters"
+                      >
+                        Tozalash
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedRecords"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ formatName(record.title) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ record.id }} · {{ record.subject }}
+                    </div>
+                  </td>
+                  <td
+                    v-if="isProvidersRegistryPage"
+                    class="border-b border-border px-4 py-3 align-top"
+                  >
+                    <div class="font-medium text-foreground">
+                      {{ getApplicantName(record) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      JSHSHIR: {{ getApplicantPinfl(record) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ record.region }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ record.district }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-foreground">
+                    {{ record.owner }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[record.tone])">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ formatDate(record.dueAt) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ formatDate(record.submittedAt) }} dan
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top text-muted-foreground">
+                    {{ record.nextAction }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <FilePenLine class="h-4 w-4 shrink-0" />
+                            <span>Tahrirlash</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Qatorlar soni</span>
+                <DropdownMenuRoot @update:open="setRowsPerPageOpen($event)">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    >
+                      <span>{{ selectedRowsPerPage }}</span>
+                      <ChevronRight class="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @select.prevent="setRowsPerPage(option)"
+                      >
+                        <span :class="option === selectedRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                          {{ option }}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Sahifada:</span>
+                <span class="font-medium text-foreground">{{ paginationSummary }}</span>
+              </div>
+            </div>
+
+            <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="currentPage === 1"
+                aria-label="Birinchi sahifa"
+                @click="goToPage(1)"
+              >
+                <ChevronsLeft class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="currentPage === 1"
+                aria-label="Oldingi sahifa"
+                @click="goToPage(currentPage - 1)"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </Button>
+              <div class="mx-1 flex h-7 min-w-14 items-center justify-center text-center text-sm font-semibold text-foreground">
+                {{ currentPageSummary }}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="currentPage === totalPages"
+                aria-label="Keyingi sahifa"
+                @click="goToPage(currentPage + 1)"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0 self-center"
+                :disabled="currentPage === totalPages"
+                aria-label="Oxirgi sahifa"
+                @click="goToPage(totalPages)"
+              >
+                <ChevronsRight class="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <div
+      v-if="isCreateProviderApplicationDialogOpen"
+      class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
+      @click.self="closeCreateProviderApplicationDialog"
+    >
+      <form
+        class="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
+        @submit.prevent="submitProviderApplicationForm"
+      >
+        <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-foreground">
+              Xizmat ko‘rsatuvchi arizasini yaratish
+            </h2>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Nodavlat tashkilot yoki tadbirkor arizasining asosiy ma'lumotlarini kiriting.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Oynani yopish"
+            @click="closeCreateProviderApplicationDialog"
+          >
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div class="max-h-[calc(92vh-9rem)] overflow-y-auto px-5 py-5 sm:px-6">
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium text-foreground">Hujjat raqami</span>
+              <Input
+                :model-value="generateNextProviderApplicationId()"
+                readonly
+                :clearable="false"
+                class="font-semibold"
+              />
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Ariza beruvchi FIO</span>
+              <Input
+                v-model="providerApplicationForm.applicantFullName"
+                placeholder="Masalan: Rahimov Abror Anvar o‘g‘li"
+              />
+              <p
+                v-if="providerApplicationFormErrors.applicantFullName"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.applicantFullName }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+              <Input
+                :model-value="providerApplicationForm.applicantPinfl"
+                inputmode="numeric"
+                maxlength="14"
+                placeholder="14 xonali JSHSHIR"
+                @update:model-value="updateProviderApplicationPinfl(String($event ?? ''))"
+              />
+              <p
+                v-if="providerApplicationFormErrors.applicantPinfl"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.applicantPinfl }}
+              </p>
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium text-foreground">Tadbirkor nomi</span>
+              <Input
+                v-model="providerApplicationForm.organizationName"
+                placeholder="Masalan: Mehrli Qadam MCHJ"
+              />
+              <p
+                v-if="providerApplicationFormErrors.organizationName"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.organizationName }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">STIR</span>
+              <Input
+                :model-value="providerApplicationForm.tin"
+                inputmode="numeric"
+                maxlength="9"
+                placeholder="9 xonali STIR"
+                @update:model-value="updateProviderApplicationTin(String($event ?? ''))"
+              />
+              <p
+                v-if="providerApplicationFormErrors.tin"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.tin }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Tashkilot turi</span>
+              <select
+                v-model="providerApplicationForm.organizationType"
+                class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option
+                  v-for="type in providerApplicationOrganizationTypes"
+                  :key="type"
+                  :value="type"
+                >
+                  {{ type }}
+                </option>
+              </select>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Hudud</span>
+              <Input
+                v-model="providerApplicationForm.region"
+                placeholder="Masalan: Toshkent shahri"
+              />
+              <p
+                v-if="providerApplicationFormErrors.region"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.region }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Tuman/shahar</span>
+              <Input
+                v-model="providerApplicationForm.district"
+                placeholder="Masalan: Yunusobod"
+              />
+              <p
+                v-if="providerApplicationFormErrors.district"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.district }}
+              </p>
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium text-foreground">Xizmat manzili</span>
+              <Input
+                v-model="providerApplicationForm.serviceAddress"
+                placeholder="Ko‘cha, uy yoki mo‘ljal"
+              />
+              <p
+                v-if="providerApplicationFormErrors.serviceAddress"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.serviceAddress }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Xodimlar soni</span>
+              <Input
+                v-model="providerApplicationForm.employeeCount"
+                type="number"
+                min="1"
+                placeholder="Masalan: 6"
+              />
+              <p
+                v-if="providerApplicationFormErrors.employeeCount"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.employeeCount }}
+              </p>
+            </label>
+
+            <label class="space-y-2">
+              <span class="text-sm font-medium text-foreground">Ariza sanasi</span>
+              <Input
+                v-model="providerApplicationForm.submittedAt"
+                type="date"
+                :clearable="false"
+              />
+              <p
+                v-if="providerApplicationFormErrors.submittedAt"
+                class="text-xs text-destructive"
+              >
+                {{ providerApplicationFormErrors.submittedAt }}
+              </p>
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium text-foreground">Mas'ul</span>
+              <Input
+                v-model="providerApplicationForm.owner"
+                placeholder="Masalan: Ishchi guruh"
+              />
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-medium text-foreground">Izoh</span>
+              <textarea
+                v-model="providerApplicationForm.summary"
+                rows="4"
+                class="min-h-24 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                placeholder="Ariza bo‘yicha qisqa izoh"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+          <Button
+            type="button"
+            variant="outline"
+            @click="closeCreateProviderApplicationDialog"
+          >
+            Bekor qilish
+          </Button>
+          <Button type="submit">
+            Saqlash
+          </Button>
+        </div>
+      </form>
+    </div>
+  </PageContainer>
+</template>

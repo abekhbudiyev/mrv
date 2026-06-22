@@ -22,6 +22,7 @@ const mockPermissions: PermissionKey[] = [
   'users.view',
   'muruvvat.view',
   'snav.view',
+  'ei.view',
 ]
 
 function buildMockUser(username: string): CurrentUser {

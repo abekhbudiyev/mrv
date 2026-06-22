@@ -41,7 +41,7 @@ defineEmits<{
         </div>
       </header>
 
-      <main class="min-h-0 flex-1 overflow-visible pt-1 xl:overflow-hidden">
+      <main class="min-h-0 flex-1 overflow-visible pt-4 xl:overflow-hidden">
         <slot />
       </main>
     </div>
