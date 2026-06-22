@@ -7,6 +7,7 @@ import { appModules } from '@/features/apps/registry/apps'
 import { iptkMenu } from '@/features/iptk/config'
 import { muruvvatMenu } from '@/features/muruvvat/config'
 import { snavMenu } from '@/features/snav/config'
+import { eiMenu } from '@/features/ei/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { useI18n } from '@/shared/i18n'
@@ -65,6 +66,10 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
     return snavMenu
   }
 
+  if (activeModuleKey.value === 'ei') {
+    return eiMenu
+  }
+
   return []
 })
 
@@ -97,6 +102,19 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/snav/info/organization-types': 'nav.organizationTypes',
   '/apps/snav/info/organizations': 'nav.organizations',
   '/apps/snav/info/reception-schedules': 'nav.receptionSchedules',
+  '/apps/ei': 'nav.main',
+  '/apps/ei/providers/applications': 'nav.applications',
+  '/apps/ei/providers/conclusions': 'nav.conclusions',
+  '/apps/ei/providers/registry': 'nav.registry',
+  '/apps/ei/children/applications': 'nav.applications',
+  '/apps/ei/children/vouchers': 'nav.vouchers',
+  '/apps/ei/children/orders': 'nav.orders',
+  '/apps/ei/service/active': 'nav.activeServices',
+  '/apps/ei/service/plans': 'nav.earlyInterventionPlans',
+  '/apps/ei/service/attendance': 'nav.attendance',
+  '/apps/ei/service/terminated': 'nav.terminatedServices',
+  '/apps/ei/finance/subsidy-requests': 'nav.subsidyRequests',
+  '/apps/ei/finance/payments': 'nav.subsidiesPayments',
 }
 
 const sidebarGroupI18nKeys: Record<string, string> = {
@@ -106,6 +124,11 @@ const sidebarGroupI18nKeys: Record<string, string> = {
   info: 'nav.info',
   management: 'nav.management',
   reports: 'nav.reports',
+  children: 'nav.childrenRequests',
+  finance: 'nav.finance',
+  providers: 'nav.providers',
+  service: 'nav.service',
+  serviceDelivery: 'nav.serviceDelivery',
 }
 
 function sidebarTitle(item: MuruvvatMenuItem) {

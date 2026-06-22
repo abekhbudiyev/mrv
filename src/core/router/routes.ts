@@ -17,6 +17,7 @@ const IPTKPage = () => import('@/features/iptk/pages/IPTKPage.vue')
 const IPTKApplicationsListPage = () => import('@/features/iptk/pages/IPTKApplicationsListPage.vue')
 const MuruvvatPage = () => import('@/features/muruvvat/pages/MuruvvatPage.vue')
 const SnavPage = () => import('@/features/snav/pages/SnavPage.vue')
+const EIPage = () => import('@/features/ei/pages/EIPage.vue')
 const ErrorPage = () => import('@/features/errors/pages/ErrorPage.vue')
 
 export const routes: RouteRecordRaw[] = [
@@ -497,6 +498,322 @@ export const routes: RouteRecordRaw[] = [
           moduleTitle: 'Ijtimoiy navigator',
           breadcrumb: ['Ilovalar', 'Ijtimoiy navigator', "Ma'lumotnomalar", 'Qabul jadvallari'],
         },
+      },
+      {
+        path: 'apps/ei',
+        sensitive: true,
+        name: 'ei',
+        component: EIPage,
+        props: {
+          pageKey: 'dashboard',
+        },
+        meta: {
+          title: 'Asosiy',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Asosiy'],
+        },
+      },
+      {
+        path: 'apps/ei/providers/applications',
+        sensitive: true,
+        name: 'ei-providers-applications',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-applications',
+        },
+        meta: {
+          title: 'Arizalar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Arizalar'],
+        },
+      },
+      {
+        path: 'apps/ei/providers/conclusions',
+        sensitive: true,
+        name: 'ei-providers-conclusions',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-conclusions',
+        },
+        meta: {
+          title: 'Xulosalar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Xulosalar'],
+        },
+      },
+      {
+        path: 'apps/ei/providers/registry',
+        sensitive: true,
+        name: 'ei-providers-registry',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-registry',
+        },
+        meta: {
+          title: 'Reyestr',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Reyestr'],
+        },
+      },
+      {
+        path: 'apps/ei/children/applications',
+        sensitive: true,
+        name: 'ei-children-applications',
+        component: EIPage,
+        props: {
+          pageKey: 'children-questionnaires',
+        },
+        meta: {
+          title: 'Arizalar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Bolalar murojaatlari', 'Arizalar'],
+        },
+      },
+      {
+        path: 'apps/ei/children/vouchers',
+        sensitive: true,
+        name: 'ei-children-vouchers',
+        component: EIPage,
+        props: {
+          pageKey: 'children-vouchers',
+        },
+        meta: {
+          title: 'Vaucherlar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Bolalar murojaatlari', 'Vaucherlar'],
+        },
+      },
+      {
+        path: 'apps/ei/children/orders',
+        sensitive: true,
+        name: 'ei-children-orders',
+        component: EIPage,
+        props: {
+          pageKey: 'children-orders',
+        },
+        meta: {
+          title: 'Buyurtmalar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Bolalar murojaatlari', 'Buyurtmalar'],
+        },
+      },
+      {
+        path: 'apps/ei/service/active',
+        sensitive: true,
+        name: 'ei-service-active',
+        component: EIPage,
+        props: {
+          pageKey: 'service-active',
+        },
+        meta: {
+          title: 'Xizmat olayotganlar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatish", 'Xizmat olayotganlar'],
+        },
+      },
+      {
+        path: 'apps/ei/service/plans',
+        sensitive: true,
+        name: 'ei-service-plans',
+        component: EIPage,
+        props: {
+          pageKey: 'service-plans',
+        },
+        meta: {
+          title: 'Erta aralashuv rejalari',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatish", 'Erta aralashuv rejalari'],
+        },
+      },
+      {
+        path: 'apps/ei/service/attendance',
+        sensitive: true,
+        name: 'ei-service-attendance',
+        component: EIPage,
+        props: {
+          pageKey: 'service-attendance',
+        },
+        meta: {
+          title: 'Davomat',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatish", 'Davomat'],
+        },
+      },
+      {
+        path: 'apps/ei/service/terminated',
+        sensitive: true,
+        name: 'ei-service-terminated',
+        component: EIPage,
+        props: {
+          pageKey: 'service-terminated',
+        },
+        meta: {
+          title: 'Xizmati tugatilganlar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatish", 'Xizmati tugatilganlar'],
+        },
+      },
+      {
+        path: 'apps/ei/finance/subsidy-requests',
+        sensitive: true,
+        name: 'ei-finance-subsidy-requests',
+        component: EIPage,
+        props: {
+          pageKey: 'finance-subsidy-requests',
+        },
+        meta: {
+          title: 'Buyurtmanomalar',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', 'Buyurtmanomalar'],
+        },
+      },
+      {
+        path: 'apps/ei/finance/payments',
+        sensitive: true,
+        name: 'ei-finance-payments',
+        component: EIPage,
+        props: {
+          pageKey: 'finance-payments',
+        },
+        meta: {
+          title: "Subsidiyalar / To'lovlar",
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "Subsidiyalar / To'lovlar"],
+        },
+      },
+      {
+        path: 'apps/ei/entrepreneurs/applications',
+        redirect: '/apps/ei/providers/applications',
+      },
+      {
+        path: 'apps/ei/entrepreneurs/conclusions',
+        redirect: '/apps/ei/providers/conclusions',
+      },
+      {
+        path: 'apps/ei/entrepreneurs/registry',
+        redirect: '/apps/ei/providers/registry',
+      },
+      {
+        path: 'apps/ei/children/questionnaires',
+        redirect: '/apps/ei/children/applications',
+      },
+      {
+        path: 'apps/ei/service/request',
+        redirect: '/apps/ei/children/applications',
+      },
+      {
+        path: 'apps/ei/service/registered',
+        redirect: '/apps/ei/service/active',
+      },
+      {
+        path: 'apps/ei/service/removed',
+        redirect: '/apps/ei/service/terminated',
+      },
+      {
+        path: 'apps/EI',
+        redirect: '/apps/ei',
+      },
+      {
+        path: 'apps/EI/providers/applications',
+        redirect: '/apps/ei/providers/applications',
+      },
+      {
+        path: 'apps/EI/providers/conclusions',
+        redirect: '/apps/ei/providers/conclusions',
+      },
+      {
+        path: 'apps/EI/providers/registry',
+        redirect: '/apps/ei/providers/registry',
+      },
+      {
+        path: 'apps/EI/children/questionnaires',
+        redirect: '/apps/ei/children/applications',
+      },
+      {
+        path: 'apps/EI/children/vouchers',
+        redirect: '/apps/ei/children/vouchers',
+      },
+      {
+        path: 'apps/EI/children/orders',
+        redirect: '/apps/ei/children/orders',
+      },
+      {
+        path: 'apps/EI/service/active',
+        redirect: '/apps/ei/service/active',
+      },
+      {
+        path: 'apps/EI/service/plans',
+        redirect: '/apps/ei/service/plans',
+      },
+      {
+        path: 'apps/EI/service/attendance',
+        redirect: '/apps/ei/service/attendance',
+      },
+      {
+        path: 'apps/EI/service/terminated',
+        redirect: '/apps/ei/service/terminated',
+      },
+      {
+        path: 'apps/EI/finance/subsidy-requests',
+        redirect: '/apps/ei/finance/subsidy-requests',
+      },
+      {
+        path: 'apps/EI/finance/payments',
+        redirect: '/apps/ei/finance/payments',
+      },
+      {
+        path: 'apps/EI/entrepreneurs/applications',
+        redirect: '/apps/ei/providers/applications',
+      },
+      {
+        path: 'apps/EI/entrepreneurs/conclusions',
+        redirect: '/apps/ei/providers/conclusions',
+      },
+      {
+        path: 'apps/EI/entrepreneurs/registry',
+        redirect: '/apps/ei/providers/registry',
+      },
+      {
+        path: 'apps/EI/children/applications',
+        redirect: '/apps/ei/children/applications',
+      },
+      {
+        path: 'apps/EI/service/request',
+        redirect: '/apps/ei/children/applications',
+      },
+      {
+        path: 'apps/EI/service/registered',
+        redirect: '/apps/ei/service/active',
+      },
+      {
+        path: 'apps/EI/service/removed',
+        redirect: '/apps/ei/service/terminated',
       },
       {
         path: 'apps/dashboard',
