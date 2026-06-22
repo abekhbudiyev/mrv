@@ -695,7 +695,13 @@ function buildSupplementalRecordId(pageKey: string, records: EiRecord[], index: 
     return fallbackId
   }
 
-  const [, idPrefix, templateSequence] = templateMatch
+  const idPrefix = templateMatch[1]
+  const templateSequence = templateMatch[2]
+
+  if (!idPrefix || !templateSequence) {
+    return fallbackId
+  }
+
   const sequenceWidth = templateSequence.length
   const maxExistingSequence = records.reduce((maxSequence, record) => {
     const recordMatch = record.id.match(/^(.*-)(\d+)$/)
