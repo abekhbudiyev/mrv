@@ -1,6 +1,14 @@
+<script lang="ts">
+import { ref as moduleRef } from 'vue'
+import type { EiRecord as EiDraftRecord } from '@/features/ei/data'
+
+const providerApplicationDrafts = moduleRef<EiDraftRecord[]>([])
+</script>
+
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send, X } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,6 +26,9 @@ import {
 import PageContainer from '@/shared/components/PageContainer.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import StatusTabs from '@/shared/components/StatusTabs.vue'
+import FilterPopover from '@/shared/components/FilterPopover.vue'
+import FilterSelect from '@/shared/components/FilterSelect.vue'
+import FilterDateInput from '@/shared/components/FilterDateInput.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
@@ -30,9 +41,47 @@ const props = withDefaults(defineProps<{
 }>(), {
   pageKey: 'dashboard',
 })
+const router = useRouter()
 
 const rowsPerPageOptions = [20, 50, 100, 200, 500]
 const editableConclusionStatuses = ['Yangi', 'Tahrirlangan', 'Qaytarilgan']
+const providerApplicationReportStatuses = ['Yangi', 'O‘rganilmoqda', 'Qabul qilingan', 'Rad etilgan']
+const providerApplicationReportRegions = [
+  'Qoraqalpog‘iston Respublikasi',
+  'Andijon',
+  'Buxoro',
+  'Jizzax',
+  'Qashqadaryo',
+  'Navoiy',
+  'Namangan',
+  'Samarqand',
+  'Surxondaryo',
+  'Sirdaryo',
+  'Toshkent viloyati',
+  'Farg‘ona',
+  'Xorazm',
+  'Toshkent shahri',
+]
+const providerApplicationWhitelistedPinfl = '11111111111111'
+const providerApplicationBlacklistedPinfl = '00000000000000'
+const providerApplicationWhitelistedTin = '111111111'
+const providerApplicationBlacklistedTin = '000000000'
+const providerApplicationAddressOptions: Record<string, Record<string, string[]>> = {
+  'Toshkent shahri': {
+    'Yunusobod': ['Bog‘ishamol MFY', 'Minor MFY', 'Oqtepa MFY'],
+    'Mirzo Ulug‘bek': ['Buyuk Ipak Yo‘li MFY', 'Qorasuv MFY', 'Olimlar MFY'],
+    'Shayxontohur': ['Labzak MFY', 'Gulobod MFY', 'Kamolon MFY'],
+  },
+  'Samarqand': {
+    'Samarqand shahri': ['Universitet MFY', 'Registon MFY', 'Bog‘bon MFY'],
+    'Kattaqo‘rg‘on': ['Yangiobod MFY', 'Do‘stlik MFY', 'Oq oltin MFY'],
+  },
+  'Farg‘ona': {
+    'Qo‘qon': ['Istiqlol MFY', 'Turon MFY', 'Navbahor MFY'],
+    'Marg‘ilon': ['Yuksalish MFY', 'Saxovat MFY', 'Atlas MFY'],
+  },
+}
+const providerApplicationRegionOptions = Object.keys(providerApplicationAddressOptions)
 
 type ProviderApplicationApplicantLookup = {
   fullName: string
@@ -54,6 +103,12 @@ type ProviderApplicationBusinessLookup = {
 }
 
 const providerApplicationApplicantsByPinfl: Record<string, ProviderApplicationApplicantLookup> = {
+  '11111111111111': {
+    fullName: 'Aliyev Ali Akmal ogli',
+    birthDate: '1991-01-11',
+    gender: 'Erkak',
+    photo: applicantManPhoto,
+  },
   '30401876543210': {
     fullName: 'Rahimov Abror Anvar o‘g‘li',
     birthDate: '1990-04-01',
@@ -75,6 +130,17 @@ const providerApplicationApplicantsByPinfl: Record<string, ProviderApplicationAp
 }
 
 const providerApplicationBusinessesByTin: Record<string, ProviderApplicationBusinessLookup> = {
+  '111111111': {
+    organizationName: 'Whitelist Reabilitatsiya MCHJ',
+    director: 'Aliyev Ali Akmal ogli',
+    registeredAt: '2021-01-11',
+    activityType: 'Erta aralashuv va reabilitatsiya xizmatlari',
+    status: 'Faol',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    mahalla: 'Minor MFY',
+    address: 'Yunusobod tumani, 11-mavze, 11-uy',
+  },
   '309845672': {
     organizationName: 'Mehrli Qadam MCHJ',
     director: 'Rahimov Abror Anvar o‘g‘li',
@@ -112,13 +178,37 @@ const providerApplicationBusinessesByTin: Record<string, ProviderApplicationBusi
 
 const searchQuery = ref('')
 const selectedStatuses = ref<string[]>([])
+const selectedProviderConclusionResult = ref('')
+const selectedProviderRegion = ref('')
+const selectedProviderDistrict = ref('')
+const providerApplicationsStartDate = ref('')
+const providerApplicationsEndDate = ref('')
+const draftProviderConclusionResult = ref('')
+const draftProviderRegion = ref('')
+const draftProviderDistrict = ref('')
+const draftProviderApplicationsStartDate = ref('')
+const draftProviderApplicationsEndDate = ref('')
+const providerApplicationReportStartDate = ref('')
+const providerApplicationReportEndDate = ref('')
+const draftProviderApplicationReportStartDate = ref('')
+const draftProviderApplicationReportEndDate = ref('')
 const selectedRowsPerPage = ref(20)
 const currentPage = ref(1)
 const isRowsPerPageOpen = ref(false)
+const isProviderApplicationsFilterOpen = ref(false)
+const isProviderApplicationReportFilterOpen = ref(false)
 const openActionMenuId = ref<string | null>(null)
-const isCreateProviderApplicationDialogOpen = ref(false)
 const isExportingRecords = ref(false)
-const providerApplicationDrafts = ref<EiRecord[]>([])
+const selectedProviderApplicationReportRegion = ref('')
+const selectedProviderApplicationReportCells = ref<Record<string, {
+  label: string
+  value: number
+}>>({})
+const isProviderApplicationReportCellDragging = ref(false)
+const suppressNextProviderApplicationReportCellClick = ref(false)
+const providerApplicationReportCellDragStart = ref<ProviderApplicationReportCellSelection | null>(null)
+const providerApplicationReportCellDragAppend = ref(false)
+const providerApplicationReportCellDragVisitedKeys = ref<Set<string>>(new Set())
 
 type ProviderApplicationForm = {
   applicantFullName: string
@@ -146,6 +236,23 @@ type ProviderApplicationForm = {
 }
 
 type ProviderApplicationFormErrors = Partial<Record<keyof ProviderApplicationForm, string>>
+type ProviderApplicationInfoRow = {
+  label: string
+  value: string
+  kind?: 'status'
+}
+type ProviderApplicationReportRow = {
+  region: string
+  total: number
+  statuses: Record<string, number>
+  isTotal?: boolean
+}
+type ProviderApplicationReportCellSelection = {
+  row: string
+  group: string
+  label: string
+  value: number
+}
 
 function toInputDate(value = new Date()) {
   const year = value.getFullYear()
@@ -192,11 +299,95 @@ function getDefaultProviderApplicationForm(): ProviderApplicationForm {
 const providerApplicationForm = ref<ProviderApplicationForm>(getDefaultProviderApplicationForm())
 const providerApplicationFormErrors = ref<ProviderApplicationFormErrors>({})
 
+const isProviderApplicationApplicantFound = computed(() => {
+  const form = providerApplicationForm.value
+
+  return Boolean(
+    form.applicantFullName.trim()
+    && form.applicantBirthDate
+    && form.applicantGender
+    && form.applicantPhoto,
+  )
+})
+const isProviderApplicationAddressComplete = computed(() => {
+  const form = providerApplicationForm.value
+
+  return Boolean(
+    form.applicantAddressRegion.trim()
+    && form.applicantAddressDistrict.trim()
+    && form.applicantAddressMahalla.trim()
+    && form.applicantAddressFull.trim(),
+  )
+})
+const isProviderApplicationBusinessFound = computed(() => {
+  const form = providerApplicationForm.value
+
+  return Boolean(
+    form.organizationName.trim()
+    && form.organizationDirector.trim()
+    && form.organizationRegisteredAt
+    && form.organizationActivityType.trim()
+    && form.organizationStatus.trim(),
+  )
+})
+const isProviderApplicationReadyToSave = computed(() => {
+  return Boolean(
+    isProviderApplicationApplicantFound.value
+    && isProviderApplicationAddressComplete.value
+    && isProviderApplicationBusinessFound.value
+    && providerApplicationForm.value.submittedAt,
+  )
+})
+const providerApplicationDistrictOptions = computed(() => {
+  return Object.keys(providerApplicationAddressOptions[providerApplicationForm.value.applicantAddressRegion] ?? {})
+})
+const providerApplicationMahallaOptions = computed(() => {
+  const regionOptions = providerApplicationAddressOptions[providerApplicationForm.value.applicantAddressRegion] ?? {}
+
+  return regionOptions[providerApplicationForm.value.applicantAddressDistrict] ?? []
+})
+const providerApplicationApplicantRows = computed<Array<[string, string]>>(() => {
+  const form = providerApplicationForm.value
+
+  return [
+    ['FIO', form.applicantFullName ? formatName(form.applicantFullName) : '-'],
+    ['JSHSHIR', form.applicantPinfl || '-'],
+    ['Tug‘ilgan sana', form.applicantBirthDate ? formatDate(form.applicantBirthDate) : '-'],
+    ['Jinsi', form.applicantGender || '-'],
+  ]
+})
+const providerApplicationBusinessRows = computed<ProviderApplicationInfoRow[]>(() => {
+  const form = providerApplicationForm.value
+
+  return [
+    { label: 'Tadbirkorlik subyekti nomi', value: form.organizationName ? formatName(form.organizationName) : '-' },
+    { label: 'STIR', value: form.tin || '-' },
+    { label: 'Direktori', value: form.organizationDirector ? formatName(form.organizationDirector) : '-' },
+    { label: 'Ro‘yxatdan o‘tkazilgan sanasi', value: form.organizationRegisteredAt ? formatDate(form.organizationRegisteredAt) : '-' },
+    { label: 'Faoliyat turi', value: form.organizationActivityType || '-' },
+    { label: 'Holati', value: form.organizationStatus || '-', kind: 'status' },
+    {
+      label: 'Manzil',
+      value: formatProviderAddress(
+        form.organizationRegion,
+        form.organizationDistrict,
+        form.organizationMahalla,
+        form.organizationAddress,
+      ) || '-',
+    },
+  ]
+})
+
 const isProvidersApplicationsPage = computed(() => props.pageKey === 'providers-applications')
+const isProvidersApplicationsReportPage = computed(() => props.pageKey === 'providers-applications-report')
+const isProvidersApplicationsCreatePage = computed(() => props.pageKey === 'providers-applications-create')
 const isProvidersConclusionsPage = computed(() => props.pageKey === 'providers-conclusions')
 const isProvidersRegistryPage = computed(() => props.pageKey === 'providers-registry')
+const usesProviderFilter = computed(() => (
+  isProvidersApplicationsPage.value || isProvidersConclusionsPage.value || isProvidersRegistryPage.value
+))
 const usesProviderApplicationsTable = computed(() => (
-  isProvidersApplicationsPage.value || isProvidersConclusionsPage.value
+  isProvidersApplicationsPage.value || isProvidersConclusionsPage.value || isProvidersRegistryPage.value
 ))
 const pageRecords = computed(() => {
   if (props.pageKey === 'dashboard') {
@@ -211,8 +402,163 @@ const pageRecords = computed(() => {
 
   return records
 })
+const providerApplicationReportRecords = computed(() => {
+  const records = [
+    ...providerApplicationDrafts.value,
+    ...getEiRecords('providers-applications'),
+  ]
+
+  return records.filter((record) => (
+    isDateWithinRange(record.submittedAt, providerApplicationReportStartDate.value, providerApplicationReportEndDate.value)
+  ))
+})
+function buildProviderApplicationReportRow(
+  region: string,
+  rowRecords: EiRecord[],
+  isTotal = false,
+): ProviderApplicationReportRow {
+  return {
+    region,
+    total: rowRecords.length,
+    isTotal,
+    statuses: Object.fromEntries(
+      providerApplicationReportStatuses.map((status) => [
+        status,
+        rowRecords.filter((record) => record.status === status).length,
+      ]),
+    ),
+  }
+}
+
+const providerApplicationReportRows = computed<ProviderApplicationReportRow[]>(() => {
+  const records = providerApplicationReportRecords.value
+
+  return [
+    buildProviderApplicationReportRow("Respublika bo'yicha jami", records, true),
+    ...providerApplicationReportRegions.map((region) => (
+      buildProviderApplicationReportRow(region, records.filter((record) => record.region === region))
+    )),
+  ]
+})
+const selectedProviderApplicationReportRegionRecords = computed(() => (
+  providerApplicationReportRecords.value.filter((record) => record.region === selectedProviderApplicationReportRegion.value)
+))
+const selectedProviderApplicationReportRegionTotalRow = computed(() => (
+  buildProviderApplicationReportRow(
+    `${selectedProviderApplicationReportRegion.value} bo‘yicha jami`,
+    selectedProviderApplicationReportRegionRecords.value,
+    true,
+  )
+))
+const providerApplicationReportDistrictRows = computed<ProviderApplicationReportRow[]>(() => {
+  if (!selectedProviderApplicationReportRegion.value) {
+    return []
+  }
+
+  const districtNames = [
+    ...Object.keys(providerApplicationAddressOptions[selectedProviderApplicationReportRegion.value] ?? {}),
+    ...selectedProviderApplicationReportRegionRecords.value.map((record) => record.district),
+  ]
+  const uniqueDistricts = [...new Set(districtNames)]
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+
+  return uniqueDistricts.map((district) => (
+    buildProviderApplicationReportRow(
+      district,
+      selectedProviderApplicationReportRegionRecords.value.filter((record) => record.district === district),
+    )
+  ))
+})
+const providerApplicationReportDisplayRows = computed<ProviderApplicationReportRow[]>(() => (
+  selectedProviderApplicationReportRegion.value
+    ? [
+        selectedProviderApplicationReportRegionTotalRow.value,
+        ...providerApplicationReportDistrictRows.value,
+      ]
+    : providerApplicationReportRows.value
+))
+const providerApplicationReportFirstColumnLabel = computed(() => (
+  selectedProviderApplicationReportRegion.value ? 'Tuman (shahar)' : 'Hudud'
+))
+const selectedProviderApplicationReportCellValues = computed(() => Object.values(selectedProviderApplicationReportCells.value))
+const providerApplicationReportSelectionAnalytics = computed(() => {
+  const values = selectedProviderApplicationReportCellValues.value.map((cell) => cell.value)
+
+  if (!values.length) {
+    return {
+      count: 0,
+      sum: 0,
+      min: 0,
+      max: 0,
+      average: 0,
+    }
+  }
+
+  const sum = values.reduce((total, value) => total + value, 0)
+
+  return {
+    count: values.length,
+    sum,
+    min: Math.min(...values),
+    max: Math.max(...values),
+    average: sum / values.length,
+  }
+})
+const activeProviderApplicationReportFilterCount = computed(() => {
+  return [
+    providerApplicationReportStartDate.value,
+    providerApplicationReportEndDate.value,
+  ].filter(Boolean).length
+})
+const hasPendingProviderApplicationReportFilterChanges = computed(() => (
+  draftProviderApplicationReportStartDate.value !== providerApplicationReportStartDate.value
+  || draftProviderApplicationReportEndDate.value !== providerApplicationReportEndDate.value
+))
 
 const statusTabs = computed(() => buildEiStatusTabs(pageRecords.value))
+const providerConclusionResultFilterOptions = computed(() => {
+  return [...new Set([
+    'Ijobiy',
+    'Salbiy',
+    ...pageRecords.value.map((record) => getConclusionResult(record)).filter((value) => value !== '-'),
+  ])].sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+})
+const providerApplicationRegionFilterOptions = computed(() => {
+  return [...new Set(pageRecords.value.map((record) => record.region))]
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+})
+const providerApplicationDistrictFilterOptions = computed(() => {
+  return [...new Set(
+    pageRecords.value
+      .filter((record) => !draftProviderRegion.value || record.region === draftProviderRegion.value)
+      .map((record) => record.district),
+  )]
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+})
+const activeProviderApplicationFilterCount = computed(() => {
+  const filters = [
+    selectedProviderRegion.value,
+    selectedProviderDistrict.value,
+    providerApplicationsStartDate.value,
+    providerApplicationsEndDate.value,
+  ]
+
+  if (isProvidersConclusionsPage.value) {
+    filters.unshift(selectedProviderConclusionResult.value)
+  }
+
+  return filters.filter(Boolean).length
+})
+const hasPendingProviderApplicationFilterChanges = computed(() => (
+  draftProviderConclusionResult.value !== selectedProviderConclusionResult.value
+  || draftProviderRegion.value !== selectedProviderRegion.value
+  || draftProviderDistrict.value !== selectedProviderDistrict.value
+  || draftProviderApplicationsStartDate.value !== providerApplicationsStartDate.value
+  || draftProviderApplicationsEndDate.value !== providerApplicationsEndDate.value
+))
 const filteredRecords = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
 
@@ -232,8 +578,16 @@ const filteredRecords = computed(() => {
       record.result ?? '',
       record.nextAction,
     ].some((value) => value.toLowerCase().includes(query))
+    const matchesProviderLocationFilters = !usesProviderFilter.value || (
+      (!selectedProviderRegion.value || record.region === selectedProviderRegion.value)
+      && (!selectedProviderDistrict.value || record.district === selectedProviderDistrict.value)
+      && isDateWithinRange(record.submittedAt, providerApplicationsStartDate.value, providerApplicationsEndDate.value)
+    )
+    const matchesProviderConclusionFilters = !isProvidersConclusionsPage.value || (
+      (!selectedProviderConclusionResult.value || getConclusionResult(record) === selectedProviderConclusionResult.value)
+    )
 
-    return matchesStatus && matchesQuery
+    return matchesStatus && matchesQuery && matchesProviderLocationFilters && matchesProviderConclusionFilters
   })
 })
 
@@ -253,18 +607,52 @@ const paginationSummary = computed(() => {
 const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
 const exportFileName = computed(() => `ei-${props.pageKey}-${toInputDate()}.xlsx`)
 
-watch(() => props.pageKey, () => {
+watch(() => props.pageKey, (nextPageKey, previousPageKey) => {
   searchQuery.value = ''
   selectedStatuses.value = []
+  resetProviderApplicationFilters()
+  isProviderApplicationsFilterOpen.value = false
+  selectedProviderApplicationReportRegion.value = ''
+  resetProviderApplicationReportFilters()
+  isProviderApplicationReportFilterOpen.value = false
+  clearProviderApplicationReportCellSelection()
   currentPage.value = 1
-  closeCreateProviderApplicationDialog()
+  if (nextPageKey === 'providers-applications-create' && previousPageKey !== 'providers-applications-create') {
+    resetProviderApplicationForm()
+  }
 }, { immediate: true })
+
+watch(isProviderApplicationsFilterOpen, (isOpen) => {
+  if (isOpen) {
+    syncProviderApplicationDraftFilters()
+  }
+})
+
+watch(isProviderApplicationReportFilterOpen, (isOpen) => {
+  if (isOpen) {
+    syncProviderApplicationReportDraftFilters()
+  }
+})
+
+watch(draftProviderRegion, () => {
+  draftProviderDistrict.value = ''
+})
 
 watch(filteredRecords, () => {
   if (currentPage.value > totalPages.value) {
     currentPage.value = totalPages.value
   }
 }, { immediate: true })
+
+onMounted(() => {
+  window.addEventListener('keydown', handleProviderApplicationReportGlobalKeydown)
+  window.addEventListener('mouseup', stopProviderApplicationReportCellDrag)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleProviderApplicationReportGlobalKeydown)
+  window.removeEventListener('mouseup', stopProviderApplicationReportCellDrag)
+})
 
 function handleStatusSelect(value: string) {
   selectedStatuses.value = value === 'all' || selectedStatuses.value.includes(value)
@@ -285,6 +673,195 @@ function closeActionMenu() {
   openActionMenuId.value = null
 }
 
+function getProviderApplicationReportCellKey(row: string, group: string, label: string) {
+  return `${row}::${group}::${label}`
+}
+
+function isProviderApplicationReportCellSelected(row: string, group: string, label: string) {
+  return Boolean(selectedProviderApplicationReportCells.value[getProviderApplicationReportCellKey(row, group, label)])
+}
+
+function clearProviderApplicationReportCellSelection() {
+  selectedProviderApplicationReportCells.value = {}
+}
+
+function selectProviderApplicationReportCell(
+  row: string,
+  group: string,
+  label: string,
+  value: number,
+  append = true,
+) {
+  const key = getProviderApplicationReportCellKey(row, group, label)
+  selectedProviderApplicationReportCells.value = {
+    ...(append ? selectedProviderApplicationReportCells.value : {}),
+    [key]: {
+      label: `${row} / ${label}`,
+      value,
+    },
+  }
+}
+
+function toggleProviderApplicationReportCell(row: string, group: string, label: string, value: number) {
+  const key = getProviderApplicationReportCellKey(row, group, label)
+  const nextSelectedCells = { ...selectedProviderApplicationReportCells.value }
+
+  if (nextSelectedCells[key]) {
+    delete nextSelectedCells[key]
+  }
+  else {
+    nextSelectedCells[key] = {
+      label: `${row} / ${label}`,
+      value,
+    }
+  }
+
+  selectedProviderApplicationReportCells.value = nextSelectedCells
+}
+
+function handleProviderApplicationReportCellClick(
+  event: MouseEvent,
+  row: string,
+  group: string,
+  label: string,
+  value: number,
+) {
+  event.preventDefault()
+
+  if (suppressNextProviderApplicationReportCellClick.value) {
+    suppressNextProviderApplicationReportCellClick.value = false
+    return
+  }
+
+  const hasSelectedCells = selectedProviderApplicationReportCellValues.value.length > 0
+
+  if (!event.ctrlKey && !event.metaKey) {
+    selectProviderApplicationReportCell(row, group, label, value, false)
+    return
+  }
+
+  if (!hasSelectedCells) {
+    selectProviderApplicationReportCell(row, group, label, value, false)
+    return
+  }
+
+  toggleProviderApplicationReportCell(row, group, label, value)
+}
+
+function handleProviderApplicationReportCellMouseDown(
+  event: MouseEvent,
+  row: string,
+  group: string,
+  label: string,
+  value: number,
+) {
+  if (event.button !== 0) return
+  const appendSelection = event.ctrlKey || event.metaKey
+  const hasSelectedCells = selectedProviderApplicationReportCellValues.value.length > 0
+
+  if (appendSelection && !hasSelectedCells) return
+
+  event.preventDefault()
+  isProviderApplicationReportCellDragging.value = true
+  suppressNextProviderApplicationReportCellClick.value = appendSelection
+  providerApplicationReportCellDragStart.value = { row, group, label, value }
+  providerApplicationReportCellDragAppend.value = appendSelection
+  providerApplicationReportCellDragVisitedKeys.value = new Set([getProviderApplicationReportCellKey(row, group, label)])
+
+  if (appendSelection) {
+    toggleProviderApplicationReportCell(row, group, label, value)
+  }
+  else {
+    selectProviderApplicationReportCell(row, group, label, value, false)
+  }
+}
+
+function handleProviderApplicationReportCellMouseEnter(row: string, group: string, label: string, value: number) {
+  if (!isProviderApplicationReportCellDragging.value) return
+
+  const startCell = providerApplicationReportCellDragStart.value
+  if (startCell && !suppressNextProviderApplicationReportCellClick.value) {
+    selectProviderApplicationReportCell(
+      startCell.row,
+      startCell.group,
+      startCell.label,
+      startCell.value,
+      providerApplicationReportCellDragAppend.value,
+    )
+  }
+
+  suppressNextProviderApplicationReportCellClick.value = true
+  const key = getProviderApplicationReportCellKey(row, group, label)
+  if (providerApplicationReportCellDragVisitedKeys.value.has(key)) return
+
+  providerApplicationReportCellDragVisitedKeys.value = new Set([...providerApplicationReportCellDragVisitedKeys.value, key])
+
+  if (providerApplicationReportCellDragAppend.value) {
+    toggleProviderApplicationReportCell(row, group, label, value)
+  }
+  else {
+    selectProviderApplicationReportCell(row, group, label, value)
+  }
+}
+
+function stopProviderApplicationReportCellDrag() {
+  isProviderApplicationReportCellDragging.value = false
+  providerApplicationReportCellDragStart.value = null
+  providerApplicationReportCellDragAppend.value = false
+  providerApplicationReportCellDragVisitedKeys.value = new Set()
+}
+
+function handleProviderApplicationReportGlobalKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || !isProvidersApplicationsReportPage.value) return
+  if (!selectedProviderApplicationReportCellValues.value.length && !isProviderApplicationReportCellDragging.value) return
+
+  event.preventDefault()
+  stopProviderApplicationReportCellDrag()
+  clearProviderApplicationReportCellSelection()
+}
+
+function getProviderApplicationReportCellClass(row: string, group: string, label: string) {
+  return isProviderApplicationReportCellSelected(row, group, label)
+    ? 'bg-primary/10 text-primary ring-1 ring-inset ring-primary/35'
+    : 'hover:bg-primary/5'
+}
+
+function toggleProviderApplicationReportRegion(row: ProviderApplicationReportRow) {
+  if (row.isTotal) {
+    return
+  }
+
+  clearProviderApplicationReportCellSelection()
+  selectedProviderApplicationReportRegion.value = selectedProviderApplicationReportRegion.value === row.region
+    ? ''
+    : row.region
+}
+
+function closeProviderApplicationReportRegion() {
+  clearProviderApplicationReportCellSelection()
+  selectedProviderApplicationReportRegion.value = ''
+}
+
+function getProviderApplicationReportStatusClasses(status: string) {
+  if (status === 'Yangi') {
+    return eiStatusClasses.info
+  }
+
+  if (status === 'O‘rganilmoqda') {
+    return eiStatusClasses.warning
+  }
+
+  if (status === 'Qabul qilingan') {
+    return eiStatusClasses.success
+  }
+
+  if (status === 'Rad etilgan') {
+    return eiStatusClasses.danger
+  }
+
+  return eiStatusClasses.neutral
+}
+
 function setRowsPerPage(nextValue: number) {
   selectedRowsPerPage.value = nextValue
   currentPage.value = 1
@@ -301,7 +878,70 @@ function goToPage(pageNumber: number) {
 function clearSearchAndFilters() {
   searchQuery.value = ''
   selectedStatuses.value = []
+  resetProviderApplicationFilters()
   currentPage.value = 1
+}
+
+function resetProviderApplicationFilters() {
+  selectedProviderConclusionResult.value = ''
+  selectedProviderRegion.value = ''
+  selectedProviderDistrict.value = ''
+  providerApplicationsStartDate.value = ''
+  providerApplicationsEndDate.value = ''
+  draftProviderConclusionResult.value = ''
+  draftProviderRegion.value = ''
+  draftProviderDistrict.value = ''
+  draftProviderApplicationsStartDate.value = ''
+  draftProviderApplicationsEndDate.value = ''
+}
+
+function clearProviderApplicationFilters() {
+  resetProviderApplicationFilters()
+  currentPage.value = 1
+}
+
+function resetProviderApplicationReportFilters() {
+  providerApplicationReportStartDate.value = ''
+  providerApplicationReportEndDate.value = ''
+  draftProviderApplicationReportStartDate.value = ''
+  draftProviderApplicationReportEndDate.value = ''
+}
+
+function clearProviderApplicationReportFilters() {
+  resetProviderApplicationReportFilters()
+  selectedProviderApplicationReportRegion.value = ''
+  clearProviderApplicationReportCellSelection()
+}
+
+function syncProviderApplicationDraftFilters() {
+  draftProviderConclusionResult.value = selectedProviderConclusionResult.value
+  draftProviderRegion.value = selectedProviderRegion.value
+  draftProviderDistrict.value = selectedProviderDistrict.value
+  draftProviderApplicationsStartDate.value = providerApplicationsStartDate.value
+  draftProviderApplicationsEndDate.value = providerApplicationsEndDate.value
+}
+
+function syncProviderApplicationReportDraftFilters() {
+  draftProviderApplicationReportStartDate.value = providerApplicationReportStartDate.value
+  draftProviderApplicationReportEndDate.value = providerApplicationReportEndDate.value
+}
+
+function applyProviderApplicationFilters() {
+  selectedProviderConclusionResult.value = draftProviderConclusionResult.value
+  selectedProviderRegion.value = draftProviderRegion.value
+  selectedProviderDistrict.value = draftProviderDistrict.value
+  providerApplicationsStartDate.value = draftProviderApplicationsStartDate.value
+  providerApplicationsEndDate.value = draftProviderApplicationsEndDate.value
+  currentPage.value = 1
+  isProviderApplicationsFilterOpen.value = false
+}
+
+function applyProviderApplicationReportFilters() {
+  providerApplicationReportStartDate.value = draftProviderApplicationReportStartDate.value
+  providerApplicationReportEndDate.value = draftProviderApplicationReportEndDate.value
+  selectedProviderApplicationReportRegion.value = ''
+  clearProviderApplicationReportCellSelection()
+  isProviderApplicationReportFilterOpen.value = false
 }
 
 function formatName(value: string) {
@@ -366,6 +1006,21 @@ function getProviderExportRows() {
   })
 }
 
+function getProviderApplicationReportExportRows() {
+  return providerApplicationReportDisplayRows.value.map((row) => {
+    const reportRow: Record<string, string | number> = {
+      [providerApplicationReportFirstColumnLabel.value]: row.region,
+      'Barcha arizalar': row.total,
+    }
+
+    providerApplicationReportStatuses.forEach((status) => {
+      reportRow[status] = row.statuses[status] ?? 0
+    })
+
+    return reportRow
+  })
+}
+
 function getGenericExportRows() {
   return filteredRecords.value.map((record, index) => ({
     '№': index + 1,
@@ -407,19 +1062,48 @@ async function downloadRecordsAsExcel() {
   }
 }
 
+async function downloadProviderApplicationReportAsExcel() {
+  if (isExportingRecords.value || providerApplicationReportDisplayRows.value.length === 0) {
+    return
+  }
+
+  isExportingRecords.value = true
+
+  try {
+    const xlsx = await import('xlsx')
+    const exportRows = getProviderApplicationReportExportRows()
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    worksheet['!cols'] = Object.keys(exportRows[0] ?? {}).map((key) => ({
+      wch: Math.min(Math.max(key.length + 4, 14), 36),
+    }))
+
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Hisobot')
+    const reportScope = selectedProviderApplicationReportRegion.value || 'respublika'
+    xlsx.writeFile(workbook, `ei-xizmat-korsatuvchilar-arizalari-${reportScope}-${toInputDate()}.xlsx`, { compression: true })
+  }
+  finally {
+    isExportingRecords.value = false
+  }
+}
+
+function resetProviderApplicationForm() {
+  providerApplicationForm.value = getDefaultProviderApplicationForm()
+  providerApplicationFormErrors.value = {}
+}
+
 function openCreateDialog() {
   if (!isProvidersApplicationsPage.value) {
     return
   }
 
-  providerApplicationForm.value = getDefaultProviderApplicationForm()
-  providerApplicationFormErrors.value = {}
-  isCreateProviderApplicationDialogOpen.value = true
+  resetProviderApplicationForm()
+  router.push('/apps/ei/providers/applications/create')
 }
 
 function closeCreateProviderApplicationDialog() {
-  isCreateProviderApplicationDialogOpen.value = false
-  providerApplicationFormErrors.value = {}
+  resetProviderApplicationForm()
+  router.push('/apps/ei/providers/applications')
 }
 
 function resetProviderApplicationApplicantFields() {
@@ -427,6 +1111,13 @@ function resetProviderApplicationApplicantFields() {
   providerApplicationForm.value.applicantBirthDate = ''
   providerApplicationForm.value.applicantGender = ''
   providerApplicationForm.value.applicantPhoto = ''
+}
+
+function resetProviderApplicationAddressFields() {
+  providerApplicationForm.value.applicantAddressRegion = ''
+  providerApplicationForm.value.applicantAddressDistrict = ''
+  providerApplicationForm.value.applicantAddressMahalla = ''
+  providerApplicationForm.value.applicantAddressFull = ''
 }
 
 function resetProviderApplicationBusinessFields() {
@@ -445,12 +1136,56 @@ function updateProviderApplicationTin(value: string) {
   providerApplicationForm.value.tin = value.replace(/\D/g, '').slice(0, 9)
   resetProviderApplicationBusinessFields()
   delete providerApplicationFormErrors.value.tin
+  delete providerApplicationFormErrors.value.organizationName
 }
 
 function updateProviderApplicationPinfl(value: string) {
   providerApplicationForm.value.applicantPinfl = value.replace(/\D/g, '').slice(0, 14)
   resetProviderApplicationApplicantFields()
+  resetProviderApplicationAddressFields()
+  providerApplicationForm.value.tin = ''
+  resetProviderApplicationBusinessFields()
   delete providerApplicationFormErrors.value.applicantPinfl
+  delete providerApplicationFormErrors.value.applicantFullName
+  delete providerApplicationFormErrors.value.applicantAddressRegion
+  delete providerApplicationFormErrors.value.applicantAddressDistrict
+  delete providerApplicationFormErrors.value.applicantAddressMahalla
+  delete providerApplicationFormErrors.value.applicantAddressFull
+  delete providerApplicationFormErrors.value.tin
+  delete providerApplicationFormErrors.value.organizationName
+}
+
+function getEventValue(event: Event) {
+  const target = event.target
+
+  return target instanceof HTMLInputElement || target instanceof HTMLSelectElement ? target.value : ''
+}
+
+function updateProviderApplicationAddressRegion(value: string) {
+  providerApplicationForm.value.applicantAddressRegion = value
+  providerApplicationForm.value.applicantAddressDistrict = ''
+  providerApplicationForm.value.applicantAddressMahalla = ''
+  delete providerApplicationFormErrors.value.applicantAddressRegion
+  delete providerApplicationFormErrors.value.applicantAddressDistrict
+  delete providerApplicationFormErrors.value.applicantAddressMahalla
+}
+
+function updateProviderApplicationAddressDistrict(value: string) {
+  providerApplicationForm.value.applicantAddressDistrict = value
+  providerApplicationForm.value.applicantAddressMahalla = ''
+  delete providerApplicationFormErrors.value.applicantAddressDistrict
+  delete providerApplicationFormErrors.value.applicantAddressMahalla
+}
+
+function updateProviderApplicationAddressMahalla(value: string) {
+  providerApplicationForm.value.applicantAddressMahalla = value
+  delete providerApplicationFormErrors.value.applicantAddressMahalla
+}
+
+function getProviderApplicationStatusClasses(status: string) {
+  return status.toLocaleLowerCase('uz-UZ') === 'faol'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+    : 'border-border bg-muted text-muted-foreground'
 }
 
 function searchProviderApplicationApplicant() {
@@ -461,6 +1196,27 @@ function searchProviderApplicationApplicant() {
     providerApplicationFormErrors.value = {
       ...providerApplicationFormErrors.value,
       applicantPinfl: 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak',
+    }
+    return
+  }
+
+  if (pinfl === providerApplicationBlacklistedPinfl) {
+    resetProviderApplicationApplicantFields()
+    resetProviderApplicationAddressFields()
+    providerApplicationForm.value.tin = ''
+    resetProviderApplicationBusinessFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      applicantPinfl: "Ushbu JSHSHIR qora ro'yxatda",
+    }
+    return
+  }
+
+  if (pinfl !== providerApplicationWhitelistedPinfl) {
+    resetProviderApplicationApplicantFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      applicantPinfl: 'Ushbu JSHSHIR bo‘yicha ma’lumot topilmadi',
     }
     return
   }
@@ -490,6 +1246,24 @@ function searchProviderApplicationBusiness() {
     providerApplicationFormErrors.value = {
       ...providerApplicationFormErrors.value,
       tin: 'STIR 9 ta raqamdan iborat bo‘lishi kerak',
+    }
+    return
+  }
+
+  if (tin === providerApplicationBlacklistedTin) {
+    resetProviderApplicationBusinessFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      tin: "Ushbu STIR qora ro'yxatda",
+    }
+    return
+  }
+
+  if (tin !== providerApplicationWhitelistedTin) {
+    resetProviderApplicationBusinessFields()
+    providerApplicationFormErrors.value = {
+      ...providerApplicationFormErrors.value,
+      tin: 'Ushbu STIR bo‘yicha ma’lumot topilmadi',
     }
     return
   }
@@ -535,6 +1309,18 @@ function validateProviderApplicationForm() {
     errors.applicantPinfl = 'JSHSHIR 14 ta raqamdan iborat bo‘lishi kerak'
   }
 
+  if (/^\d{14}$/.test(form.applicantPinfl) && form.applicantPinfl === providerApplicationBlacklistedPinfl) {
+    errors.applicantPinfl = "Ushbu JSHSHIR qora ro'yxatda"
+  }
+
+  if (
+    /^\d{14}$/.test(form.applicantPinfl)
+    && form.applicantPinfl !== providerApplicationWhitelistedPinfl
+    && form.applicantPinfl !== providerApplicationBlacklistedPinfl
+  ) {
+    errors.applicantPinfl = 'Ushbu JSHSHIR bo‘yicha ma’lumot topilmadi'
+  }
+
   if (!form.applicantAddressRegion.trim()) {
     errors.applicantAddressRegion = 'Hududni kiriting'
   }
@@ -553,6 +1339,18 @@ function validateProviderApplicationForm() {
 
   if (!/^\d{9}$/.test(form.tin)) {
     errors.tin = 'STIR 9 ta raqamdan iborat bo‘lishi kerak'
+  }
+
+  if (/^\d{9}$/.test(form.tin) && form.tin === providerApplicationBlacklistedTin) {
+    errors.tin = "Ushbu STIR qora ro'yxatda"
+  }
+
+  if (
+    /^\d{9}$/.test(form.tin)
+    && form.tin !== providerApplicationWhitelistedTin
+    && form.tin !== providerApplicationBlacklistedTin
+  ) {
+    errors.tin = 'Ushbu STIR bo‘yicha ma’lumot topilmadi'
   }
 
   if (!form.organizationName.trim()) {
@@ -638,52 +1436,390 @@ function submitProviderApplicationForm() {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('uz-UZ', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date(value))
+  const date = new Date(`${value}T00:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+
+  return `${day}.${month}.${year}`
+}
+
+function parseProviderApplicationFilterDate(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value
+  }
+
+  const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value)
+
+  if (!match) {
+    return ''
+  }
+
+  const [, day, month, year] = match
+  const isoDate = `${year}-${month}-${day}`
+  const date = new Date(`${isoDate}T00:00:00`)
+
+  if (
+    Number.isNaN(date.getTime())
+    || date.getFullYear() !== Number(year)
+    || date.getMonth() + 1 !== Number(month)
+    || date.getDate() !== Number(day)
+  ) {
+    return ''
+  }
+
+  return isoDate
+}
+
+function isDateWithinRange(value: string, startDate: string, endDate: string) {
+  const normalizedStartDate = parseProviderApplicationFilterDate(startDate)
+  const normalizedEndDate = parseProviderApplicationFilterDate(endDate)
+
+  if (normalizedStartDate && value < normalizedStartDate) {
+    return false
+  }
+
+  if (normalizedEndDate && value > normalizedEndDate) {
+    return false
+  }
+
+  return true
 }
 </script>
 
 <template>
   <PageContainer>
     <SectionBlock
+      v-if="isProvidersApplicationsReportPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible p-5"
+      title=""
+      description=""
+    >
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-xl border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex min-w-0 items-center gap-2">
+            <Button
+              v-if="selectedProviderApplicationReportRegion"
+              variant="outline"
+              class="h-10 gap-2"
+              @click="closeProviderApplicationReportRegion"
+            >
+              <ChevronLeft class="h-4 w-4" />
+              Ortga
+            </Button>
+            <span
+              v-if="selectedProviderApplicationReportRegion"
+              class="truncate text-sm font-medium text-muted-foreground"
+            >
+              {{ selectedProviderApplicationReportRegion }} tumanlari kesimi
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <FilterPopover
+              v-model:open="isProviderApplicationReportFilterOpen"
+              :active-count="activeProviderApplicationReportFilterCount"
+            >
+              <div class="flex flex-col gap-3">
+                <FilterDateInput
+                  v-model="draftProviderApplicationReportStartDate"
+                  label="Boshlanish sanasi"
+                />
+
+                <FilterDateInput
+                  v-model="draftProviderApplicationReportEndDate"
+                  label="Tugash sanasi"
+                />
+              </div>
+
+              <template #footer>
+                <div class="flex justify-end gap-2 border-t border-border pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="activeProviderApplicationReportFilterCount === 0 && !hasPendingProviderApplicationReportFilterChanges"
+                    @click="clearProviderApplicationReportFilters"
+                  >
+                    Tozalash
+                  </Button>
+                  <Button
+                    size="sm"
+                    @click="applyProviderApplicationReportFilters"
+                  >
+                    Qo'llash
+                  </Button>
+                </div>
+              </template>
+            </FilterPopover>
+
+            <Button
+              variant="outline"
+              class="h-10 gap-2"
+              :disabled="isExportingRecords"
+              @click="downloadProviderApplicationReportAsExcel"
+            >
+              <Download class="h-4 w-4" />
+              <span>{{ isExportingRecords ? 'Yuklanmoqda' : 'Yuklab olish' }}</span>
+            </Button>
+          </div>
+        </div>
+
+        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+          <div class="min-h-[22rem] flex-1 overflow-auto">
+            <table class="w-full min-w-[900px] border-separate border-spacing-0 text-sm">
+              <thead class="bg-muted/45 text-left text-muted-foreground">
+                <tr>
+                  <th
+                    rowspan="2"
+                    class="sticky left-0 top-0 z-50 h-24 w-72 min-w-72 max-w-72 border-b border-r border-border bg-muted px-4 py-0 text-xs font-semibold uppercase tracking-wide"
+                  >
+                    {{ providerApplicationReportFirstColumnLabel }}
+                  </th>
+                  <th
+                    rowspan="2"
+                    class="sticky top-0 z-40 h-24 min-w-28 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Barcha arizalar
+                  </th>
+                  <th
+                    :colspan="providerApplicationReportStatuses.length"
+                    class="sticky top-0 z-40 h-12 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide"
+                  >
+                    Bosqichlari bo'yicha
+                  </th>
+                </tr>
+                <tr>
+                  <th
+                    v-for="status in providerApplicationReportStatuses"
+                    :key="status"
+                    class="sticky top-12 z-40 h-12 min-w-36 border-b border-r border-border bg-muted px-4 py-0 text-center text-xs font-semibold uppercase tracking-wide last:border-r-0"
+                  >
+                    {{ status }}
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="row in providerApplicationReportDisplayRows"
+                  :key="`provider-report-${row.region}`"
+                  :class="[
+                    'transition-colors duration-200 ease-out hover:bg-muted/25',
+                    row.isTotal ? 'bg-muted/35' : '',
+                  ]"
+                >
+                  <td
+                    :class="[
+                      'sticky left-0 z-20 w-72 min-w-72 max-w-72 border-b border-r border-border px-4 py-3 font-medium text-foreground',
+                      row.isTotal ? 'bg-muted font-semibold' : 'bg-card',
+                    ]"
+                  >
+                    <button
+                      type="button"
+                      :disabled="row.isTotal || Boolean(selectedProviderApplicationReportRegion)"
+                      :class="[
+                        'inline-flex items-center text-left transition-colors duration-200 ease-out',
+                        !row.isTotal && !selectedProviderApplicationReportRegion
+                          ? 'cursor-pointer hover:text-primary focus-visible:outline-none focus-visible:text-primary'
+                          : 'cursor-default disabled:opacity-100',
+                      ]"
+                      @click="toggleProviderApplicationReportRegion(row)"
+                    >
+                      {{ row.region }}
+                    </button>
+                  </td>
+                  <td
+                    :class="[
+                      'select-none border-b border-r border-border px-4 py-3 text-center font-semibold tabular-nums text-foreground transition-colors duration-150 ease-out',
+                      getProviderApplicationReportCellClass(row.region, 'total', 'Barcha arizalar'),
+                    ]"
+                    @mousedown="handleProviderApplicationReportCellMouseDown($event, row.region, 'total', 'Barcha arizalar', row.total)"
+                    @mouseenter="handleProviderApplicationReportCellMouseEnter(row.region, 'total', 'Barcha arizalar', row.total)"
+                    @click="handleProviderApplicationReportCellClick($event, row.region, 'total', 'Barcha arizalar', row.total)"
+                  >
+                    {{ row.total }}
+                  </td>
+                  <td
+                    v-for="status in providerApplicationReportStatuses"
+                    :key="`${row.region}-${status}`"
+                    :class="[
+                      'select-none border-b border-r border-border px-4 py-3 text-center transition-colors duration-150 ease-out last:border-r-0',
+                      getProviderApplicationReportCellClass(row.region, 'status', status),
+                    ]"
+                    @mousedown="handleProviderApplicationReportCellMouseDown($event, row.region, 'status', status, row.statuses[status] ?? 0)"
+                    @mouseenter="handleProviderApplicationReportCellMouseEnter(row.region, 'status', status, row.statuses[status] ?? 0)"
+                    @click="handleProviderApplicationReportCellClick($event, row.region, 'status', status, row.statuses[status] ?? 0)"
+                  >
+                    <span :class="cn('inline-flex min-w-10 justify-center rounded-full border px-2.5 py-1 text-xs font-medium tabular-nums', getProviderApplicationReportStatusClasses(status))">
+                      {{ row.statuses[status] }}
+                    </span>
+                  </td>
+                </tr>
+                <tr v-if="providerApplicationReportDisplayRows.length === 1 && selectedProviderApplicationReportRegion">
+                  <td
+                    :colspan="providerApplicationReportStatuses.length + 2"
+                    class="border-b border-border px-4 py-12 text-center text-sm text-muted-foreground"
+                  >
+                    Ushbu hudud bo'yicha tuman ma'lumoti topilmadi.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border-t border-border bg-card px-3 py-2">
+            <div
+              v-if="providerApplicationReportSelectionAnalytics.count > 0"
+              class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Tanlangan:
+                  <strong class="font-semibold text-foreground">{{ providerApplicationReportSelectionAnalytics.count }} ta</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Jami:
+                  <strong class="font-semibold text-foreground">{{ providerApplicationReportSelectionAnalytics.sum }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Minimum:
+                  <strong class="font-semibold text-foreground">{{ providerApplicationReportSelectionAnalytics.min }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  Maksimum:
+                  <strong class="font-semibold text-foreground">{{ providerApplicationReportSelectionAnalytics.max }}</strong>
+                </span>
+                <span class="inline-flex h-8 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-sm text-muted-foreground">
+                  O'rtacha:
+                  <strong class="font-semibold text-foreground">{{ providerApplicationReportSelectionAnalytics.average.toFixed(1) }}</strong>
+                </span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                class="h-8 shrink-0"
+                @click="clearProviderApplicationReportCellSelection"
+              >
+                Tanlovni tozalash
+              </Button>
+            </div>
+
+            <p
+              v-else
+              class="text-sm text-muted-foreground"
+            >
+              Analitika uchun jadvaldagi raqamni bosing. Davom ettirish uchun Ctrl + click ishlating.
+            </p>
+          </div>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="!isProvidersApplicationsCreatePage"
       class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
       content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
       title=""
       description=""
     >
-      <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="relative w-full lg:max-w-sm">
-          <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            v-model="searchQuery"
-            placeholder="Qidirish"
-            class="pl-9"
-            @update:model-value="currentPage = 1"
-          />
+      <div class="flex min-h-[74px] flex-col gap-4 rounded-lg border border-border bg-card p-4">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              v-model="searchQuery"
+              placeholder="Qidirish"
+              class="pl-9"
+              @update:model-value="currentPage = 1"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <FilterPopover
+              v-if="usesProviderFilter"
+              v-model:open="isProviderApplicationsFilterOpen"
+              wrapper-class="order-1"
+              :active-count="activeProviderApplicationFilterCount"
+            >
+              <div class="flex flex-col gap-3">
+                <FilterSelect
+                  v-if="isProvidersConclusionsPage"
+                  v-model="draftProviderConclusionResult"
+                  label="Natija"
+                  :options="providerConclusionResultFilterOptions"
+                />
+
+                <FilterSelect
+                  v-model="draftProviderRegion"
+                  label="Hudud"
+                  :options="providerApplicationRegionFilterOptions"
+                />
+
+                <FilterSelect
+                  v-model="draftProviderDistrict"
+                  label="Tuman (shahar)"
+                  :options="providerApplicationDistrictFilterOptions"
+                  :disabled="providerApplicationDistrictFilterOptions.length === 0"
+                />
+
+                <FilterDateInput
+                  v-model="draftProviderApplicationsStartDate"
+                  label="Boshlanish sanasi"
+                />
+
+                <FilterDateInput
+                  v-model="draftProviderApplicationsEndDate"
+                  label="Tugash sanasi"
+                />
+              </div>
+
+              <template #footer>
+                <div class="flex justify-end gap-2 border-t border-border pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="activeProviderApplicationFilterCount === 0 && !hasPendingProviderApplicationFilterChanges"
+                    @click="clearProviderApplicationFilters"
+                  >
+                    Tozalash
+                  </Button>
+                  <Button
+                    size="sm"
+                    @click="applyProviderApplicationFilters"
+                  >
+                    Qo'llash
+                  </Button>
+                </div>
+              </template>
+            </FilterPopover>
+
+            <Button
+              v-if="isProvidersApplicationsPage"
+              class="order-3 h-10 gap-2"
+              @click="openCreateDialog"
+            >
+              <Plus class="h-4 w-4" />
+              <span>Yaratish</span>
+            </Button>
+            <Button
+              variant="outline"
+              class="order-2 h-10 gap-2"
+              :disabled="isExportingRecords || filteredRecords.length === 0"
+              @click="downloadRecordsAsExcel"
+            >
+              <Download class="h-4 w-4" />
+              <span>{{ isExportingRecords ? 'Yuklanmoqda' : 'Yuklab olish' }}</span>
+            </Button>
+          </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <Button
-            v-if="isProvidersApplicationsPage"
-            class="order-2 h-10 gap-2"
-            @click="openCreateDialog"
-          >
-            <Plus class="h-4 w-4" />
-            <span>Yaratish</span>
-          </Button>
-          <Button
-            variant="outline"
-            class="order-1 h-10 gap-2"
-            :disabled="isExportingRecords || filteredRecords.length === 0"
-            @click="downloadRecordsAsExcel"
-          >
-            <Download class="h-4 w-4" />
-            <span>{{ isExportingRecords ? 'Yuklanmoqda' : 'Yuklab olish' }}</span>
-          </Button>
-        </div>
       </div>
 
       <StatusTabs
@@ -1308,151 +2444,140 @@ function formatDate(value: string) {
       </div>
     </SectionBlock>
 
-    <div
-      v-if="isCreateProviderApplicationDialogOpen"
-      class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/45 p-4 dark:bg-black/60"
-      @click.self="closeCreateProviderApplicationDialog"
+    <SectionBlock
+      v-else
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible p-5"
+      title=""
+      description=""
     >
       <form
-        class="max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl"
+        class="flex w-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground"
         @submit.prevent="submitProviderApplicationForm"
       >
-        <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
+        <div class="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div class="min-w-0">
             <h2 class="text-lg font-semibold text-foreground">
               Xizmat ko‘rsatuvchi arizasini yaratish
             </h2>
-            <p class="mt-1 text-sm text-muted-foreground">
-              Ariza beruvchi JSHSHIR va tadbirkorlik subyekti STIR orqali aniqlanadi.
-            </p>
           </div>
-
-          <button
-            type="button"
-            class="rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Oynani yopish"
-            @click="closeCreateProviderApplicationDialog"
-          >
-            <X class="h-5 w-5" />
-          </button>
         </div>
 
-        <div class="max-h-[calc(92vh-9rem)] overflow-y-auto px-5 py-5 sm:px-6">
-          <div class="space-y-5">
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="space-y-2 md:col-span-2">
-                <span class="text-sm font-medium text-foreground">Hujjat raqami</span>
-                <Input
-                  :model-value="generateNextProviderApplicationId()"
-                  readonly
-                  :clearable="false"
-                  class="font-semibold"
-                />
-              </label>
+        <div class="space-y-6 px-5 py-5 sm:px-6">
+          <section class="space-y-4">
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Ariza beruvchi
+              </p>
             </div>
 
-            <section class="rounded-lg border border-border bg-background/60 p-4">
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-foreground">Ariza beruvchi ma'lumoti</h3>
-              </div>
+            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">JSHSHIR</span>
+                <Input
+                  :model-value="providerApplicationForm.applicantPinfl"
+                  inputmode="numeric"
+                  maxlength="14"
+                  autocomplete="off"
+                  placeholder="11111111111111"
+                  class="h-11"
+                  @update:model-value="updateProviderApplicationPinfl(String($event ?? ''))"
+                  @keydown.enter.prevent="searchProviderApplicationApplicant"
+                />
+              </label>
 
-              <div class="grid gap-4 lg:grid-cols-[10rem_1fr]">
-                <div class="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-3">
-                  <div class="flex h-32 w-28 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-                    <img
-                      v-if="providerApplicationForm.applicantPhoto"
-                      :src="providerApplicationForm.applicantPhoto"
-                      alt="Ariza beruvchi rasmi"
-                      class="h-full w-full object-cover"
-                    >
-                    <span
-                      v-else
-                      class="text-xs font-medium uppercase text-muted-foreground"
-                    >
-                      Rasm
-                    </span>
-                  </div>
+              <Button
+                type="button"
+                class="h-11 gap-2"
+                :disabled="providerApplicationForm.applicantPinfl.length !== 14"
+                @click="searchProviderApplicationApplicant"
+              >
+                <Search class="h-4 w-4" />
+                <span>Qidirish</span>
+              </Button>
+            </div>
+
+            <p
+              v-if="providerApplicationFormErrors.applicantPinfl"
+              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
+              {{ providerApplicationFormErrors.applicantPinfl }}
+            </p>
+            <p
+              v-if="providerApplicationFormErrors.applicantFullName"
+              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
+              {{ providerApplicationFormErrors.applicantFullName }}
+            </p>
+
+            <div
+              v-if="isProviderApplicationApplicantFound"
+              class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+            >
+              <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-3 py-4">
+                <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted">
+                  <img
+                    :src="providerApplicationForm.applicantPhoto"
+                    alt="Ariza beruvchi rasmi"
+                    class="h-full w-full object-cover"
+                  >
                 </div>
-
-                <div class="grid gap-4 md:grid-cols-2">
-                  <label class="space-y-2 md:col-span-2">
-                    <span class="text-sm font-medium text-foreground">JSHSHIR</span>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                      <Input
-                        :model-value="providerApplicationForm.applicantPinfl"
-                        inputmode="numeric"
-                        maxlength="14"
-                        placeholder="30401876543210"
-                        @update:model-value="updateProviderApplicationPinfl(String($event ?? ''))"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        class="gap-2 sm:w-32"
-                        :disabled="providerApplicationForm.applicantPinfl.length !== 14"
-                        @click="searchProviderApplicationApplicant"
-                      >
-                        <Search class="h-4 w-4" />
-                        <span>Qidirish</span>
-                      </Button>
-                    </div>
-                    <p
-                      v-if="providerApplicationFormErrors.applicantPinfl"
-                      class="text-xs text-destructive"
-                    >
-                      {{ providerApplicationFormErrors.applicantPinfl }}
-                    </p>
-                  </label>
-
-                  <label class="space-y-2 md:col-span-2">
-                    <span class="text-sm font-medium text-foreground">FIO</span>
-                    <Input
-                      v-model="providerApplicationForm.applicantFullName"
-                      readonly
-                      :clearable="false"
-                      placeholder="JSHSHIR orqali aniqlanadi"
-                    />
-                    <p
-                      v-if="providerApplicationFormErrors.applicantFullName"
-                      class="text-xs text-destructive"
-                    >
-                      {{ providerApplicationFormErrors.applicantFullName }}
-                    </p>
-                  </label>
-
-                  <label class="space-y-2">
-                    <span class="text-sm font-medium text-foreground">Tug‘ilgan sana</span>
-                    <Input
-                      v-model="providerApplicationForm.applicantBirthDate"
-                      readonly
-                      :clearable="false"
-                    />
-                  </label>
-
-                  <label class="space-y-2">
-                    <span class="text-sm font-medium text-foreground">Jinsi</span>
-                    <Input
-                      v-model="providerApplicationForm.applicantGender"
-                      readonly
-                      :clearable="false"
-                    />
-                  </label>
-                </div>
-              </div>
-            </section>
-
-            <section class="rounded-lg border border-border bg-background/60 p-4">
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-foreground">Manzil ma'lumoti</h3>
+                <p class="mt-2 text-center text-sm text-muted-foreground">
+                  Rasm
+                </p>
               </div>
 
-              <div class="grid gap-4 md:grid-cols-2">
+              <div class="overflow-hidden rounded-2xl border border-border bg-card">
+                <table class="w-full border-collapse text-sm">
+                  <tbody>
+                    <tr
+                      v-for="[label, value] in providerApplicationApplicantRows"
+                      :key="label"
+                      class="border-b border-border last:border-b-0"
+                    >
+                      <td class="w-44 bg-muted/40 px-4 py-3 font-medium text-muted-foreground">
+                        {{ label }}
+                      </td>
+                      <td class="px-4 py-3 font-medium text-foreground">
+                        {{ value }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section
+            v-if="isProviderApplicationApplicantFound"
+            class="space-y-4 border-t border-border pt-5"
+          >
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Manzil ma'lumoti
+              </p>
+            </div>
+
+            <div class="rounded-xl border border-border/70 bg-card p-4">
+              <div class="grid gap-4 md:grid-cols-3">
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">Hudud</span>
-                  <Input
-                    v-model="providerApplicationForm.applicantAddressRegion"
-                    placeholder="Masalan: Toshkent shahri"
-                  />
+                  <select
+                    :value="providerApplicationForm.applicantAddressRegion"
+                    class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out focus-visible:ring-2 focus-visible:ring-ring"
+                    @change="updateProviderApplicationAddressRegion(getEventValue($event))"
+                  >
+                    <option value="">
+                      Tanlang
+                    </option>
+                    <option
+                      v-for="region in providerApplicationRegionOptions"
+                      :key="region"
+                      :value="region"
+                    >
+                      {{ region }}
+                    </option>
+                  </select>
                   <p
                     v-if="providerApplicationFormErrors.applicantAddressRegion"
                     class="text-xs text-destructive"
@@ -1463,10 +2588,23 @@ function formatDate(value: string) {
 
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">Tuman (shahar)</span>
-                  <Input
-                    v-model="providerApplicationForm.applicantAddressDistrict"
-                    placeholder="Masalan: Yunusobod"
-                  />
+                  <select
+                    :value="providerApplicationForm.applicantAddressDistrict"
+                    :disabled="!providerApplicationForm.applicantAddressRegion"
+                    class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-ring"
+                    @change="updateProviderApplicationAddressDistrict(getEventValue($event))"
+                  >
+                    <option value="">
+                      Tanlang
+                    </option>
+                    <option
+                      v-for="district in providerApplicationDistrictOptions"
+                      :key="district"
+                      :value="district"
+                    >
+                      {{ district }}
+                    </option>
+                  </select>
                   <p
                     v-if="providerApplicationFormErrors.applicantAddressDistrict"
                     class="text-xs text-destructive"
@@ -1477,10 +2615,23 @@ function formatDate(value: string) {
 
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">MFY</span>
-                  <Input
-                    v-model="providerApplicationForm.applicantAddressMahalla"
-                    placeholder="Masalan: Bog‘ishamol MFY"
-                  />
+                  <select
+                    :value="providerApplicationForm.applicantAddressMahalla"
+                    :disabled="!providerApplicationForm.applicantAddressDistrict"
+                    class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-ring"
+                    @change="updateProviderApplicationAddressMahalla(getEventValue($event))"
+                  >
+                    <option value="">
+                      Tanlang
+                    </option>
+                    <option
+                      v-for="mahalla in providerApplicationMahallaOptions"
+                      :key="mahalla"
+                      :value="mahalla"
+                    >
+                      {{ mahalla }}
+                    </option>
+                  </select>
                   <p
                     v-if="providerApplicationFormErrors.applicantAddressMahalla"
                     class="text-xs text-destructive"
@@ -1489,11 +2640,12 @@ function formatDate(value: string) {
                   </p>
                 </label>
 
-                <label class="space-y-2">
+                <label class="space-y-2 md:col-span-3">
                   <span class="text-sm font-medium text-foreground">To‘liq manzil</span>
                   <Input
                     v-model="providerApplicationForm.applicantAddressFull"
                     placeholder="Ko‘cha, uy yoki mo‘ljal"
+                    class="h-10"
                   />
                   <p
                     v-if="providerApplicationFormErrors.applicantAddressFull"
@@ -1503,166 +2655,88 @@ function formatDate(value: string) {
                   </p>
                 </label>
               </div>
-            </section>
+            </div>
+          </section>
 
-            <section class="rounded-lg border border-border bg-background/60 p-4">
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-foreground">Tadbirkorlik subyekti ma'lumoti</h3>
-              </div>
+          <section
+            v-if="isProviderApplicationApplicantFound && isProviderApplicationAddressComplete"
+            class="space-y-4 border-t border-border pt-5"
+          >
+            <div>
+              <p class="text-base font-semibold text-foreground">
+                Tadbirkorlik subyekti
+              </p>
+            </div>
 
-              <div class="grid gap-4 md:grid-cols-2">
-                <label class="space-y-2 md:col-span-2">
-                  <span class="text-sm font-medium text-foreground">STIR</span>
-                  <div class="flex flex-col gap-2 sm:flex-row">
-                    <Input
-                      :model-value="providerApplicationForm.tin"
-                      inputmode="numeric"
-                      maxlength="9"
-                      placeholder="309845672"
-                      @update:model-value="updateProviderApplicationTin(String($event ?? ''))"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      class="gap-2 sm:w-32"
-                      :disabled="providerApplicationForm.tin.length !== 9"
-                      @click="searchProviderApplicationBusiness"
-                    >
-                      <Search class="h-4 w-4" />
-                      <span>Qidirish</span>
-                    </Button>
-                  </div>
-                  <p
-                    v-if="providerApplicationFormErrors.tin"
-                    class="text-xs text-destructive"
+            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+              <label class="space-y-2">
+                <span class="text-sm font-medium text-foreground">STIR</span>
+                <Input
+                  :model-value="providerApplicationForm.tin"
+                  inputmode="numeric"
+                  maxlength="9"
+                  autocomplete="off"
+                  placeholder="111111111"
+                  class="h-11"
+                  @update:model-value="updateProviderApplicationTin(String($event ?? ''))"
+                  @keydown.enter.prevent="searchProviderApplicationBusiness"
+                />
+              </label>
+
+              <Button
+                type="button"
+                class="h-11 gap-2"
+                :disabled="providerApplicationForm.tin.length !== 9"
+                @click="searchProviderApplicationBusiness"
+              >
+                <Search class="h-4 w-4" />
+                <span>Qidirish</span>
+              </Button>
+            </div>
+
+            <p
+              v-if="providerApplicationFormErrors.tin"
+              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
+              {{ providerApplicationFormErrors.tin }}
+            </p>
+            <p
+              v-if="providerApplicationFormErrors.organizationName"
+              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
+              {{ providerApplicationFormErrors.organizationName }}
+            </p>
+
+            <div
+              v-if="isProviderApplicationBusinessFound"
+              class="overflow-hidden rounded-2xl border border-border bg-card"
+            >
+              <table class="w-full border-collapse text-sm">
+                <tbody>
+                  <tr
+                    v-for="row in providerApplicationBusinessRows"
+                    :key="row.label"
+                    class="border-b border-border last:border-b-0"
                   >
-                    {{ providerApplicationFormErrors.tin }}
-                  </p>
-                </label>
-
-                <label class="space-y-2 md:col-span-2">
-                  <span class="text-sm font-medium text-foreground">Tadbirkorlik subyekti nomi</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationName"
-                    readonly
-                    :clearable="false"
-                    placeholder="STIR orqali aniqlanadi"
-                  />
-                  <p
-                    v-if="providerApplicationFormErrors.organizationName"
-                    class="text-xs text-destructive"
-                  >
-                    {{ providerApplicationFormErrors.organizationName }}
-                  </p>
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Direktori</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationDirector"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Ro‘yxatdan o‘tkazilgan sanasi</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationRegisteredAt"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Faoliyat turi</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationActivityType"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Holati</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationStatus"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Hudud</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationRegion"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Tuman (shahar)</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationDistrict"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">MFY</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationMahalla"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Manzil</span>
-                  <Input
-                    v-model="providerApplicationForm.organizationAddress"
-                    readonly
-                    :clearable="false"
-                  />
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Ariza sanasi</span>
-                  <Input
-                    v-model="providerApplicationForm.submittedAt"
-                    type="date"
-                    :clearable="false"
-                  />
-                  <p
-                    v-if="providerApplicationFormErrors.submittedAt"
-                    class="text-xs text-destructive"
-                  >
-                    {{ providerApplicationFormErrors.submittedAt }}
-                  </p>
-                </label>
-
-                <label class="space-y-2">
-                  <span class="text-sm font-medium text-foreground">Mas'ul</span>
-                  <Input
-                    v-model="providerApplicationForm.owner"
-                    placeholder="Masalan: Ishchi guruh"
-                  />
-                </label>
-
-                <label class="space-y-2 md:col-span-2">
-                  <span class="text-sm font-medium text-foreground">Izoh</span>
-                  <textarea
-                    v-model="providerApplicationForm.summary"
-                    rows="3"
-                    class="min-h-20 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors duration-200 ease-out placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="Ariza bo‘yicha qisqa izoh"
-                  />
-                </label>
-              </div>
-            </section>
-          </div>
+                    <td class="w-64 bg-muted/40 px-4 py-3 font-medium text-muted-foreground">
+                      {{ row.label }}
+                    </td>
+                    <td class="px-4 py-3 font-medium text-foreground">
+                      <span
+                        v-if="row.kind === 'status'"
+                        :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold', getProviderApplicationStatusClasses(row.value))"
+                      >
+                        {{ row.value }}
+                      </span>
+                      <span v-else>
+                        {{ row.value }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
         </div>
 
         <div class="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
@@ -1673,11 +2747,14 @@ function formatDate(value: string) {
           >
             Bekor qilish
           </Button>
-          <Button type="submit">
+          <Button
+            type="submit"
+            :disabled="!isProviderApplicationReadyToSave"
+          >
             Saqlash
           </Button>
         </div>
       </form>
-    </div>
+    </SectionBlock>
   </PageContainer>
 </template>

@@ -138,6 +138,7 @@ const translationKeys: Record<string, string> = {
   'Xizmat olayotganlar': 'nav.activeServices',
   "Xizmat ko'rsatish": 'nav.serviceDelivery',
   "Xizmat ko'rsatuvchilar": 'nav.providers',
+  "Xizmat ko'rsatuvchilar arizalari": 'page.ei.providersApplicationsReport',
   'Xulosalar': 'nav.conclusions',
   'Xizmati tugatilganlar': 'nav.terminatedServices',
   'Yaratish': 'action.create',
@@ -790,6 +791,11 @@ const translations: Record<string, TranslationMap> = {
     en: 'Provider applications',
     ru: 'Заявления поставщиков услуг',
     i18n: 'page.ei.providersApplications',
+  },
+  'page.ei.providersApplicationsReport': {
+    en: 'Provider applications report',
+    ru: 'Provider applications report',
+    i18n: 'page.ei.providersApplicationsReport',
   },
   'page.ei.providersConclusions': {
     en: 'Provider conclusions',

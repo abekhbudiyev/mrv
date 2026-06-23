@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, ref, useAttrs } from 'vue'
 import { X } from 'lucide-vue-next'
 import { cn } from '@/shared/lib/utils'
 
@@ -29,6 +29,7 @@ const props = withDefaults(defineProps<InputProps>(), {
   class: '',
 })
 const attrs = useAttrs()
+const inputElement = ref<HTMLInputElement | null>(null)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -53,11 +54,20 @@ const classes = computed(() =>
 function clearInput() {
   emit('update:modelValue', '')
 }
+
+function focus() {
+  inputElement.value?.focus()
+}
+
+defineExpose({
+  focus,
+})
 </script>
 
 <template>
   <div class="relative w-full">
     <input
+      ref="inputElement"
       v-bind="attrs"
       :value="modelValue"
       :type="type"

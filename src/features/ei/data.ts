@@ -229,6 +229,7 @@ export const eiRecordsByPageKey: Record<string, EiRecord[]> = {
     {
       id: 'EA-REG-2026-0007',
       title: 'Yuksalish Bolalar Markazi',
+      tin: '301582746',
       applicant: {
         fullName: 'Saidova Malika Olimovna',
         pinfl: '40804876543213',
@@ -256,6 +257,7 @@ export const eiRecordsByPageKey: Record<string, EiRecord[]> = {
     {
       id: 'EA-REG-2026-0005',
       title: 'Imkon Terapiya NNT',
+      tin: '305914628',
       applicant: {
         fullName: 'Tursunov Elyor Akmal o‘g‘li',
         pinfl: '30705876543214',

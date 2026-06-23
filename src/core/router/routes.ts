@@ -516,6 +516,22 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/ei/providers/applications/create',
+        sensitive: true,
+        name: 'ei-providers-applications-create',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-applications-create',
+        },
+        meta: {
+          title: 'Yangi ariza',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Arizalar', 'Yangi ariza'],
+        },
+      },
+      {
         path: 'apps/ei/providers/applications',
         sensitive: true,
         name: 'ei-providers-applications',
@@ -708,6 +724,22 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/ei/reports/providers-applications',
+        sensitive: true,
+        name: 'ei-reports-providers-applications',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-applications-report',
+        },
+        meta: {
+          title: "Xizmat ko'rsatuvchilar arizalari",
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Hisobotlar', "Xizmat ko'rsatuvchilar arizalari"],
+        },
+      },
+      {
         path: 'apps/ei/entrepreneurs/applications',
         redirect: '/apps/ei/providers/applications',
       },
@@ -742,6 +774,10 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'apps/EI/providers/applications',
         redirect: '/apps/ei/providers/applications',
+      },
+      {
+        path: 'apps/EI/providers/applications/create',
+        redirect: '/apps/ei/providers/applications/create',
       },
       {
         path: 'apps/EI/providers/conclusions',
@@ -786,6 +822,10 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'apps/EI/finance/payments',
         redirect: '/apps/ei/finance/payments',
+      },
+      {
+        path: 'apps/EI/reports/providers-applications',
+        redirect: '/apps/ei/reports/providers-applications',
       },
       {
         path: 'apps/EI/entrepreneurs/applications',

@@ -1,5 +1,6 @@
 import {
   Baby,
+  BarChart3,
   CreditCard,
   FileCheck2,
   FileText,
@@ -108,6 +109,13 @@ export const eiPages: MuruvvatPageDefinition[] = [
     route: '/apps/ei/finance/payments',
     breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "Subsidiyalar / To'lovlar"],
   },
+  {
+    key: 'providers-applications-report',
+    title: "Xizmat ko'rsatuvchilar arizalari",
+    description: "Xizmat ko'rsatuvchilar arizalarining hudud va bosqichlar bo'yicha kesimi.",
+    route: '/apps/ei/reports/providers-applications',
+    breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Hisobotlar', "Xizmat ko'rsatuvchilar arizalari"],
+  },
 ]
 
 export const eiMenu: MuruvvatMenuItem[] = [
@@ -214,6 +222,19 @@ export const eiMenu: MuruvvatMenuItem[] = [
         title: "Subsidiyalar / To'lovlar",
         route: '/apps/ei/finance/payments',
         icon: CreditCard,
+      },
+    ],
+  },
+  {
+    id: 'reports',
+    title: 'Hisobotlar',
+    icon: BarChart3,
+    children: [
+      {
+        id: 'providers-applications-report',
+        title: "Xizmat ko'rsatuvchilar arizalari",
+        route: '/apps/ei/reports/providers-applications',
+        icon: BarChart3,
       },
     ],
   },
