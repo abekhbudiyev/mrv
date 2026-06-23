@@ -229,6 +229,7 @@ export const eiRecordsByPageKey: Record<string, EiRecord[]> = {
     {
       id: 'EA-REG-2026-0007',
       title: 'Yuksalish Bolalar Markazi',
+      tin: '301582746',
       applicant: {
         fullName: 'Saidova Malika Olimovna',
         pinfl: '40804876543213',
@@ -256,6 +257,7 @@ export const eiRecordsByPageKey: Record<string, EiRecord[]> = {
     {
       id: 'EA-REG-2026-0005',
       title: 'Imkon Terapiya NNT',
+      tin: '305914628',
       applicant: {
         fullName: 'Tursunov Elyor Akmal o‘g‘li',
         pinfl: '30705876543214',
@@ -695,7 +697,13 @@ function buildSupplementalRecordId(pageKey: string, records: EiRecord[], index: 
     return fallbackId
   }
 
-  const [, idPrefix, templateSequence] = templateMatch
+  const idPrefix = templateMatch[1]
+  const templateSequence = templateMatch[2]
+
+  if (!idPrefix || !templateSequence) {
+    return fallbackId
+  }
+
   const sequenceWidth = templateSequence.length
   const maxExistingSequence = records.reduce((maxSequence, record) => {
     const recordMatch = record.id.match(/^(.*-)(\d+)$/)
