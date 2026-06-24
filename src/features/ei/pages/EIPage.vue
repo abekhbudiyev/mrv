@@ -199,6 +199,12 @@ const isProviderApplicationsFilterOpen = ref(false)
 const isProviderApplicationReportFilterOpen = ref(false)
 const openActionMenuId = ref<string | null>(null)
 const isExportingRecords = ref(false)
+const childApplicationStatusOverrides = ref<Record<string, {
+  status: string
+  tone: EiRecord['tone']
+  nextAction: string
+  historyLabel: string
+}>>({})
 const selectedProviderApplicationReportRegion = ref('')
 const selectedProviderApplicationReportCells = ref<Record<string, {
   label: string
@@ -383,11 +389,17 @@ const isProvidersApplicationsReportPage = computed(() => props.pageKey === 'prov
 const isProvidersApplicationsCreatePage = computed(() => props.pageKey === 'providers-applications-create')
 const isProvidersConclusionsPage = computed(() => props.pageKey === 'providers-conclusions')
 const isProvidersRegistryPage = computed(() => props.pageKey === 'providers-registry')
+const isChildrenApplicationsPage = computed(() => props.pageKey === 'children-questionnaires')
+const isChildrenVouchersPage = computed(() => props.pageKey === 'children-vouchers')
+const isChildrenOrdersPage = computed(() => props.pageKey === 'children-orders')
 const usesProviderFilter = computed(() => (
   isProvidersApplicationsPage.value || isProvidersConclusionsPage.value || isProvidersRegistryPage.value
 ))
 const usesProviderApplicationsTable = computed(() => (
   isProvidersApplicationsPage.value || isProvidersConclusionsPage.value || isProvidersRegistryPage.value
+))
+const usesChildrenApplicationsTable = computed(() => (
+  isChildrenApplicationsPage.value || isChildrenVouchersPage.value || isChildrenOrdersPage.value
 ))
 const pageRecords = computed(() => {
   if (props.pageKey === 'dashboard') {
@@ -398,6 +410,30 @@ const pageRecords = computed(() => {
 
   if (props.pageKey === 'providers-applications') {
     return [...providerApplicationDrafts.value, ...records]
+  }
+
+  if (props.pageKey === 'children-questionnaires' || props.pageKey === 'children-vouchers') {
+    return records.map((record) => {
+      const override = childApplicationStatusOverrides.value[record.id]
+
+      if (!override) {
+        return record
+      }
+
+      return {
+        ...record,
+        status: override.status,
+        tone: override.tone,
+        nextAction: override.nextAction,
+        history: [
+          {
+            label: override.historyLabel,
+            date: formatDate(toInputDate()),
+          },
+          ...record.history,
+        ],
+      }
+    })
   }
 
   return records
@@ -956,6 +992,42 @@ function getApplicantPinfl(record: EiRecord) {
   return record.applicant?.pinfl ?? '-'
 }
 
+function getMetadataValue(record: EiRecord, label: string) {
+  return record.metadata.find((item) => item.label === label)?.value ?? ''
+}
+
+function getChildServiceUserName(record: EiRecord) {
+  return getMetadataValue(record, 'Xizmatdan foydalanuvchi FIO')
+    ? formatName(getMetadataValue(record, 'Xizmatdan foydalanuvchi FIO'))
+    : record.title
+      ? formatName(record.title)
+      : '-'
+}
+
+function getChildServiceUserPinfl(record: EiRecord) {
+  return getMetadataValue(record, 'Xizmatdan foydalanuvchi JSHSHIR') || '-'
+}
+
+function getChildApplicationApplicantName(record: EiRecord) {
+  return getMetadataValue(record, 'Ariza beruvchi FIO')
+    ? formatName(getMetadataValue(record, 'Ariza beruvchi FIO'))
+    : getApplicantName(record)
+}
+
+function getChildApplicationApplicantPinfl(record: EiRecord) {
+  return getMetadataValue(record, 'Ariza beruvchi JSHSHIR') || getApplicantPinfl(record)
+}
+
+function getChildApplicationProviderName(record: EiRecord) {
+  return getMetadataValue(record, 'Tadbirkor')
+    ? formatName(getMetadataValue(record, 'Tadbirkor'))
+    : '-'
+}
+
+function getChildApplicationProviderInn(record: EiRecord) {
+  return getMetadataValue(record, 'INN') || record.tin || '-'
+}
+
 function getConclusionResult(record: EiRecord) {
   return record.result ?? record.metadata.find((item) => item.label === 'Xulosa turi')?.value ?? '-'
 }
@@ -980,6 +1052,63 @@ function canEditAndSendConclusion(record: EiRecord) {
 
 function canReviewConclusion(record: EiRecord) {
   return isProvidersConclusionsPage.value && record.status === 'Yuborilgan'
+}
+
+function canRunChildApplicationDecision(record: EiRecord) {
+  return isChildrenApplicationsPage.value && record.status === 'Yangi'
+}
+
+function canCreateChildVoucherOrder(record: EiRecord) {
+  return isChildrenVouchersPage.value && record.status === 'Faol'
+}
+
+function updateChildApplicationStatus(
+  record: EiRecord,
+  status: string,
+  tone: EiRecord['tone'],
+  nextAction: string,
+  historyLabel: string,
+) {
+  childApplicationStatusOverrides.value = {
+    ...childApplicationStatusOverrides.value,
+    [record.id]: {
+      status,
+      tone,
+      nextAction,
+      historyLabel,
+    },
+  }
+  closeActionMenu()
+}
+
+function createChildApplicationVoucher(record: EiRecord) {
+  updateChildApplicationStatus(
+    record,
+    'Vaucher yaratilgan',
+    'success',
+    'Vaucher asosida xizmat ko‘rsatuvchini tanlash',
+    'Vaucher shakllantirildi',
+  )
+}
+
+function rejectChildApplication(record: EiRecord) {
+  updateChildApplicationStatus(
+    record,
+    'Rad etilgan',
+    'danger',
+    'Rad etish sababini xabarnoma qilish',
+    'Ariza rad etildi',
+  )
+}
+
+function createChildVoucherOrder(record: EiRecord) {
+  updateChildApplicationStatus(
+    record,
+    'Foydalanilgan',
+    'neutral',
+    'Buyurtmani xizmat ko‘rsatuvchiga yuborish',
+    'Buyurtma shakllantirildi',
+  )
 }
 
 function getProviderExportRows() {
@@ -1865,7 +1994,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
               >
                 <CardContent class="space-y-4 p-4">
                   <div
-                    v-if="usesProviderApplicationsTable"
+                    v-if="usesProviderApplicationsTable || usesChildrenApplicationsTable"
                     class="space-y-4"
                   >
                     <div class="flex items-start justify-between gap-3">
@@ -1887,6 +2016,57 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                     </div>
 
                     <div class="grid gap-3 text-sm">
+                      <template v-if="usesChildrenApplicationsTable">
+                        <div>
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Xizmatdan foydalanuvchi
+                          </p>
+                          <p class="mt-1 font-medium text-foreground">
+                            {{ getChildServiceUserName(record) }}
+                          </p>
+                          <p class="mt-1 text-muted-foreground">
+                            JSHSHIR: {{ getChildServiceUserPinfl(record) }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Ariza beruvchi
+                          </p>
+                          <p class="mt-1 font-medium text-foreground">
+                            {{ getChildApplicationApplicantName(record) }}
+                          </p>
+                          <p class="mt-1 text-muted-foreground">
+                            JSHSHIR: {{ getChildApplicationApplicantPinfl(record) }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Tadbirkor
+                          </p>
+                          <p class="mt-1 font-medium text-foreground">
+                            {{ getChildApplicationProviderName(record) }}
+                          </p>
+                          <p class="mt-1 text-muted-foreground">
+                            INN: {{ getChildApplicationProviderInn(record) }}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Manzil
+                          </p>
+                          <p class="mt-1 font-medium text-foreground">
+                            {{ record.region }}
+                          </p>
+                          <p class="mt-1 text-muted-foreground">
+                            {{ record.district }}
+                          </p>
+                        </div>
+                      </template>
+
+                      <template v-else>
                       <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                           Ariza beruvchi
@@ -1931,6 +2111,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                           {{ getConclusionResult(record) }}
                         </span>
                       </div>
+                      </template>
                     </div>
                   </div>
 
@@ -2188,6 +2369,168 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                           >
                             <Check class="h-4 w-4 shrink-0" />
                             <span>Qabul qilish</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuRoot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table
+              v-else-if="usesChildrenApplicationsTable"
+              class="min-w-[1320px] border-separate border-spacing-0 text-sm xl:min-w-full"
+            >
+              <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
+                <tr>
+                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Hujjat
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Xizmatdan foydalanuvchi
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Ariza beruvchi
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Tadbirkor
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Manzil
+                  </th>
+                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Holat
+                  </th>
+                  <th class="w-24 rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                    Amallar
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="paginatedRecords.length === 0">
+                  <td
+                    colspan="7"
+                    class="border-b border-border px-4 py-12 text-center"
+                  >
+                    <div class="mx-auto flex max-w-md flex-col items-center gap-2">
+                      <p class="text-sm font-medium text-foreground">
+                        Ma'lumot topilmadi
+                      </p>
+                      <p class="text-sm text-muted-foreground">
+                        Qidiruv yoki status filteriga mos yozuv topilmadi.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="mt-2"
+                        @click="clearSearchAndFilters"
+                      >
+                        Tozalash
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="record in paginatedRecords"
+                  :key="record.id"
+                  class="transition-colors duration-200 ease-out hover:bg-muted/30"
+                >
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ record.id }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ formatDate(record.submittedAt) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ getChildServiceUserName(record) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      JSHSHIR: {{ getChildServiceUserPinfl(record) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ getChildApplicationApplicantName(record) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      JSHSHIR: {{ getChildApplicationApplicantPinfl(record) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ getChildApplicationProviderName(record) }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      INN: {{ getChildApplicationProviderInn(record) }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <div class="font-medium text-foreground">
+                      {{ record.region }}
+                    </div>
+                    <div class="mt-1 text-muted-foreground">
+                      {{ record.district }}
+                    </div>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[record.tone])">
+                      {{ record.status }}
+                    </span>
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <DropdownMenuRoot @update:open="setActionMenuOpen(record.id, $event)">
+                      <DropdownMenuTrigger as-child>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                        >
+                          <Ellipsis class="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          :side-offset="6"
+                          :collision-padding="12"
+                          class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                        >
+                          <DropdownMenuItem
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="closeActionMenu"
+                          >
+                            <Eye class="h-4 w-4 shrink-0" />
+                            <span>Ko'rish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canCreateChildVoucherOrder(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="createChildVoucherOrder(record)"
+                          >
+                            <Send class="h-4 w-4 shrink-0" />
+                            <span>Buyurtma shakllantirish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canRunChildApplicationDecision(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                            @select.prevent="createChildApplicationVoucher(record)"
+                          >
+                            <Send class="h-4 w-4 shrink-0" />
+                            <span>Vaucher shakllantirish</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            v-if="canRunChildApplicationDecision(record)"
+                            class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm text-destructive outline-none hover:bg-destructive/10"
+                            @select.prevent="rejectChildApplication(record)"
+                          >
+                            <RotateCcw class="h-4 w-4 shrink-0" />
+                            <span>Rad etish</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenuPortal>
