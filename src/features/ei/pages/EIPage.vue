@@ -1059,7 +1059,7 @@ function canRunChildApplicationDecision(record: EiRecord) {
 }
 
 function canCreateChildVoucherOrder(record: EiRecord) {
-  return isChildrenVouchersPage.value && record.status === 'Faol'
+  return isChildrenVouchersPage.value && record.status === 'Qabul qilingan'
 }
 
 function updateChildApplicationStatus(
