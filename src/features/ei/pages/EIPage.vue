@@ -7,8 +7,8 @@ const providerApplicationDrafts = moduleRef<EiDraftRecord[]>([])
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
+import { CalendarDays, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,6 +42,7 @@ const props = withDefaults(defineProps<{
   pageKey: 'dashboard',
 })
 const router = useRouter()
+const route = useRoute()
 
 const rowsPerPageOptions = [20, 50, 100, 200, 500]
 const editableConclusionStatuses = ['Yangi', 'Tahrirlangan', 'Qaytarilgan']
@@ -175,6 +176,328 @@ const providerApplicationBusinessesByTin: Record<string, ProviderApplicationBusi
     address: 'Istiqlol ko‘chasi, 24-uy',
   },
 }
+const attendanceRecords: AttendanceRecord[] = [
+  {
+    id: 'EA-ATT-2026-0001',
+    date: '2026-06-02',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    provider: 'MEHRLI QADAM MCHJ',
+    tin: '309845672',
+    childName: 'Karimova Madina Dilshod qizi',
+    childPinfl: '51302876543212',
+    applicantName: 'Karimov Dilshod Bahrom ogli',
+    applicantPinfl: '41302876543213',
+    plannedTime: '09:00-11:00',
+    arrivedAt: '09:03',
+    leftAt: '11:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0002',
+    date: '2026-06-02',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    provider: 'MEHRLI QADAM MCHJ',
+    tin: '309845672',
+    childName: 'Nazarov Diyorbek Dilshod ogli',
+    childPinfl: '51403876543214',
+    applicantName: 'Nazarova Shahnoza Ilhomovna',
+    applicantPinfl: '41403876543215',
+    plannedTime: '11:30-13:30',
+    arrivedAt: '',
+    leftAt: '',
+    hours: 0,
+    status: 'Kelmadi',
+    calculationStatus: 'Hisoblanmaydi',
+    biometricStatus: 'Qayd etilmadi',
+    geoStatus: 'Qayd etilmadi',
+  },
+  {
+    id: 'EA-ATT-2026-0003',
+    date: '2026-06-05',
+    region: 'Samarqand',
+    district: 'Samarqand shahri',
+    provider: 'KELAJAK REABILITATSIYA NNT',
+    tin: '302471895',
+    childName: 'Saidova Muslima Akmal qizi',
+    childPinfl: '51504876543216',
+    applicantName: 'Saidov Akmal Olimovich',
+    applicantPinfl: '41504876543217',
+    plannedTime: '10:00-12:00',
+    arrivedAt: '10:18',
+    leftAt: '12:05',
+    hours: 2,
+    status: 'Kechikdi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0004',
+    date: '2026-06-05',
+    region: 'Samarqand',
+    district: 'Samarqand shahri',
+    provider: 'KELAJAK REABILITATSIYA NNT',
+    tin: '302471895',
+    childName: 'Raxmonov Azizbek Jamshid ogli',
+    childPinfl: '51605876543218',
+    applicantName: 'Raxmonova Mohira Jamshidovna',
+    applicantPinfl: '41605876543219',
+    plannedTime: '14:00-16:00',
+    arrivedAt: '14:01',
+    leftAt: '16:10',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Limitdan tashqari',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0005',
+    date: '2026-06-11',
+    region: 'Farg‘ona',
+    district: 'Qo‘qon',
+    provider: 'BOLAJON TERAPIYA MARKAZI',
+    tin: '614923780',
+    childName: 'Tursunova Maftuna Ravshan qizi',
+    childPinfl: '51706876543210',
+    applicantName: 'Tursunov Ravshan Komilovich',
+    applicantPinfl: '41706876543211',
+    plannedTime: '09:30-11:30',
+    arrivedAt: '09:32',
+    leftAt: '11:28',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0006',
+    date: '2026-06-11',
+    region: 'Farg‘ona',
+    district: 'Qo‘qon',
+    provider: 'BOLAJON TERAPIYA MARKAZI',
+    tin: '614923780',
+    childName: 'Abdullayev Sardor Javlon ogli',
+    childPinfl: '51807876543212',
+    applicantName: 'Abdullayeva Dilnoza Hamidovna',
+    applicantPinfl: '41807876543213',
+    plannedTime: '12:00-14:00',
+    arrivedAt: '12:00',
+    leftAt: '13:50',
+    hours: 2,
+    status: 'Tasdiqlanmagan',
+    calculationStatus: 'Biometrik tasdiqlanmagan',
+    biometricStatus: 'Xatolik',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0007',
+    date: '2026-06-18',
+    region: 'Toshkent shahri',
+    district: 'Mirzo Ulug‘bek',
+    provider: 'YUKSALISH BOLALAR MARKAZI',
+    tin: '301582746',
+    childName: 'Murodova Zilola Shavkat qizi',
+    childPinfl: '51908876543214',
+    applicantName: 'Murodov Shavkat Baxtiyorovich',
+    applicantPinfl: '41908876543215',
+    plannedTime: '15:00-17:00',
+    arrivedAt: '15:05',
+    leftAt: '17:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0008',
+    date: '2026-06-18',
+    region: 'Toshkent shahri',
+    district: 'Mirzo Ulug‘bek',
+    provider: 'YUKSALISH BOLALAR MARKAZI',
+    tin: '301582746',
+    childName: 'Qodirov Jasur Bekzod ogli',
+    childPinfl: '52009876543216',
+    applicantName: 'Qodirova Nargiza Ilhomovna',
+    applicantPinfl: '42009876543217',
+    plannedTime: '17:00-19:00',
+    arrivedAt: '17:02',
+    leftAt: '19:01',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Geolokatsiya mos emas',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos emas',
+  },
+  {
+    id: 'EA-ATT-2026-0009',
+    date: '2026-06-24',
+    region: 'Samarqand',
+    district: 'Kattaqo‘rg‘on',
+    provider: 'IMKON TERAPIYA NNT',
+    tin: '305914628',
+    childName: 'Eshonqulova Sevinch Farrux qizi',
+    childPinfl: '52110876543218',
+    applicantName: 'Eshonqulov Farrux Olimovich',
+    applicantPinfl: '42110876543219',
+    plannedTime: '09:00-11:00',
+    arrivedAt: '09:00',
+    leftAt: '11:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0010',
+    date: '2026-07-01',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    provider: 'MEHRLI QADAM MCHJ',
+    tin: '309845672',
+    childName: 'Karimova Madina Dilshod qizi',
+    childPinfl: '51302876543212',
+    applicantName: 'Karimov Dilshod Bahrom ogli',
+    applicantPinfl: '41302876543213',
+    plannedTime: '09:00-11:00',
+    arrivedAt: '09:01',
+    leftAt: '11:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0011',
+    date: '2026-07-01',
+    region: 'Toshkent shahri',
+    district: 'Yunusobod',
+    provider: 'MEHRLI QADAM MCHJ',
+    tin: '309845672',
+    childName: 'Nazarov Diyorbek Dilshod ogli',
+    childPinfl: '51403876543214',
+    applicantName: 'Nazarova Shahnoza Ilhomovna',
+    applicantPinfl: '41403876543215',
+    plannedTime: '11:30-13:30',
+    arrivedAt: '',
+    leftAt: '',
+    hours: 0,
+    status: 'Kelmadi',
+    calculationStatus: 'Hisoblanmaydi',
+    biometricStatus: 'Qayd etilmadi',
+    geoStatus: 'Qayd etilmadi',
+  },
+  {
+    id: 'EA-ATT-2026-0012',
+    date: '2026-07-03',
+    region: 'Samarqand',
+    district: 'Samarqand shahri',
+    provider: 'KELAJAK REABILITATSIYA NNT',
+    tin: '302471895',
+    childName: 'Saidova Muslima Akmal qizi',
+    childPinfl: '51504876543216',
+    applicantName: 'Saidov Akmal Olimovich',
+    applicantPinfl: '41504876543217',
+    plannedTime: '10:00-12:00',
+    arrivedAt: '10:12',
+    leftAt: '12:00',
+    hours: 2,
+    status: 'Kechikdi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0013',
+    date: '2026-07-08',
+    region: 'Farg‘ona',
+    district: 'Qo‘qon',
+    provider: 'BOLAJON TERAPIYA MARKAZI',
+    tin: '614923780',
+    childName: 'Tursunova Maftuna Ravshan qizi',
+    childPinfl: '51706876543210',
+    applicantName: 'Tursunov Ravshan Komilovich',
+    applicantPinfl: '41706876543211',
+    plannedTime: '09:30-11:30',
+    arrivedAt: '09:30',
+    leftAt: '11:25',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0014',
+    date: '2026-07-08',
+    region: 'Farg‘ona',
+    district: 'Qo‘qon',
+    provider: 'BOLAJON TERAPIYA MARKAZI',
+    tin: '614923780',
+    childName: 'Abdullayev Sardor Javlon ogli',
+    childPinfl: '51807876543212',
+    applicantName: 'Abdullayeva Dilnoza Hamidovna',
+    applicantPinfl: '41807876543213',
+    plannedTime: '12:00-14:00',
+    arrivedAt: '',
+    leftAt: '',
+    hours: 0,
+    status: 'Kelmadi',
+    calculationStatus: 'Hisoblanmaydi',
+    biometricStatus: 'Qayd etilmadi',
+    geoStatus: 'Qayd etilmadi',
+  },
+  {
+    id: 'EA-ATT-2026-0015',
+    date: '2026-07-15',
+    region: 'Toshkent shahri',
+    district: 'Mirzo Ulug‘bek',
+    provider: 'YUKSALISH BOLALAR MARKAZI',
+    tin: '301582746',
+    childName: 'Murodova Zilola Shavkat qizi',
+    childPinfl: '51908876543214',
+    applicantName: 'Murodov Shavkat Baxtiyorovich',
+    applicantPinfl: '41908876543215',
+    plannedTime: '15:00-17:00',
+    arrivedAt: '15:00',
+    leftAt: '17:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+  {
+    id: 'EA-ATT-2026-0016',
+    date: '2026-07-22',
+    region: 'Samarqand',
+    district: 'Kattaqo‘rg‘on',
+    provider: 'IMKON TERAPIYA NNT',
+    tin: '305914628',
+    childName: 'Eshonqulova Sevinch Farrux qizi',
+    childPinfl: '52110876543218',
+    applicantName: 'Eshonqulov Farrux Olimovich',
+    applicantPinfl: '42110876543219',
+    plannedTime: '09:00-11:00',
+    arrivedAt: '09:04',
+    leftAt: '11:00',
+    hours: 2,
+    status: 'Keldi',
+    calculationStatus: 'Hisoblanadi',
+    biometricStatus: 'Tasdiqlandi',
+    geoStatus: 'Mos',
+  },
+]
 
 const searchQuery = ref('')
 const selectedStatuses = ref<string[]>([])
@@ -215,6 +538,14 @@ const suppressNextProviderApplicationReportCellClick = ref(false)
 const providerApplicationReportCellDragStart = ref<ProviderApplicationReportCellSelection | null>(null)
 const providerApplicationReportCellDragAppend = ref(false)
 const providerApplicationReportCellDragVisitedKeys = ref<Set<string>>(new Set())
+const selectedAttendanceMonth = ref(toInputDate().slice(0, 7))
+const selectedAttendanceRegion = ref('')
+const selectedAttendanceProvider = ref('')
+const selectedAttendanceDay = ref(toInputDate())
+const selectedAttendanceListTab = ref<AttendanceListTab>('all')
+const draftAttendanceRegion = ref('')
+const draftAttendanceProvider = ref('')
+const isAttendanceFilterOpen = ref(false)
 
 type ProviderApplicationForm = {
   applicantFullName: string
@@ -258,6 +589,29 @@ type ProviderApplicationReportCellSelection = {
   group: string
   label: string
   value: number
+}
+type AttendanceStatus = 'Keldi' | 'Kelmadi' | 'Kechikdi' | 'Tasdiqlanmagan'
+type AttendanceCalculationStatus = 'Hisoblanadi' | 'Hisoblanmaydi' | 'Limitdan tashqari' | 'Biometrik tasdiqlanmagan' | 'Geolokatsiya mos emas'
+type AttendanceListTab = 'all' | 'present' | 'absent'
+type AttendanceRecord = {
+  id: string
+  date: string
+  region: string
+  district: string
+  provider: string
+  tin: string
+  childName: string
+  childPinfl: string
+  applicantName: string
+  applicantPinfl: string
+  plannedTime: string
+  arrivedAt: string
+  leftAt: string
+  hours: number
+  status: AttendanceStatus
+  calculationStatus: AttendanceCalculationStatus
+  biometricStatus: string
+  geoStatus: string
 }
 
 function toInputDate(value = new Date()) {
@@ -401,6 +755,8 @@ const usesProviderApplicationsTable = computed(() => (
 const usesChildrenApplicationsTable = computed(() => (
   isChildrenApplicationsPage.value || isChildrenVouchersPage.value || isChildrenOrdersPage.value
 ))
+const isServiceAttendancePage = computed(() => props.pageKey === 'service-attendance')
+const isServiceAttendanceDayPage = computed(() => props.pageKey === 'service-attendance-day')
 const pageRecords = computed(() => {
   if (props.pageKey === 'dashboard') {
     return getEiDashboardRecords()
@@ -551,7 +907,133 @@ const hasPendingProviderApplicationReportFilterChanges = computed(() => (
   draftProviderApplicationReportStartDate.value !== providerApplicationReportStartDate.value
   || draftProviderApplicationReportEndDate.value !== providerApplicationReportEndDate.value
 ))
+const attendanceRegionOptions = computed(() => (
+  [...new Set(attendanceRecords.map((record) => record.region))]
+    .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+))
+const draftAttendanceProviderOptions = computed(() => (
+  [...new Set(
+    attendanceRecords
+      .filter((record) => !draftAttendanceRegion.value || record.region === draftAttendanceRegion.value)
+      .map((record) => record.provider),
+  )].sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+))
+const activeAttendanceFilterCount = computed(() => [
+  selectedAttendanceRegion.value,
+  selectedAttendanceProvider.value,
+].filter(Boolean).length)
+const hasPendingAttendanceFilterChanges = computed(() => (
+  draftAttendanceRegion.value !== selectedAttendanceRegion.value
+  || draftAttendanceProvider.value !== selectedAttendanceProvider.value
+))
+const filteredAttendanceRecords = computed(() => {
+  const monthPrefix = selectedAttendanceMonth.value
 
+  return attendanceRecords.filter((record) => {
+    const matchesMonth = record.date.startsWith(monthPrefix)
+    const matchesRegion = !selectedAttendanceRegion.value || record.region === selectedAttendanceRegion.value
+    const matchesProvider = !selectedAttendanceProvider.value || record.provider === selectedAttendanceProvider.value
+
+    return matchesMonth && matchesRegion && matchesProvider
+  })
+})
+const attendanceCalendarDays = computed(() => {
+  const { year, month } = parseAttendanceMonth(selectedAttendanceMonth.value)
+  const firstDay = new Date(year, month - 1, 1)
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const leadingBlankCount = (firstDay.getDay() + 6) % 7
+  const days: Array<{
+    key: string
+    date: string
+    day: number
+    isBlank: boolean
+    planned: number
+    present: number
+    absent: number
+    hours: number
+  }> = []
+
+  for (let index = 0; index < leadingBlankCount; index += 1) {
+    days.push({
+      key: `blank-${index}`,
+      date: '',
+      day: 0,
+      isBlank: true,
+      planned: 0,
+      present: 0,
+      absent: 0,
+      hours: 0,
+    })
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${selectedAttendanceMonth.value}-${String(day).padStart(2, '0')}`
+    const records = filteredAttendanceRecords.value.filter((record) => record.date === date)
+
+    days.push({
+      key: date,
+      date,
+      day,
+      isBlank: false,
+      planned: records.length,
+      present: records.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi').length,
+      absent: records.filter((record) => record.status === 'Kelmadi').length,
+      hours: records.reduce((total, record) => total + record.hours, 0),
+    })
+  }
+
+  return days
+})
+const attendanceSummary = computed(() => {
+  const records = filteredAttendanceRecords.value
+  const planned = records.length
+  const present = records.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi').length
+  const absent = records.filter((record) => record.status === 'Kelmadi').length
+  const hours = records.reduce((total, record) => total + record.hours, 0)
+
+  return {
+    planned,
+    present,
+    absent,
+    hours,
+  }
+})
+const attendanceDayRouteDate = computed(() => {
+  const date = Array.isArray(route.params.date) ? route.params.date[0] : route.params.date
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(date ?? '') ? String(date) : toInputDate()
+})
+const selectedAttendanceDayRecords = computed(() => (
+  attendanceRecords.filter((record) => record.date === attendanceDayRouteDate.value)
+))
+const attendanceListTabs = computed(() => {
+  const records = selectedAttendanceDayRecords.value
+
+  return [
+    { label: 'Barchasi', value: 'all' as const, count: records.length },
+    {
+      label: 'Kelganlar',
+      value: 'present' as const,
+      count: records.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi').length,
+    },
+    {
+      label: 'Kelmaganlar',
+      value: 'absent' as const,
+      count: records.filter((record) => record.status === 'Kelmadi').length,
+    },
+  ]
+})
+const selectedAttendanceDayTableRecords = computed(() => {
+  if (selectedAttendanceListTab.value === 'present') {
+    return selectedAttendanceDayRecords.value.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi')
+  }
+
+  if (selectedAttendanceListTab.value === 'absent') {
+    return selectedAttendanceDayRecords.value.filter((record) => record.status === 'Kelmadi')
+  }
+
+  return selectedAttendanceDayRecords.value
+})
 const statusTabs = computed(() => buildEiStatusTabs(pageRecords.value))
 const providerConclusionResultFilterOptions = computed(() => {
   return [...new Set([
@@ -672,6 +1154,26 @@ watch(isProviderApplicationReportFilterOpen, (isOpen) => {
 
 watch(draftProviderRegion, () => {
   draftProviderDistrict.value = ''
+})
+
+watch(selectedAttendanceRegion, () => {
+  selectedAttendanceProvider.value = ''
+})
+
+watch(draftAttendanceRegion, () => {
+  draftAttendanceProvider.value = ''
+})
+
+watch(isAttendanceFilterOpen, (isOpen) => {
+  if (isOpen) {
+    syncAttendanceDraftFilters()
+  }
+})
+
+watch(selectedAttendanceMonth, (month) => {
+  if (!selectedAttendanceDay.value.startsWith(month)) {
+    selectedAttendanceDay.value = `${month}-01`
+  }
 })
 
 watch(filteredRecords, () => {
@@ -978,6 +1480,66 @@ function applyProviderApplicationReportFilters() {
   selectedProviderApplicationReportRegion.value = ''
   clearProviderApplicationReportCellSelection()
   isProviderApplicationReportFilterOpen.value = false
+}
+
+function syncAttendanceDraftFilters() {
+  draftAttendanceRegion.value = selectedAttendanceRegion.value
+  draftAttendanceProvider.value = selectedAttendanceProvider.value
+}
+
+function clearAttendanceFilters() {
+  selectedAttendanceRegion.value = ''
+  selectedAttendanceProvider.value = ''
+  draftAttendanceRegion.value = ''
+  draftAttendanceProvider.value = ''
+}
+
+function applyAttendanceFilters() {
+  selectedAttendanceRegion.value = draftAttendanceRegion.value
+  selectedAttendanceProvider.value = draftAttendanceProvider.value
+  isAttendanceFilterOpen.value = false
+}
+
+function parseAttendanceMonth(value: string): { year: number; month: number } {
+  const match = /^(\d{4})-(\d{2})$/.exec(value)
+  const fallbackDate = new Date()
+  const fallbackYear = fallbackDate.getFullYear()
+  const fallbackMonth = fallbackDate.getMonth() + 1
+  const year = match ? Number(match[1]) : fallbackYear
+  const month = match ? Number(match[2]) : fallbackMonth
+
+  if (month < 1 || month > 12) {
+    return { year: fallbackYear, month: fallbackMonth }
+  }
+
+  return { year, month }
+}
+
+function openAttendanceDay(date: string) {
+  selectedAttendanceListTab.value = 'all'
+  router.push(`/apps/ei/service/attendance/${date}`)
+}
+
+function shiftAttendanceMonth(offset: number) {
+  const { year, month } = parseAttendanceMonth(selectedAttendanceMonth.value)
+  const date = new Date(year, month - 1 + offset, 1)
+  selectedAttendanceMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getAttendanceDayClass(day: { planned: number; absent: number; date: string }) {
+  if (selectedAttendanceDay.value === day.date) {
+    return 'border-primary bg-primary/10 ring-2 ring-primary/20'
+  }
+
+  if (day.absent > 0) {
+    return 'border-red-200 bg-red-50/70 hover:bg-red-50 dark:border-red-800 dark:bg-red-950/20'
+  }
+
+  if (day.planned > 0) {
+    return 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20'
+  }
+
+  return 'border-border bg-background hover:bg-muted/40'
 }
 
 function formatName(value: string) {
@@ -1846,6 +2408,352 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             >
               Analitika uchun jadvaldagi raqamni bosing. Davom ettirish uchun Ctrl + click ishlating.
             </p>
+          </div>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="isServiceAttendanceDayPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
+      title=""
+      description=""
+    >
+      <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-w-0 items-center gap-3">
+          <Button
+            variant="outline"
+            class="h-10 gap-2"
+            @click="router.push('/apps/ei/service/attendance')"
+          >
+            <ChevronLeft class="h-4 w-4" />
+            Ortga
+          </Button>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold text-foreground">
+              {{ formatDate(attendanceDayRouteDate) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="inline-flex w-full rounded-lg border border-border bg-background p-0.5 sm:w-auto">
+          <Button
+            v-for="tab in attendanceListTabs"
+            :key="tab.value"
+            type="button"
+            variant="ghost"
+            size="sm"
+            :class="selectedAttendanceListTab === tab.value ? 'h-8 flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:flex-none' : 'h-8 flex-1 gap-2 sm:flex-none'"
+            @click="selectedAttendanceListTab = tab.value"
+          >
+            <span>{{ tab.label }}</span>
+            <span :class="selectedAttendanceListTab === tab.value ? 'rounded-full bg-primary-foreground/20 px-1.5 text-[11px]' : 'rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground'">
+              {{ tab.count }}
+            </span>
+          </Button>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-lg border border-border bg-card">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[1120px] border-separate border-spacing-0 text-sm">
+            <thead class="bg-muted/45 text-left text-muted-foreground">
+              <tr>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Hujjat
+                </th>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Xizmatdan foydalanuvchi
+                </th>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Qonuniy vakil
+                </th>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Tadbirkor
+                </th>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Manzil
+                </th>
+                <th class="w-24 border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Amallar
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="selectedAttendanceDayTableRecords.length === 0">
+                <td
+                  colspan="6"
+                  class="border-b border-border px-4 py-12 text-center text-sm text-muted-foreground"
+                >
+                  Tanlangan kun va tab bo'yicha ma'lumot topilmadi.
+                </td>
+              </tr>
+              <tr
+                v-for="record in selectedAttendanceDayTableRecords"
+                :key="record.id"
+                class="transition-colors duration-200 ease-out hover:bg-muted/30"
+              >
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ record.id }}
+                  </div>
+                  <div class="mt-1 text-muted-foreground">
+                    {{ formatDate(record.date) }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ formatName(record.childName) }}
+                  </div>
+                  <div class="mt-1 text-muted-foreground">
+                    JSHSHIR: {{ record.childPinfl }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ formatName(record.applicantName) }}
+                  </div>
+                  <div class="mt-1 text-muted-foreground">
+                    JSHSHIR: {{ record.applicantPinfl }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ record.provider }}
+                  </div>
+                  <div class="mt-1 text-muted-foreground">
+                    STIR: {{ record.tin }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ record.region }}
+                  </div>
+                  <div class="mt-1 text-muted-foreground">
+                    {{ record.district }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <DropdownMenuRoot @update:open="setActionMenuOpen(record.id, $event)">
+                    <DropdownMenuTrigger as-child>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                      >
+                        <Ellipsis class="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuPortal>
+                      <DropdownMenuContent
+                        side="bottom"
+                        align="end"
+                        :side-offset="6"
+                        :collision-padding="12"
+                        class="z-50 min-w-40 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                      >
+                        <DropdownMenuItem
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @select.prevent="closeActionMenu"
+                        >
+                          <Eye class="h-4 w-4 shrink-0" />
+                          <span>Ko'rish</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuRoot>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="isServiceAttendancePage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
+      title=""
+      description=""
+    >
+      <div class="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
+        <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+              <CalendarDays class="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div class="ml-1 inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-background p-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-8 p-0"
+                @click="shiftAttendanceMonth(-1)"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </Button>
+              <input
+                v-model="selectedAttendanceMonth"
+                type="month"
+                class="h-8 w-36 border-0 bg-transparent px-2 text-sm font-medium text-foreground outline-none"
+              >
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-8 p-0"
+                @click="shiftAttendanceMonth(1)"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <FilterPopover
+              v-model:open="isAttendanceFilterOpen"
+              :active-count="activeAttendanceFilterCount"
+            >
+              <div class="flex flex-col gap-3">
+                <FilterSelect
+                  v-model="draftAttendanceRegion"
+                  label="Hudud"
+                  :options="attendanceRegionOptions"
+                />
+
+                <FilterSelect
+                  v-model="draftAttendanceProvider"
+                  label="Tashkilot"
+                  :options="draftAttendanceProviderOptions"
+                />
+              </div>
+
+              <template #footer>
+                <div class="flex justify-end gap-2 border-t border-border pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    :disabled="activeAttendanceFilterCount === 0 && !hasPendingAttendanceFilterChanges"
+                    @click="clearAttendanceFilters"
+                  >
+                    Tozalash
+                  </Button>
+                  <Button
+                    size="sm"
+                    @click="applyAttendanceFilters"
+                  >
+                    Qo'llash
+                  </Button>
+                </div>
+              </template>
+            </FilterPopover>
+          </div>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-4">
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Reja
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-foreground">
+              {{ attendanceSummary.planned }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Kelgan
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-emerald-600">
+              {{ attendanceSummary.present }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Kelmagan
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-red-600">
+              {{ attendanceSummary.absent }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Soat
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-foreground">
+              {{ attendanceSummary.hours }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="min-h-[34rem]">
+        <div class="overflow-hidden rounded-lg border border-border bg-card">
+          <div class="grid grid-cols-7 border-b border-border bg-muted/45 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div
+              v-for="weekday in ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']"
+              :key="weekday"
+              class="border-r border-border px-2 py-3 last:border-r-0"
+            >
+              {{ weekday }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-7">
+            <div
+              v-for="day in attendanceCalendarDays"
+              :key="day.key"
+              class="min-h-28 border-b border-r border-border p-2 last:border-r-0"
+            >
+              <div
+                v-if="day.isBlank"
+                class="h-full rounded-md bg-muted/20"
+              />
+              <div
+                v-else
+                :class="cn('relative flex h-full min-h-24 w-full flex-col rounded-md border p-2 text-left transition-colors duration-200 ease-out', getAttendanceDayClass(day))"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <span class="text-sm font-semibold text-foreground">{{ day.day }}</span>
+                  <Button
+                    v-if="day.planned > 0"
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-7 w-7 rounded-md p-0"
+                    :aria-label="`${formatDate(day.date)} bo'yicha kirish`"
+                    @click="openAttendanceDay(day.date)"
+                  >
+                    <ChevronRight class="h-4 w-4" />
+                  </Button>
+                </div>
+                <span
+                  v-if="day.planned > 0"
+                  class="mt-2 grid gap-1 text-xs"
+                >
+                  <span class="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>Reja</span>
+                    <strong class="font-semibold text-foreground">{{ day.planned }}</strong>
+                  </span>
+                  <span class="flex items-center justify-between gap-2 text-emerald-700">
+                    <span>Kelgan</span>
+                    <strong>{{ day.present }}</strong>
+                  </span>
+                  <span class="flex items-center justify-between gap-2 text-red-700">
+                    <span>Kelmagan</span>
+                    <strong>{{ day.absent }}</strong>
+                  </span>
+                </span>
+                <span
+                  v-else
+                  class="mt-auto text-xs text-muted-foreground"
+                >
+                  Reja yo'q
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

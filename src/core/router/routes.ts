@@ -660,6 +660,22 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/ei/service/attendance/:date',
+        sensitive: true,
+        name: 'ei-service-attendance-day',
+        component: EIPage,
+        props: {
+          pageKey: 'service-attendance-day',
+        },
+        meta: {
+          title: 'Davomat',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatish", 'Davomat'],
+        },
+      },
+      {
         path: 'apps/ei/service/attendance',
         sensitive: true,
         name: 'ei-service-attendance',
