@@ -2475,6 +2475,9 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                 <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                   Manzil
                 </th>
+                <th class="border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  Xizmat ko'rsatilgan soatlar
+                </th>
                 <th class="w-24 border-b border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
                   Amallar
                 </th>
@@ -2532,6 +2535,11 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                   </div>
                   <div class="mt-1 text-muted-foreground">
                     {{ record.district }}
+                  </div>
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <div class="font-medium text-foreground">
+                    {{ record.hours }}/2
                   </div>
                 </td>
                 <td class="border-b border-border px-4 py-3 align-top">
