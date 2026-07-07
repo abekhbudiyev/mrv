@@ -103,6 +103,15 @@ type ProviderApplicationBusinessLookup = {
   address: string
 }
 
+type EiDetailField = {
+  label: string
+  value: string
+  kind?: string
+}
+
+type ChildApplicationViewMode = 'sections' | 'tabs'
+type ChildApplicationDetailTab = 'main' | 'basis' | 'process' | 'history'
+
 const providerApplicationApplicantsByPinfl: Record<string, ProviderApplicationApplicantLookup> = {
   '11111111111111': {
     fullName: 'Aliyev Ali Akmal ogli',
@@ -543,6 +552,8 @@ const selectedAttendanceRegion = ref('')
 const selectedAttendanceProvider = ref('')
 const selectedAttendanceDay = ref(toInputDate())
 const selectedAttendanceListTab = ref<AttendanceListTab>('all')
+const childApplicationViewMode = ref<ChildApplicationViewMode>('sections')
+const selectedChildApplicationDetailTab = ref<ChildApplicationDetailTab>('main')
 const draftAttendanceRegion = ref('')
 const draftAttendanceProvider = ref('')
 const isAttendanceFilterOpen = ref(false)
@@ -744,6 +755,7 @@ const isProvidersApplicationsCreatePage = computed(() => props.pageKey === 'prov
 const isProvidersConclusionsPage = computed(() => props.pageKey === 'providers-conclusions')
 const isProvidersRegistryPage = computed(() => props.pageKey === 'providers-registry')
 const isChildrenApplicationsPage = computed(() => props.pageKey === 'children-questionnaires')
+const isChildrenApplicationViewPage = computed(() => props.pageKey === 'children-application-view')
 const isChildrenVouchersPage = computed(() => props.pageKey === 'children-vouchers')
 const isChildrenOrdersPage = computed(() => props.pageKey === 'children-orders')
 const usesProviderFilter = computed(() => (
@@ -769,31 +781,81 @@ const pageRecords = computed(() => {
   }
 
   if (props.pageKey === 'children-questionnaires' || props.pageKey === 'children-vouchers') {
-    return records.map((record) => {
-      const override = childApplicationStatusOverrides.value[record.id]
-
-      if (!override) {
-        return record
-      }
-
-      return {
-        ...record,
-        status: override.status,
-        tone: override.tone,
-        nextAction: override.nextAction,
-        history: [
-          {
-            label: override.historyLabel,
-            date: formatDate(toInputDate()),
-          },
-          ...record.history,
-        ],
-      }
-    })
+    return records.map((record) => applyChildApplicationStatusOverride(record))
   }
 
   return records
 })
+const childApplicationRecords = computed(() => (
+  getEiRecords('children-questionnaires').map((record) => applyChildApplicationStatusOverride(record))
+))
+const selectedChildApplicationId = computed(() => String(route.params.id ?? ''))
+const selectedChildApplication = computed(() => (
+  childApplicationRecords.value.find((record) => record.id === selectedChildApplicationId.value)
+))
+const selectedChildApplicationDetail = computed(() => (
+  selectedChildApplication.value ? getChildApplicationDetail(selectedChildApplication.value) : null
+))
+const selectedChildApplicationPersonSections = computed<Array<{
+  key: string
+  title: string
+  data: {
+    photo: string
+    fields: EiDetailField[]
+  }
+}>>(() => {
+  if (!selectedChildApplicationDetail.value) {
+    return []
+  }
+
+  return [
+    { key: 'applicant', title: 'Ariza beruvchi ma\'lumotlari', data: selectedChildApplicationDetail.value.applicant },
+    { key: 'child', title: 'Xizmatdan foydalanuvchi ma\'lumotlari', data: selectedChildApplicationDetail.value.child },
+  ]
+})
+const selectedChildApplicationLinkedSections = computed<Array<{
+  key: string
+  title: string
+  fields: EiDetailField[]
+}>>(() => {
+  if (!selectedChildApplicationDetail.value) {
+    return []
+  }
+
+  return [
+    { key: 'provider', title: 'Tadbirkor ma\'lumotlari', fields: selectedChildApplicationDetail.value.provider },
+    { key: 'voucher', title: 'Vaucher ma\'lumotlari', fields: selectedChildApplicationDetail.value.voucher },
+    { key: 'order', title: 'Buyurtma ma\'lumotlari', fields: selectedChildApplicationDetail.value.order },
+    { key: 'plan', title: 'Erta aralashuv rejasi', fields: selectedChildApplicationDetail.value.plan },
+    { key: 'attendance', title: 'Davomat va xizmat ko\'rsatish ma\'lumotlari', fields: selectedChildApplicationDetail.value.attendance },
+  ]
+})
+const selectedChildApplicationReceiverFields = computed<EiDetailField[]>(() => {
+  const receiver = selectedChildApplicationDetail.value?.receiver
+
+  if (!receiver) {
+    return []
+  }
+
+  return [
+    { label: 'Lavozim', value: receiver.position },
+    { label: 'Telefon', value: receiver.phone },
+  ]
+})
+const childApplicationDetailTabs = computed<Array<{
+  value: ChildApplicationDetailTab
+  label: string
+  count: number
+}>>(() => [
+  { value: 'main', label: 'Asosiy', count: 4 },
+  { value: 'basis', label: 'Asos hujjati', count: 1 },
+  { value: 'process', label: 'Xizmat jarayoni', count: selectedChildApplicationLinkedSections.value.length },
+  { value: 'history', label: 'Hujjat tarixi', count: selectedChildApplicationDetail.value?.history.length ?? 0 },
+])
+
+function shouldShowChildApplicationTab(tab: ChildApplicationDetailTab) {
+  return childApplicationViewMode.value === 'sections' || selectedChildApplicationDetailTab.value === tab
+}
 const providerApplicationReportRecords = computed(() => {
   const records = [
     ...providerApplicationDrafts.value,
@@ -1590,6 +1652,163 @@ function getChildApplicationProviderInn(record: EiRecord) {
   return getMetadataValue(record, 'INN') || record.tin || '-'
 }
 
+function applyChildApplicationStatusOverride(record: EiRecord): EiRecord {
+  const override = childApplicationStatusOverrides.value[record.id]
+
+  if (!override) {
+    return record
+  }
+
+  return {
+    ...record,
+    status: override.status,
+    tone: override.tone,
+    nextAction: override.nextAction,
+    history: [
+      {
+        label: override.historyLabel,
+        date: formatDate(toInputDate()),
+      },
+      ...record.history,
+    ],
+  }
+}
+
+function openChildApplication(record: EiRecord) {
+  closeActionMenu()
+  router.push(`/apps/ei/children/applications/${record.id}`)
+}
+
+function getChildApplicationReceiver(record: EiRecord) {
+  const channel = getMetadataValue(record, 'Murojaat kanali') || record.owner
+
+  if (['YIDXP', 'Ijtimoiy karta'].includes(channel)) {
+    return null
+  }
+
+  return {
+    photo: applicantManPhoto,
+    fullName: channel === 'Ijtimoiy xodim' ? 'Mamadaliyev Shavkat Ilhom ogli' : 'Tursunova Dilnoza Akmalovna',
+    pinfl: channel === 'Ijtimoiy xodim' ? '31101876543210' : '41102876543211',
+    system: channel || 'Inson markazi',
+    position: channel === 'Ijtimoiy xodim' ? 'Ijtimoiy xodim' : 'Operator',
+    phone: '+998 90 123 45 67',
+    acceptedAt: `${formatDate(record.submittedAt)} 10:24`,
+  }
+}
+
+function getChildApplicationDetail(record: EiRecord) {
+  const childName = getChildServiceUserName(record)
+  const childPinfl = getChildServiceUserPinfl(record)
+  const applicantName = getChildApplicationApplicantName(record)
+  const applicantPinfl = getChildApplicationApplicantPinfl(record)
+  const providerName = getChildApplicationProviderName(record)
+  const providerInn = getChildApplicationProviderInn(record)
+  const basisDocument = getMetadataValue(record, 'Asos hujjat') || 'Oilaviy shifokor xulosasi'
+  const voucherId = getMetadataValue(record, 'Vaucher') || (record.status.includes('Vaucher') ? `EA-VCH-${record.submittedAt.slice(0, 4)}-${record.id.slice(-4)}` : '')
+  const receiver = getChildApplicationReceiver(record)
+  const isVoucherAvailable = Boolean(voucherId) || ['Vaucher shakllandi', 'Vaucher yaratilgan'].includes(record.status)
+  const isOrderAvailable = record.status === 'Qabul qilingan' || getMetadataValue(record, 'Vaucher')
+  const address = `${record.region}, ${record.district}, Yangi hayot MFY, Mustaqillik ko'chasi, 12-uy`
+
+  return {
+    application: [
+      { label: 'Ariza ID', value: record.id },
+      { label: 'Ariza sanasi', value: formatDate(record.submittedAt) },
+      { label: 'Ariza holati', value: record.status, kind: 'status' },
+      { label: 'Ariza turi', value: receiver ? 'Operator orqali' : 'Mustaqil' },
+      { label: 'Hududiy tegishlilik', value: `${record.region}, ${record.district}` },
+    ],
+    receiver,
+    applicant: {
+      photo: applicantWomanPhoto,
+      fields: [
+        { label: 'FIO', value: applicantName },
+        { label: 'JSHSHIR', value: applicantPinfl },
+        { label: 'Tugilgan sanasi', value: '14.05.1994' },
+        { label: 'Jinsi', value: applicantName.includes('OVA') ? 'Ayol' : 'Erkak' },
+        { label: 'Manzil', value: address },
+        { label: 'Telefon raqami', value: '+998 93 456 78 90' },
+      ],
+    },
+    child: {
+      photo: applicantManPhoto,
+      fields: [
+        { label: 'FIO', value: childName },
+        { label: 'JSHSHIR', value: childPinfl },
+        { label: 'Tugilgan sanasi', value: record.id.endsWith('0210') ? '18.02.2024' : '05.09.2024' },
+        { label: 'Jinsi', value: childName.includes('QIZI') || childName.includes('KARIMOVA') ? 'Ayol' : 'Erkak' },
+        { label: 'Manzil', value: address },
+      ],
+    },
+    basis: [
+      { label: 'Asos turi', value: basisDocument },
+      { label: 'Hujjat raqami', value: basisDocument.includes('Nogiron') ? 'NOG-2026-0145' : 'OSH-2026-0478' },
+      { label: 'Hujjat sanasi', value: '15.06.2026' },
+      { label: 'Yo\'naltiruvchi havola', value: 'integration://ei/basis-document' },
+      { label: 'Integratsiya holati', value: 'Avtomatik olindi', kind: 'success' },
+    ],
+    provider: [
+      { label: 'Tashkilot nomi', value: providerName },
+      { label: 'Tashkilot turi', value: providerName.includes('YATT') ? 'YaTT' : 'NNT / yuridik shaxs' },
+      { label: 'STIR', value: providerInn },
+      { label: 'Manzil', value: `${record.region}, ${record.district}, Barkamol MFY, Markaziy ko'cha, 8-uy` },
+      { label: 'Telefon raqami', value: '+998 71 200 10 20' },
+      { label: 'Faoliyat holati', value: providerName === '-' ? 'Tanlanmagan' : 'Faol', kind: providerName === '-' ? 'neutral' : 'success' },
+      { label: 'Reyestrga kiritilgan sana', value: providerName === '-' ? '-' : '15.06.2026' },
+    ],
+    voucher: [
+      { label: 'Vaucher ID', value: isVoucherAvailable ? (voucherId || `EA-VCH-${record.id.slice(-4)}`) : 'Hali shakllanmagan' },
+      { label: 'Shakllangan sana', value: isVoucherAvailable ? formatDate(addDays(record.submittedAt, 1)) : '-' },
+      { label: 'Amal qilish muddati', value: isVoucherAvailable ? formatDate(addDays(record.submittedAt, 31)) : '-' },
+      { label: 'Holati', value: isVoucherAvailable ? record.status : 'Kutilmoqda', kind: isVoucherAvailable ? 'status' : 'neutral' },
+    ],
+    order: [
+      { label: 'Buyurtma ID', value: isOrderAvailable ? `EA-ORD-${record.id.slice(-4)}` : 'Hali shakllanmagan' },
+      { label: 'Buyurtma sanasi', value: isOrderAvailable ? formatDate(addDays(record.submittedAt, 2)) : '-' },
+      { label: 'Tadbirkor', value: isOrderAvailable ? providerName : '-' },
+      { label: 'Holati', value: isOrderAvailable ? 'Qabul qilingan' : 'Kutilmoqda', kind: isOrderAvailable ? 'success' : 'neutral' },
+      { label: 'Xizmat boshlanish sanasi', value: isOrderAvailable ? formatDate(addDays(record.submittedAt, 3)) : '-' },
+    ],
+    plan: [
+      { label: 'Reja ID', value: isOrderAvailable ? `EA-PLN-${record.id.slice(-4)}` : 'Hali shakllanmagan' },
+      { label: 'Reja tuzilgan sana', value: isOrderAvailable ? formatDate(addDays(record.submittedAt, 5)) : '-' },
+      { label: 'Masul mutaxassis', value: isOrderAvailable ? 'Ergasheva Nilufar Komilovna' : '-' },
+      { label: 'Reja muddati', value: isOrderAvailable ? '6 oy' : '-' },
+      { label: 'Haftalik xizmat soatlari', value: isOrderAvailable ? '6 soatgacha' : '-' },
+      { label: 'Holati', value: isOrderAvailable ? 'Ishlab chiqilmoqda' : 'Kutilmoqda', kind: isOrderAvailable ? 'warning' : 'neutral' },
+    ],
+    attendance: [
+      { label: 'Oxirgi davomat sanasi', value: isOrderAvailable ? '03.07.2026' : '-' },
+      { label: 'Reja bo\'yicha', value: isOrderAvailable ? '7 ta' : '-' },
+      { label: 'Kelgan', value: isOrderAvailable ? '5 ta' : '-' },
+      { label: 'Kelmagan', value: isOrderAvailable ? '2 ta' : '-' },
+      { label: 'Xizmat soatlari', value: isOrderAvailable ? '10 soat' : '-' },
+    ],
+    history: record.history,
+  }
+}
+
+function getDetailFieldBadgeClass(kind?: string) {
+  if (kind === 'success') {
+    return eiStatusClasses.success
+  }
+
+  if (kind === 'warning') {
+    return eiStatusClasses.warning
+  }
+
+  if (kind === 'neutral') {
+    return eiStatusClasses.neutral
+  }
+
+  if (kind === 'status' && selectedChildApplication.value) {
+    return eiStatusClasses[selectedChildApplication.value.tone]
+  }
+
+  return ''
+}
+
 function getConclusionResult(record: EiRecord) {
   return record.result ?? record.metadata.find((item) => item.label === 'Xulosa turi')?.value ?? '-'
 }
@@ -2186,7 +2405,379 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 <template>
   <PageContainer>
     <SectionBlock
-      v-if="isProvidersApplicationsReportPage"
+      v-if="isChildrenApplicationViewPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-y-auto p-5 pb-10"
+      title=""
+      description=""
+    >
+      <div class="ei-detail-toolbar flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-w-0 items-center gap-3">
+          <Button
+            variant="outline"
+            class="h-10 gap-2"
+            @click="router.push('/apps/ei/children/applications')"
+          >
+            <ChevronLeft class="h-4 w-4" />
+            Ortga
+          </Button>
+          <div
+            v-if="selectedChildApplication"
+            class="min-w-0"
+          >
+            <p class="truncate text-sm font-semibold text-foreground">
+              Bola arizasini ko'rish
+            </p>
+            <p class="mt-1 truncate text-sm text-muted-foreground">
+              {{ selectedChildApplication.id }} · {{ getChildServiceUserName(selectedChildApplication) }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          v-if="selectedChildApplication"
+          class="flex flex-wrap items-center gap-2"
+        >
+          <div class="inline-flex rounded-lg border border-border bg-background p-0.5">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              :class="childApplicationViewMode === 'sections' ? 'h-8 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-8 px-3'"
+              @click="childApplicationViewMode = 'sections'"
+            >
+              Ketma-ket
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              :class="childApplicationViewMode === 'tabs' ? 'h-8 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-8 px-3'"
+              @click="childApplicationViewMode = 'tabs'"
+            >
+              Tablar
+            </Button>
+          </div>
+
+          <span :class="cn('inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[selectedChildApplication.tone])">
+            {{ selectedChildApplication.status }}
+          </span>
+        </div>
+      </div>
+
+      <div
+        v-if="!selectedChildApplication || !selectedChildApplicationDetail"
+        class="flex min-h-[24rem] items-center justify-center rounded-lg border border-border bg-card p-8 text-center"
+      >
+        <div class="max-w-md">
+          <p class="text-sm font-medium text-foreground">
+            Ariza topilmadi
+          </p>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Berilgan ID bo'yicha bola arizasi mavjud emas yoki ro'yxatdan olib tashlangan.
+          </p>
+          <Button
+            variant="outline"
+            class="mt-4"
+            @click="router.push('/apps/ei/children/applications')"
+          >
+            Arizalarga qaytish
+          </Button>
+        </div>
+      </div>
+
+      <div
+        v-else
+        class="ei-detail-view grid gap-4"
+      >
+        <div
+          v-if="childApplicationViewMode === 'tabs'"
+          class="inline-flex w-full overflow-x-auto rounded-lg border border-border bg-card p-1 sm:w-fit"
+        >
+          <Button
+            v-for="tab in childApplicationDetailTabs"
+            :key="tab.value"
+            type="button"
+            variant="ghost"
+            size="sm"
+            :class="selectedChildApplicationDetailTab === tab.value ? 'h-9 shrink-0 gap-2 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 shrink-0 gap-2 px-3'"
+            @click="selectedChildApplicationDetailTab = tab.value"
+          >
+            <span>{{ tab.label }}</span>
+            <span :class="selectedChildApplicationDetailTab === tab.value ? 'rounded-full bg-primary-foreground/20 px-1.5 text-[11px]' : 'rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground'">
+              {{ tab.count }}
+            </span>
+          </Button>
+        </div>
+
+        <div
+          v-if="shouldShowChildApplicationTab('main')"
+          class="rounded-lg border border-border bg-card"
+        >
+          <div class="border-b border-border px-4 py-3">
+            <p class="text-sm font-semibold text-foreground">
+              Ariza ma'lumotlari
+            </p>
+          </div>
+          <div class="overflow-hidden">
+            <table class="w-full border-separate border-spacing-0 text-sm">
+              <tbody>
+                <tr
+              v-for="field in selectedChildApplicationDetail.application"
+              :key="`application-${field.label}`"
+                  class="border-b border-border last:border-b-0"
+            >
+                  <td class="w-72 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                {{ field.label }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+              <span
+                v-if="field.kind"
+                :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
+              >
+                {{ field.value }}
+              </span>
+              <p
+                v-else
+                class="break-words font-medium text-foreground"
+              >
+                {{ field.value }}
+              </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          v-if="shouldShowChildApplicationTab('main') || shouldShowChildApplicationTab('basis')"
+          class="grid gap-4"
+        >
+          <div
+            v-if="shouldShowChildApplicationTab('main')"
+            class="rounded-lg border border-border bg-card"
+          >
+            <div class="border-b border-border px-4 py-3">
+              <p class="text-sm font-semibold text-foreground">
+                Arizani qabul qiluvchi ma'lumotlari
+              </p>
+            </div>
+            <div
+              v-if="selectedChildApplicationDetail.receiver"
+              class="space-y-4 p-4"
+            >
+              <div class="flex items-center gap-3">
+                <img
+                  :src="selectedChildApplicationDetail.receiver.photo"
+                  alt=""
+                  class="h-14 w-14 rounded-full border border-border object-cover"
+                >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-foreground">
+                    {{ formatName(selectedChildApplicationDetail.receiver.fullName) }}
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    JSHSHIR: {{ selectedChildApplicationDetail.receiver.pinfl }}
+                  </p>
+                </div>
+              </div>
+              <div class="-mx-4 overflow-hidden border-t border-border">
+                <table class="w-full border-separate border-spacing-0 text-sm">
+                  <tbody>
+                    <tr
+                      v-for="field in selectedChildApplicationReceiverFields"
+                      :key="`receiver-${field.label}`"
+                      class="border-b border-border last:border-b-0"
+                    >
+                      <td class="w-56 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                        {{ field.label }}
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top font-medium text-foreground">
+                        {{ field.value }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p
+              v-else
+              class="p-4 text-sm text-muted-foreground"
+            >
+              Ariza beruvchi tomonidan mustaqil yuborilgan.
+            </p>
+          </div>
+
+          <div
+            v-if="shouldShowChildApplicationTab('basis')"
+            class="rounded-lg border border-border bg-card"
+          >
+            <div class="border-b border-border px-4 py-3">
+              <p class="text-sm font-semibold text-foreground">
+                Xizmatdan foydalanish uchun asos
+              </p>
+            </div>
+            <div class="overflow-hidden">
+              <table class="w-full border-separate border-spacing-0 text-sm">
+                <tbody>
+                  <tr
+                v-for="field in selectedChildApplicationDetail.basis"
+                :key="`basis-${field.label}`"
+                    class="border-b border-border last:border-b-0"
+              >
+                    <td class="w-72 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                  {{ field.label }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top">
+                <span
+                  v-if="field.kind"
+                  :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
+                >
+                  {{ field.value }}
+                </span>
+                <p
+                  v-else
+                  class="break-words font-medium text-foreground"
+                >
+                  {{ field.value }}
+                </p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="shouldShowChildApplicationTab('main')"
+          class="grid gap-4"
+        >
+          <div
+            v-for="personSection in selectedChildApplicationPersonSections"
+            :key="personSection.key"
+            class="rounded-lg border border-border bg-card"
+          >
+            <div class="border-b border-border px-4 py-3">
+              <p class="text-sm font-semibold text-foreground">
+                {{ personSection.title }}
+              </p>
+            </div>
+            <div class="space-y-4 p-4">
+              <div class="flex items-center gap-3">
+                <img
+                  :src="personSection.data.photo"
+                  alt=""
+                  class="h-14 w-14 rounded-full border border-border object-cover"
+                >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-foreground">
+                    {{ personSection.data.fields[0]?.value }}
+                  </p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    JSHSHIR: {{ personSection.data.fields[1]?.value }}
+                  </p>
+                </div>
+              </div>
+              <div class="-mx-4 overflow-hidden border-t border-border">
+                <table class="w-full border-separate border-spacing-0 text-sm">
+                  <tbody>
+                    <tr
+                  v-for="field in personSection.data.fields"
+                  :key="`${personSection.key}-${field.label}`"
+                      class="border-b border-border last:border-b-0"
+                >
+                      <td class="w-56 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                    {{ field.label }}
+                      </td>
+                      <td class="border-b border-border px-4 py-3 align-top font-medium text-foreground">
+                    {{ field.value }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-if="shouldShowChildApplicationTab('process')"
+          v-for="section in selectedChildApplicationLinkedSections"
+          :key="section.key"
+          class="rounded-lg border border-border bg-card"
+        >
+          <div class="border-b border-border px-4 py-3">
+            <p class="text-sm font-semibold text-foreground">
+              {{ section.title }}
+            </p>
+          </div>
+          <div class="overflow-hidden">
+            <table class="w-full border-separate border-spacing-0 text-sm">
+              <tbody>
+                <tr
+              v-for="field in section.fields"
+              :key="`${section.key}-${field.label}`"
+                  class="border-b border-border last:border-b-0"
+            >
+                  <td class="w-72 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                {{ field.label }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+              <span
+                v-if="field.kind"
+                :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
+              >
+                {{ field.value }}
+              </span>
+              <p
+                v-else
+                class="break-words font-medium text-foreground"
+              >
+                {{ field.value }}
+              </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div
+          v-if="shouldShowChildApplicationTab('history')"
+          class="rounded-lg border border-border bg-card"
+        >
+          <div class="border-b border-border px-4 py-3">
+            <p class="text-sm font-semibold text-foreground">
+              Hujjat tarixi
+            </p>
+          </div>
+          <div class="divide-y divide-border">
+            <div
+              v-for="(item, index) in selectedChildApplicationDetail.history"
+              :key="`${item.label}-${item.date}-${index}`"
+              class="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto]"
+            >
+              <div>
+                <p class="text-sm font-medium text-foreground">
+                  {{ item.label }}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Amal bajargan: {{ selectedChildApplication ? (index === 0 ? getChildApplicationApplicantName(selectedChildApplication) : selectedChildApplication.owner) : '-' }}
+                </p>
+              </div>
+              <p class="text-sm font-medium text-muted-foreground sm:text-right">
+                {{ item.date }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="isProvidersApplicationsReportPage"
       class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
       content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible p-5"
       title=""
@@ -3419,7 +4010,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                         >
                           <DropdownMenuItem
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @select.prevent="closeActionMenu"
+                            @select.prevent="openChildApplication(record)"
                           >
                             <Eye class="h-4 w-4 shrink-0" />
                             <span>Ko'rish</span>
@@ -4017,3 +4608,76 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
     </SectionBlock>
   </PageContainer>
 </template>
+
+<style scoped>
+.ei-detail-toolbar {
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+}
+
+.ei-detail-view :deep(.rounded-lg.border.border-border.bg-card) {
+  border-radius: 0.875rem;
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+}
+
+.ei-detail-view :deep(.rounded-lg.border.border-border.bg-card > .border-b) {
+  background: hsl(var(--muted) / 0.26);
+  padding: 0.875rem 1.25rem;
+}
+
+.ei-detail-view :deep(table) {
+  font-size: 0.875rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ei-detail-view :deep(tbody tr) {
+  transition: background-color 160ms ease;
+}
+
+.ei-detail-view :deep(tbody tr:hover) {
+  background: hsl(var(--muted) / 0.18);
+}
+
+.ei-detail-view :deep(td:first-child) {
+  width: 17rem;
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.3);
+  padding: 0.875rem 1.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.ei-detail-view :deep(td:last-child) {
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.875rem 1.25rem;
+}
+
+.ei-detail-view :deep(tbody tr:last-child td) {
+  border-bottom: 0;
+}
+
+.ei-detail-view :deep(img) {
+  box-shadow: 0 0 0 3px hsl(var(--background));
+}
+
+@media (max-width: 640px) {
+  .ei-detail-view :deep(td:first-child),
+  .ei-detail-view :deep(td:last-child) {
+    display: block;
+    width: 100%;
+    border-right: 0;
+  }
+
+  .ei-detail-view :deep(td:first-child) {
+    padding-bottom: 0.25rem;
+  }
+
+  .ei-detail-view :deep(td:last-child) {
+    padding-top: 0.25rem;
+  }
+}
+</style>

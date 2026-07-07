@@ -580,6 +580,22 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/ei/children/applications/:id',
+        sensitive: true,
+        name: 'ei-children-application-view',
+        component: EIPage,
+        props: {
+          pageKey: 'children-application-view',
+        },
+        meta: {
+          title: 'Bola arizasini ko‘rish',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Bolalar murojaatlari', 'Arizalar', 'Ko‘rish'],
+        },
+      },
+      {
         path: 'apps/ei/children/applications',
         sensitive: true,
         name: 'ei-children-applications',
