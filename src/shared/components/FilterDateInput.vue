@@ -278,6 +278,7 @@ onBeforeUnmount(() => {
         <Input
           :model-value="modelValue"
           class="h-10 pr-10"
+          :aria-label="label"
           inputmode="numeric"
           maxlength="10"
           :placeholder="placeholder"

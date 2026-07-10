@@ -532,6 +532,22 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/ei/providers/applications/:id',
+        sensitive: true,
+        name: 'ei-providers-application-view',
+        component: EIPage,
+        props: {
+          pageKey: 'providers-application-view',
+        },
+        meta: {
+          title: "Xizmat ko'rsatuvchi arizasini ko'rish",
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Arizalar', "Ko'rish"],
+        },
+      },
+      {
         path: 'apps/ei/providers/applications',
         sensitive: true,
         name: 'ei-providers-applications',

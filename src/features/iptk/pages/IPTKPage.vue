@@ -92,7 +92,7 @@ type DocumentFlowStep = {
 
 const NOTIFICATION_DURATION = 2600
 const filterOverlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
-const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
 const filterPanelContentClass = 'flex flex-col gap-3'
 
 interface CommissionMemberDraft {
@@ -8661,7 +8661,7 @@ onUnmounted(() => {
     />
 
     <template v-if="isDashboardPage">
-      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto rounded-2xl border border-border bg-card p-5">
+      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
         <div class="relative flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-end">
           <div class="flex flex-wrap items-center gap-2">
             <Button
@@ -9108,7 +9108,7 @@ onUnmounted(() => {
           <div
             v-for="item in applicationDashboardKpis"
             :key="item.label"
-            class="flex min-h-[15.5rem] flex-col rounded-xl border border-border bg-background p-4"
+            class="flex min-h-[15.5rem] flex-col rounded-lg border border-border bg-background p-4"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -9154,7 +9154,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="rounded-xl border border-border bg-background p-4">
+        <div class="rounded-lg border border-border bg-background p-4">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p class="text-base font-semibold text-foreground">Statuslar bo'yicha oylik dinamika</p>
@@ -9285,7 +9285,7 @@ onUnmounted(() => {
         </div>
 
         <div v-if="false" class="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-          <div class="rounded-xl border border-border bg-background p-4">
+          <div class="rounded-lg border border-border bg-background p-4">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-base font-semibold text-foreground">Arizalar dinamikasi</p>
@@ -9316,7 +9316,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="rounded-xl border border-border bg-background p-4">
+          <div class="rounded-lg border border-border bg-background p-4">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <p class="text-base font-semibold text-foreground">Statuslar</p>
@@ -9351,7 +9351,7 @@ onUnmounted(() => {
           <div
             v-for="card in applicationDashboardDistributionCards"
             :key="card.title"
-            class="rounded-xl border border-border bg-background p-4"
+            class="rounded-lg border border-border bg-background p-4"
           >
             <div class="flex items-center justify-between gap-3">
               <div>
@@ -9383,7 +9383,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="rounded-xl border border-border bg-background p-4">
+        <div class="rounded-lg border border-border bg-background p-4">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p class="text-base font-semibold text-foreground">Hududlar bo'yicha statuslar</p>
@@ -9409,7 +9409,7 @@ onUnmounted(() => {
               >
                 <p class="text-sm font-semibold leading-none text-foreground">{{ item.total }}</p>
 
-                <div class="flex h-56 w-full items-end rounded-xl bg-muted/50 px-3 py-2">
+                <div class="flex h-56 w-full items-end rounded-lg bg-muted/50 px-3 py-2">
                   <div
                     class="flex w-full min-w-0 flex-col-reverse overflow-hidden rounded-lg bg-muted transition-[height] duration-300 ease-out"
                     :style="{ height: `${item.percent}%` }"
@@ -9490,7 +9490,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="relative w-full lg:max-w-sm">
               <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -10412,7 +10412,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
@@ -10438,19 +10438,19 @@ onUnmounted(() => {
 
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
             <div class="grid gap-3 md:grid-cols-4">
-              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+              <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Sana') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ formatDateDisplay(selectedViewRecord.createdAt) }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+              <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Bosqich') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ workflowStageLabels[selectedViewRecord.workflowStage] }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+              <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Yangilangan') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedViewRecord.updatedAt }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+              <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t("A'zolar soni") }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedViewRecord.members.length }}</p>
               </div>
@@ -10464,11 +10464,11 @@ onUnmounted(() => {
                 <div
                   v-for="leader in selectedViewLeadership"
                   :key="leader.role"
-                  class="rounded-2xl border border-border bg-card p-4"
+                  class="rounded-lg border border-border bg-card p-4"
                 >
                   <div class="flex gap-4">
                     <div class="flex shrink-0 flex-col items-center gap-2">
-                      <div class="flex h-28 w-20 items-center justify-center rounded-2xl border border-border bg-primary/5 text-base font-semibold text-primary">
+                      <div class="flex h-28 w-20 items-center justify-center rounded-lg border border-border bg-primary/5 text-base font-semibold text-primary">
                         {{ getProfileInitials(leader.profile) }}
                       </div>
                       <span class="text-xs text-muted-foreground">Rasm</span>
@@ -10510,11 +10510,11 @@ onUnmounted(() => {
                 <div
                   v-for="member in selectedViewRecord.members"
                   :key="member.id"
-                  class="rounded-2xl border border-border bg-card p-4"
+                  class="rounded-lg border border-border bg-card p-4"
                 >
                   <div class="grid gap-4 md:grid-cols-[6rem_minmax(0,1fr)]">
                     <div class="flex flex-col items-center gap-2">
-                      <div class="flex h-28 w-20 items-center justify-center rounded-2xl border border-border bg-primary/5 text-base font-semibold text-primary">
+                      <div class="flex h-28 w-20 items-center justify-center rounded-lg border border-border bg-primary/5 text-base font-semibold text-primary">
                         {{ getProfileInitials({ fullName: member.fullName, pinfl: member.pinfl, birthDate: member.birthDate, region: member.region, district: member.district }) }}
                       </div>
                       <span class="text-xs text-muted-foreground">Rasm</span>
@@ -10548,7 +10548,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <h3 class="text-base font-semibold text-foreground">
                 Hujjat tarixi
               </h3>
@@ -10556,7 +10556,7 @@ onUnmounted(() => {
                 <div
                   v-for="(history, index) in selectedViewHistory"
                   :key="`${history.operation}-${index}`"
-                  class="grid gap-3 rounded-xl border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_10rem]"
+                  class="grid gap-3 rounded-lg border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_10rem]"
                 >
                   <div class="flex min-w-0 gap-3">
                     <span
@@ -10629,7 +10629,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
@@ -10728,7 +10728,7 @@ onUnmounted(() => {
             </div>
 
             <div class="grid gap-4 xl:grid-cols-2">
-              <div class="space-y-4 rounded-3xl border border-border bg-card p-4">
+              <div class="space-y-4 rounded-lg border border-border bg-card p-4">
                 <p class="text-sm font-semibold text-foreground">
                   Komissiya raisi
                 </p>
@@ -10762,10 +10762,10 @@ onUnmounted(() => {
                 </p>
                 <div
                   v-if="chairSearch.profile"
-                  class="grid gap-4 rounded-2xl border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
+                  class="grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
                 >
                   <div class="flex flex-col items-center gap-2">
-                    <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border bg-primary/5 text-lg font-semibold text-primary">
+                    <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border bg-primary/5 text-lg font-semibold text-primary">
                       {{ getProfileInitials(chairSearch.profile) }}
                     </div>
                     <span class="text-xs text-muted-foreground">Rasm</span>
@@ -10813,7 +10813,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="space-y-4 rounded-3xl border border-border bg-card p-4">
+              <div class="space-y-4 rounded-lg border border-border bg-card p-4">
                 <p class="text-sm font-semibold text-foreground">
                   Rais o'rinbosari
                 </p>
@@ -10847,10 +10847,10 @@ onUnmounted(() => {
                 </p>
                 <div
                   v-if="deputyChairSearch.profile"
-                  class="grid gap-4 rounded-2xl border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
+                  class="grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
                 >
                   <div class="flex flex-col items-center gap-2">
-                    <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border bg-primary/5 text-lg font-semibold text-primary">
+                    <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border bg-primary/5 text-lg font-semibold text-primary">
                       {{ getProfileInitials(deputyChairSearch.profile) }}
                     </div>
                     <span class="text-xs text-muted-foreground">Rasm</span>
@@ -10898,7 +10898,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="space-y-4 rounded-3xl border border-border bg-card p-4 xl:col-span-2">
+              <div class="space-y-4 rounded-lg border border-border bg-card p-4 xl:col-span-2">
                 <p class="text-sm font-semibold text-foreground">
                   Komissiya kotibi
                 </p>
@@ -10932,10 +10932,10 @@ onUnmounted(() => {
                 </p>
                 <div
                   v-if="secretarySearch.profile"
-                  class="grid gap-4 rounded-2xl border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
+                  class="grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
                 >
                   <div class="flex flex-col items-center gap-2">
-                    <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border bg-primary/5 text-lg font-semibold text-primary">
+                    <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border bg-primary/5 text-lg font-semibold text-primary">
                       {{ getProfileInitials(secretarySearch.profile) }}
                     </div>
                     <span class="text-xs text-muted-foreground">Rasm</span>
@@ -10984,7 +10984,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="space-y-4 rounded-3xl border border-border bg-card p-4">
+            <div class="space-y-4 rounded-lg border border-border bg-card p-4">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <h3 class="text-sm font-semibold text-foreground">
@@ -11009,7 +11009,7 @@ onUnmounted(() => {
                 <div
                   v-for="(member, index) in formMembers"
                   :key="member.id"
-                  class="rounded-2xl border border-border bg-card p-4"
+                  class="rounded-lg border border-border bg-card p-4"
                 >
                   <div class="mb-3 flex items-center justify-between gap-3">
                     <p class="text-sm font-semibold text-foreground">
@@ -11057,10 +11057,10 @@ onUnmounted(() => {
                   </p>
                   <div
                     v-if="member.fullName"
-                    class="mt-3 grid gap-4 rounded-2xl border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
+                    class="mt-3 grid gap-4 rounded-lg border border-border bg-background p-4 md:grid-cols-[7rem_minmax(0,1fr)]"
                   >
                     <div class="flex flex-col items-center gap-2">
-                      <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border bg-primary/5 text-lg font-semibold text-primary">
+                      <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border bg-primary/5 text-lg font-semibold text-primary">
                         {{ getProfileInitials({ fullName: member.fullName, pinfl: member.pinfl, birthDate: member.birthDate, region: member.region, district: member.district }) }}
                       </div>
                       <span class="text-xs text-muted-foreground">Rasm</span>
@@ -11193,7 +11193,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -11815,7 +11815,7 @@ onUnmounted(() => {
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <p class="text-lg font-semibold text-foreground">Barthel va Lawton baholashi</p>
@@ -11829,16 +11829,16 @@ onUnmounted(() => {
       </div>
 
       <div class="flex-1 space-y-6 overflow-y-auto p-5">
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <p class="text-base font-semibold text-foreground">{{ t('Xizmat oluvchi') }}</p>
           <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
-            <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
-              <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
+            <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-lg border border-border bg-background px-5 py-6 text-center">
+              <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
                 {{ t("Rasm yo'q") }}
               </div>
               <span class="mt-3 text-sm text-muted-foreground">{{ t('Rasm') }}</span>
             </div>
-            <div class="overflow-hidden rounded-2xl border border-border bg-background">
+            <div class="overflow-hidden rounded-lg border border-border bg-background">
               <div
                 v-for="[label, value] in selectedAssessmentServiceRecipientRows"
                 :key="`assessment-service-recipient-${label}`"
@@ -11851,7 +11851,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="text-base font-semibold text-foreground">Elementar harakatlarni baholash</p>
@@ -11862,7 +11862,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="mt-4 space-y-4">
-            <div v-for="question in barthelQuestions" :key="question.id" class="rounded-2xl border border-border bg-background p-4">
+            <div v-for="question in barthelQuestions" :key="question.id" class="rounded-lg border border-border bg-background p-4">
               <p class="text-sm font-semibold text-foreground">{{ question.order }}. {{ question.title }}</p>
               <p class="mt-1 text-xs text-muted-foreground">Tanlangan ball: {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}</p>
               <div class="mt-3 grid gap-2">
@@ -11872,7 +11872,7 @@ onUnmounted(() => {
                   type="button"
                   :disabled="selectedAssessmentReadonly"
                   :class="[
-                    'rounded-xl border px-3 py-3 text-left transition-colors disabled:cursor-default',
+                    'rounded-lg border px-3 py-3 text-left transition-colors disabled:cursor-default',
                     getAssessmentSelectedOption(question)?.id === option.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/40 disabled:hover:bg-card',
                   ]"
                   @click="setAssessmentAnswer(question.id, option.id)"
@@ -11887,7 +11887,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="text-base font-semibold text-foreground">Murakkab harakatlarni baholash</p>
@@ -11898,7 +11898,7 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="mt-4 space-y-4">
-            <div v-for="question in lawtonQuestions" :key="question.id" class="rounded-2xl border border-border bg-background p-4">
+            <div v-for="question in lawtonQuestions" :key="question.id" class="rounded-lg border border-border bg-background p-4">
               <p class="text-sm font-semibold text-foreground">{{ question.order }}. {{ question.title }}</p>
               <p class="mt-1 text-xs text-muted-foreground">Tanlangan ball: {{ formatAssessmentScore(getAssessmentSelectedOption(question)?.score ?? 0) }}</p>
               <div class="mt-3 grid gap-2">
@@ -11908,7 +11908,7 @@ onUnmounted(() => {
                   type="button"
                   :disabled="selectedAssessmentReadonly"
                   :class="[
-                    'rounded-xl border px-3 py-3 text-left transition-colors disabled:cursor-default',
+                    'rounded-lg border px-3 py-3 text-left transition-colors disabled:cursor-default',
                     getAssessmentSelectedOption(question)?.id === option.id ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/40 disabled:hover:bg-card',
                   ]"
                   @click="setAssessmentAnswer(question.id, option.id)"
@@ -11923,11 +11923,11 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch">
             <div
               :class="[
-                'flex min-w-0 flex-1 flex-col justify-between rounded-xl border p-4',
+                'flex min-w-0 flex-1 flex-col justify-between rounded-lg border p-4',
                 assessmentGroupLabel === 'Tezkor'
                   ? 'border-destructive/25 bg-destructive/5'
                   : assessmentGroupLabel === 'Rejali'
@@ -11950,19 +11950,19 @@ onUnmounted(() => {
               </div>
             </div>
             <div class="grid flex-[1.4] gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Barthel</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentBarthelTotal) }} ball</p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Lawton</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ formatAssessmentScore(assessmentLawtonTotal) }} ball</p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Yaqin qarindoshlari</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ getAssessmentCloseRelativesLabel(selectedAssessmentViewRecord) }}</p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">Uy-joyi</p>
                 <p class="mt-1 text-base font-semibold text-foreground">{{ getAssessmentHousingLabel(selectedAssessmentViewRecord) }}</p>
               </div>
@@ -12004,7 +12004,7 @@ onUnmounted(() => {
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
         <div>
           <h2 class="text-lg font-semibold">
@@ -12019,7 +12019,7 @@ onUnmounted(() => {
         </Button>
       </div>
       <div class="space-y-4 px-6 py-5">
-        <div class="overflow-hidden rounded-xl border border-border">
+        <div class="overflow-hidden rounded-lg border border-border">
           <div class="grid grid-cols-[12rem_1fr] border-b border-border text-sm last:border-b-0">
             <div class="bg-muted/30 px-4 py-3 font-medium text-muted-foreground">Hujjat</div>
             <div class="px-4 py-3 font-medium text-foreground">{{ selectedAssessmentViewRecord?.documentNumber }}</div>
@@ -12125,7 +12125,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -12383,7 +12383,7 @@ onUnmounted(() => {
           @select="selectProtocolStatusTab($event as ProtocolStatusTabValue)"
         />
 
-        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
           <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
             <div
               v-if="isTableLoading"
@@ -12779,7 +12779,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl">
+        <div class="flex max-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div>
               <div class="flex flex-wrap items-center gap-2">
@@ -12938,7 +12938,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-4">
+            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 p-4">
               <div>
                 <p class="font-medium text-foreground">{{ t("IPTK qabul qildi bosqichidagi arizalar") }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">{{ t("Shakllantirish bosilganda tanlangan hudud va tuman bo'yicha ro'yxat yig'iladi.") }}</p>
@@ -12962,7 +12962,7 @@ onUnmounted(() => {
 
             <div
               v-if="protocolForm.isGenerated"
-              class="mt-5 overflow-hidden rounded-xl border border-border"
+              class="mt-5 overflow-hidden rounded-lg border border-border"
             >
               <div v-if="protocolForm.applications.length === 0" class="p-6 text-center text-sm text-muted-foreground">
                 {{ isProtocolReadonly ? t("Ushbu demo bayonnomada arizalar ro'yxati saqlanmagan.") : t("Tanlangan shartlar bo'yicha ariza topilmadi.") }}
@@ -13064,7 +13064,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+      <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -13103,7 +13103,7 @@ onUnmounted(() => {
           @select="selectQuestionnaireStatusTab($event as QuestionnaireStatusTabValue)"
         />
 
-        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
           <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
             <div
               v-if="isTableLoading"
@@ -13134,7 +13134,7 @@ onUnmounted(() => {
               <Card
                 v-for="record in paginatedQuestionnaires"
                 :key="record.id"
-                class="rounded-xl border-border bg-card"
+                class="rounded-lg border-border bg-card"
               >
                 <CardContent class="p-4">
                   <div class="mb-4 flex items-start justify-between gap-3">
@@ -13442,7 +13442,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -13481,7 +13481,7 @@ onUnmounted(() => {
           @select="selectConclusionResultTab($event as ConclusionResultTabValue)"
         />
 
-        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border">
+        <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
           <div class="relative min-h-0 flex-1 overflow-y-auto xl:hidden">
             <div
               v-if="isTableLoading"
@@ -13512,7 +13512,7 @@ onUnmounted(() => {
               <Card
                 v-for="record in paginatedConclusions"
                 :key="record.id"
-                class="rounded-xl border-border bg-card"
+                class="rounded-lg border-border bg-card"
               >
                 <CardContent class="p-4">
                   <div class="mb-4 flex items-start justify-between gap-3">
@@ -13774,7 +13774,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
@@ -13801,26 +13801,26 @@ onUnmounted(() => {
 
           <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-6">
             <div class="grid gap-3 md:grid-cols-3">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Hujjat') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.documentNumber }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">{{ t('Ariza') }}: {{ selectedConclusionRecord.applicationNumber }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Bayonnoma') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.protocolNumber }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">{{ selectedConclusionRecord.commissionName }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Tasdiqlangan sana') }}</p>
                 <p class="mt-1 font-semibold text-foreground">{{ formatDateDisplay(selectedConclusionRecord.approvedAt) }}</p>
                 <p class="mt-1 text-sm text-muted-foreground">{{ selectedConclusionRecord.status }}</p>
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <h3 class="text-base font-semibold text-foreground">{{ t('Xizmat oluvchi') }}</h3>
-              <div class="mt-4 overflow-hidden rounded-xl border border-border">
+              <div class="mt-4 overflow-hidden rounded-lg border border-border">
                 <div class="grid border-b border-border sm:grid-cols-[14rem_minmax(0,1fr)]">
                   <div class="bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground">FIO</div>
                   <div class="px-4 py-3 font-medium uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.serviceRecipient) }}</div>
@@ -13849,7 +13849,7 @@ onUnmounted(() => {
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="text-base font-semibold text-foreground">{{ t('Xizmat ma’lumoti') }}</h3>
                 <div class="mt-4 space-y-3">
                   <div>
@@ -13867,7 +13867,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="text-base font-semibold text-foreground">{{ t('Xulosa') }}</h3>
                 <div class="mt-4 space-y-3">
                   <div>
@@ -13892,25 +13892,25 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <h3 class="text-base font-semibold text-foreground">{{ t('Komissiya ma’lumoti') }}</h3>
               <div class="mt-4 grid gap-3 md:grid-cols-3">
-                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                <div class="rounded-lg border border-border bg-muted/20 p-3">
                   <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Rais') }}</p>
                   <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.chair) }}</p>
                 </div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                <div class="rounded-lg border border-border bg-muted/20 p-3">
                   <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t('Kotib') }}</p>
                   <p class="mt-1 font-semibold uppercase text-foreground">{{ normalizeFullName(selectedConclusionRecord.secretary) }}</p>
                 </div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                <div class="rounded-lg border border-border bg-muted/20 p-3">
                   <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ t("A'zolar soni") }}</p>
                   <p class="mt-1 font-semibold text-foreground">{{ selectedConclusionRecord.membersCount }} ta</p>
                 </div>
               </div>
             </div>
 
-            <p class="rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+            <p class="rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               {{ t("Public ko'rinishda shaxsga doir sezgir ma'lumotlar qisqartirib ko'rsatiladi.") }}
             </p>
           </div>
@@ -13968,7 +13968,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -14293,7 +14293,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
             <div>
               <h2 class="text-lg font-semibold text-foreground">
@@ -14313,7 +14313,7 @@ onUnmounted(() => {
           </div>
 
           <div class="space-y-6 px-6 py-5">
-            <section class="space-y-4 rounded-2xl border border-border bg-card p-4">
+            <section class="space-y-4 rounded-lg border border-border bg-card p-4">
               <div class="grid gap-4 md:grid-cols-2">
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">Qisqa nomi</span>
@@ -14333,7 +14333,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+                class="flex w-full items-center justify-between rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
                 @click="toggleServiceTypeTranslations"
               >
                 <span>Tarjimalar (ixtiyoriy)</span>
@@ -14341,14 +14341,14 @@ onUnmounted(() => {
               </button>
 
               <div v-if="isServiceTypeTranslationsOpen" class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                <div class="space-y-3 rounded-lg border border-border bg-background p-3">
                   <h4 class="text-sm font-semibold text-foreground">Qisqa nomi tarjimalari</h4>
                   <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
                     <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
                     <Input v-model="serviceTypeForm.shortName[field.key]" placeholder="Ixtiyoriy" />
                   </label>
                 </div>
-                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                <div class="space-y-3 rounded-lg border border-border bg-background p-3">
                   <h4 class="text-sm font-semibold text-foreground">To'liq nomi tarjimalari</h4>
                   <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
                     <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
@@ -14646,7 +14646,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ selectedServiceTypeRecord.id }}</h2>
@@ -14667,7 +14667,7 @@ onUnmounted(() => {
               </span>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Qisqa nomi</h3>
                 <div class="mt-4 divide-y divide-border text-sm">
                   <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
@@ -14689,7 +14689,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">To'liq nomi</h3>
                 <div class="mt-4 divide-y divide-border text-sm">
                   <div class="grid grid-cols-[150px_1fr] gap-3 py-2">
@@ -14713,18 +14713,18 @@ onUnmounted(() => {
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Minimal yosh</h3>
                 <p class="mt-4 text-sm font-medium text-foreground">{{ selectedServiceTypeRecord.minAge }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Maksimal yosh</h3>
                 <p class="mt-4 text-sm font-medium text-foreground">{{ selectedServiceTypeRecord.maxAge ?? '-' }}</p>
               </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Mos tashxislar</h3>
                 <div class="mt-4 space-y-2">
                   <div
@@ -14738,7 +14738,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Qarshi ko'rsatmalar</h3>
                 <div class="mt-4 space-y-2">
                   <div
@@ -14753,7 +14753,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <h3 class="font-semibold text-foreground">Talab etiladigan hujjatlar</h3>
               <div class="mt-4 grid gap-2 md:grid-cols-2">
                 <div
@@ -14769,14 +14769,14 @@ onUnmounted(() => {
 
             <div
               v-if="selectedDiagnosisRecord && isQuestionnaireTemplateRecord(selectedDiagnosisRecord)"
-              class="rounded-2xl border border-border bg-card p-4"
+              class="rounded-lg border border-border bg-card p-4"
             >
               <h3 class="font-semibold text-foreground">Savollar shabloni</h3>
               <div class="mt-4 space-y-4">
                 <div
                   v-for="(group, groupIndex) in selectedDiagnosisRecord.questionGroups"
                   :key="group.id"
-                  class="rounded-xl border border-border bg-background p-4"
+                  class="rounded-lg border border-border bg-background p-4"
                 >
                   <p class="text-sm font-semibold text-foreground">{{ groupIndex + 1 }}. {{ group.title }}</p>
                   <div class="mt-3 space-y-3">
@@ -14805,11 +14805,11 @@ onUnmounted(() => {
               v-if="selectedDiagnosisRecord && isCategoryGroupRecord(selectedDiagnosisRecord)"
               class="grid gap-4 md:grid-cols-2"
             >
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Minimal ball</h3>
                 <p class="mt-4 text-sm font-medium text-foreground">{{ selectedDiagnosisRecord.minScore }}</p>
               </div>
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Maksimal ball</h3>
                 <p class="mt-4 text-sm font-medium text-foreground">{{ selectedDiagnosisRecord.maxScore }}</p>
               </div>
@@ -14874,7 +14874,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -15154,7 +15154,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ editingDiagnosisId ? medicalReferenceEditTitle : medicalReferenceCreateTitle }}</h2>
@@ -15168,7 +15168,7 @@ onUnmounted(() => {
           </div>
 
           <div class="space-y-6 px-6 py-5">
-            <section class="space-y-4 rounded-2xl border border-border bg-card p-4">
+            <section class="space-y-4 rounded-lg border border-border bg-card p-4">
               <div class="grid gap-4 md:grid-cols-2">
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">Qisqa nomi</span>
@@ -15182,7 +15182,7 @@ onUnmounted(() => {
 
               <button
                 type="button"
-                class="flex w-full items-center justify-between rounded-xl border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
+                class="flex w-full items-center justify-between rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-left text-sm font-semibold text-foreground transition hover:bg-muted"
                 @click="toggleDiagnosisTranslations"
               >
                 <span>Tarjimalar (ixtiyoriy)</span>
@@ -15190,14 +15190,14 @@ onUnmounted(() => {
               </button>
 
               <div v-if="isDiagnosisTranslationsOpen" class="grid gap-4 md:grid-cols-2">
-                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                <div class="space-y-3 rounded-lg border border-border bg-background p-3">
                   <h4 class="text-sm font-semibold text-foreground">Qisqa nomi tarjimalari</h4>
                   <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
                     <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
                     <Input v-model="diagnosisForm.shortName[field.key]" placeholder="Ixtiyoriy" />
                   </label>
                 </div>
-                <div class="space-y-3 rounded-xl border border-border bg-background p-3">
+                <div class="space-y-3 rounded-lg border border-border bg-background p-3">
                   <h4 class="text-sm font-semibold text-foreground">To'liq nomi tarjimalari</h4>
                   <label v-for="field in optionalLocalizedLanguageFields" :key="field.key" class="space-y-2">
                     <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ field.label }}</span>
@@ -15209,7 +15209,7 @@ onUnmounted(() => {
 
             <section
               v-if="isCategoryGroupsPage"
-              class="grid gap-4 rounded-2xl border border-border bg-card p-4 md:grid-cols-2"
+              class="grid gap-4 rounded-lg border border-border bg-card p-4 md:grid-cols-2"
             >
               <label class="space-y-2">
                 <span class="text-sm font-medium text-foreground">Minimal ball</span>
@@ -15223,7 +15223,7 @@ onUnmounted(() => {
 
             <section
               v-if="isQuestionnaireTemplatesPage"
-              class="space-y-4 rounded-2xl border border-border bg-card p-4"
+              class="space-y-4 rounded-lg border border-border bg-card p-4"
             >
               <div class="flex items-center justify-between gap-3">
                 <div>
@@ -15240,7 +15240,7 @@ onUnmounted(() => {
                 <div
                   v-for="(group, groupIndex) in diagnosisForm.questionGroups"
                   :key="group.id"
-                  class="space-y-4 rounded-xl border border-border bg-background p-4"
+                  class="space-y-4 rounded-lg border border-border bg-background p-4"
                 >
                   <div class="flex items-center justify-between gap-3">
                     <label class="flex-1 space-y-2">
@@ -15257,7 +15257,7 @@ onUnmounted(() => {
                     </Button>
                   </div>
 
-                  <div class="space-y-3 rounded-xl border border-dashed border-border p-3">
+                  <div class="space-y-3 rounded-lg border border-dashed border-border p-3">
                     <div class="flex items-center justify-between gap-3">
                       <p class="text-sm font-semibold text-foreground">Savollar</p>
                       <Button variant="outline" size="sm" class="gap-2" @click="addQuestionnaireQuestion(group.id)">
@@ -15457,7 +15457,7 @@ onUnmounted(() => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-popover px-6 py-5">
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ selectedDiagnosisRecord.id }}</h2>
@@ -15479,7 +15479,7 @@ onUnmounted(() => {
               </span>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">Qisqa nomi</h3>
                 <div class="mt-4 divide-y divide-border text-sm">
                   <div v-for="field in localizedLanguageFields" :key="field.key" class="grid grid-cols-[150px_1fr] gap-3 py-2">
@@ -15488,7 +15488,7 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <h3 class="font-semibold text-foreground">To'liq nomi</h3>
                 <div class="mt-4 divide-y divide-border text-sm">
                   <div v-for="field in localizedLanguageFields" :key="field.key" class="grid grid-cols-[150px_1fr] gap-3 py-2">
@@ -15558,7 +15558,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible rounded-2xl border border-border bg-card p-5">
+      <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
         <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex min-w-0 items-center gap-2">
             <Button
@@ -16019,7 +16019,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
           <div
             v-if="isTableLoading"
             class="absolute inset-0 z-20 flex items-center justify-center bg-card/70 backdrop-blur-[1px]"
@@ -16264,7 +16264,7 @@ onUnmounted(() => {
       @touchmove.prevent
       @wheel.self.prevent
     >
-      <div class="flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex max-h-[88vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
           <div class="min-w-0">
             <h2 class="text-lg font-semibold text-foreground">{{ t("Tanlangan son bo'yicha arizalar") }}</h2>
@@ -16304,7 +16304,7 @@ onUnmounted(() => {
         <div class="min-h-0 flex-1 overflow-auto px-6 py-5">
           <div
             v-if="isApplicationReportDrilldownLoading"
-            class="flex min-h-64 items-center justify-center rounded-2xl border border-border bg-card text-sm text-muted-foreground"
+            class="flex min-h-64 items-center justify-center rounded-lg border border-border bg-card text-sm text-muted-foreground"
           >
             <LoaderCircle class="mr-2 h-5 w-5 animate-spin text-primary" />
             <span>{{ t('Yuklanmoqda') }}</span>
@@ -16312,7 +16312,7 @@ onUnmounted(() => {
 
           <div
             v-else-if="applicationReportDrilldownRows.length === 0"
-            class="rounded-2xl border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground"
+            class="rounded-lg border border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground"
           >
             {{ t("Ma'lumot topilmadi") }}
           </div>
@@ -16324,7 +16324,7 @@ onUnmounted(() => {
             <article
               v-for="record in paginatedApplicationReportDrilldownRows"
               :key="record.id"
-              class="rounded-2xl border border-border bg-card p-4 text-sm transition-colors duration-200 ease-out hover:bg-muted/20"
+              class="rounded-lg border border-border bg-card p-4 text-sm transition-colors duration-200 ease-out hover:bg-muted/20"
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
@@ -16425,19 +16425,19 @@ onUnmounted(() => {
               </div>
 
               <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2">
+                <div class="rounded-lg border border-border bg-muted/20 px-3 py-2">
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Xizmat oluvchi') }}</p>
                   <p class="mt-1 font-semibold uppercase text-foreground">{{ record.serviceRecipient }}</p>
                   <p class="mt-1 text-muted-foreground">{{ record.serviceRecipientPinfl }}</p>
                 </div>
 
-                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2">
+                <div class="rounded-lg border border-border bg-muted/20 px-3 py-2">
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Manzil') }}</p>
                   <p class="mt-1 font-semibold text-foreground">{{ record.region }}</p>
                   <p class="mt-1 text-muted-foreground">{{ record.district }}</p>
                 </div>
 
-                <div class="rounded-xl border border-border bg-muted/20 px-3 py-2 sm:col-span-2">
+                <div class="rounded-lg border border-border bg-muted/20 px-3 py-2 sm:col-span-2">
                   <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t('Xizmat turi') }}</p>
                   <p class="mt-1 font-semibold text-foreground">{{ record.serviceType }}</p>
                 </div>
@@ -16547,7 +16547,7 @@ onUnmounted(() => {
       @touchmove.prevent
       @wheel.self.prevent
     >
-      <div class="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+      <div class="flex max-h-[92vh] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
           <div class="min-w-0">
             <h2 class="text-lg font-semibold text-foreground">{{ t(activeDocumentFlow.title) }}</h2>
@@ -16564,7 +16564,7 @@ onUnmounted(() => {
         </div>
 
         <div class="min-h-0 flex-1 overflow-auto px-6 py-6">
-          <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="rounded-lg border border-border bg-card p-4">
             <p class="text-sm font-semibold text-foreground">{{ t('Hujjat bosqichlari') }}</p>
             <div class="mt-5 min-w-[860px]">
               <div class="grid grid-cols-[repeat(var(--flow-count),minmax(9rem,1fr))] items-stretch gap-3" :style="{ '--flow-count': String(activeDocumentFlow.steps.length) }">
@@ -16575,7 +16575,7 @@ onUnmounted(() => {
                   <div class="relative">
                     <div
                       :class="cn(
-                        'flex min-h-44 flex-col rounded-2xl border p-4 transition-colors duration-200 ease-out',
+                        'flex min-h-44 flex-col rounded-lg border p-4 transition-colors duration-200 ease-out',
                         documentFlowToneClassMap[step.tone],
                       )"
                     >
@@ -16604,7 +16604,7 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="mt-4 rounded-2xl border border-border bg-muted/20 p-4">
+          <div class="mt-4 rounded-lg border border-border bg-muted/20 p-4">
             <p class="text-sm font-semibold text-foreground">{{ t('O‘tish qoidalari') }}</p>
             <div class="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
               <p v-if="documentFlowDialogKind === 'commission'">

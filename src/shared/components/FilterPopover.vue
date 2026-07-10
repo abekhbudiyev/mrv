@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Filter, X } from 'lucide-vue-next'
-import type { StyleValue } from 'vue'
+import { onBeforeUnmount, onMounted, ref, type StyleValue } from 'vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { cn } from '@/shared/lib/utils'
 
@@ -28,9 +28,10 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
+const rootElement = ref<HTMLElement | null>(null)
 
 const overlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
-const panelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const panelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
 
 function setOpen(nextOpen: boolean) {
   emit('update:open', nextOpen)
@@ -39,10 +40,34 @@ function setOpen(nextOpen: boolean) {
 function toggleOpen() {
   setOpen(!props.open)
 }
+
+function handleOutsidePointerDown(event: PointerEvent) {
+  if (!props.open || rootElement.value?.contains(event.target as Node)) {
+    return
+  }
+
+  setOpen(false)
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && props.open) {
+    setOpen(false)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', handleOutsidePointerDown, true)
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', handleOutsidePointerDown, true)
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
 </script>
 
 <template>
-  <div :class="cn('relative', wrapperClass)">
+  <div ref="rootElement" :class="cn('relative', wrapperClass)">
     <div
       v-if="open"
       :class="overlayClass"

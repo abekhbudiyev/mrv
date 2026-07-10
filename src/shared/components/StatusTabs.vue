@@ -48,15 +48,15 @@ function handleSelect(event: MouseEvent, value: string) {
 </script>
 
 <template>
-  <div class="-mt-1 max-w-full min-w-0 overflow-x-auto">
-    <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-2xl border border-border bg-card p-1 text-muted-foreground">
+  <div class="max-w-full min-w-0 overflow-x-auto">
+    <div class="inline-flex min-w-max items-center justify-start gap-1 rounded-lg border border-border bg-card p-1 text-muted-foreground shadow-[0_1px_2px_rgba(15,23,18,0.03)]">
       <button
         v-for="tab in tabs"
         :key="`${itemKeyPrefix}-${tab.value}`"
         type="button"
         :aria-pressed="isActive(tab.value)"
         :class="cn(
-          'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:translate-y-px active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus:border-primary/60 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-primary/25 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
+          'group inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent bg-transparent px-3.5 py-1 text-sm font-medium text-muted-foreground outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out hover:border-primary/40 hover:bg-background hover:text-foreground active:border-primary/60 active:bg-primary/10 active:text-foreground active:ring-2 active:ring-primary/20 focus-visible:border-primary/60 focus-visible:bg-background focus-visible:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 disabled:pointer-events-none disabled:opacity-50',
           isActive(tab.value) ? 'border-primary/60 bg-background text-foreground ring-2 ring-primary/25' : '',
         )"
         @click="handleSelect($event, tab.value)"

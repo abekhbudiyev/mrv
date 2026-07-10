@@ -53,12 +53,12 @@ function goApps() {
 <template>
   <div class="flex min-h-screen min-w-0 max-w-full flex-col overflow-hidden bg-background p-4 sm:p-5 lg:p-6">
     <section
-      class="relative flex min-h-[calc(100vh-2rem)] flex-1 items-center justify-center overflow-hidden rounded-2xl border border-border bg-card px-6 py-12 sm:min-h-[calc(100vh-2.5rem)] sm:px-10 lg:min-h-[calc(100vh-3rem)]"
+      class="relative flex min-h-[calc(100vh-2rem)] flex-1 items-center justify-center overflow-hidden rounded-lg border border-border bg-card px-6 py-12 sm:min-h-[calc(100vh-2.5rem)] sm:px-10 lg:min-h-[calc(100vh-3rem)]"
     >
       <div class="relative flex w-full max-w-3xl flex-col items-center text-center">
         <div
           :class="[
-            'mb-8 inline-flex h-14 w-14 items-center justify-center rounded-2xl border',
+            'mb-8 inline-flex h-14 w-14 items-center justify-center rounded-lg border',
             page.iconClass,
           ]"
         >

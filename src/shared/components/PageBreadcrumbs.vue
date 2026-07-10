@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ChevronRight } from 'lucide-vue-next'
+
 defineProps<{
   items: string[]
 }>()
@@ -13,11 +15,13 @@ defineProps<{
       v-for="(item, index) in items"
       :key="`${item}-${index}`"
     >
-      <span class="truncate">{{ item }}</span>
-      <span
+      <span :class="index === items.length - 1 ? 'truncate font-medium text-foreground' : 'truncate'">
+        {{ item }}
+      </span>
+      <ChevronRight
         v-if="index < items.length - 1"
-        class="shrink-0"
-      >/</span>
+        class="h-3 w-3 shrink-0 opacity-60"
+      />
     </template>
   </nav>
 </template>

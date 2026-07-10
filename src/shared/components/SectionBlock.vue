@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from '@/shared/i18n'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/shadcn/card'
+import { cn } from '@/shared/lib/utils'
 
 defineProps<{
   title: string
@@ -13,7 +14,10 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Card :class="$props.class">
+  <Card
+    v-if="title || description"
+    :class="$props.class"
+  >
     <CardHeader
       v-if="title || description"
       class="pb-3"
@@ -32,4 +36,13 @@ const { t } = useI18n()
       <slot />
     </CardContent>
   </Card>
+
+  <section
+    v-else
+    :class="cn('min-w-0', $props.class)"
+  >
+    <div :class="cn(contentClass || 'space-y-4', '!px-0 !pt-0')">
+      <slot />
+    </div>
+  </section>
 </template>

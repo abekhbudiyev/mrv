@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { ArrowUpRight } from 'lucide-vue-next'
 import type { AppModule } from '@/features/apps/types'
 import { useI18n } from '@/shared/i18n'
-import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 
 defineProps<{
@@ -13,35 +13,34 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <Card class="h-full transition-colors duration-200 ease-out hover:border-primary/25 hover:bg-accent/35">
-    <CardContent class="flex h-full flex-col gap-4 pt-5">
-      <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/60 text-foreground">
-          <component
-            :is="app.icon"
-            class="h-5 w-5"
-          />
+  <RouterLink
+    :to="app.route"
+    class="group block h-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+  >
+    <Card class="h-full transition-[border-color,background-color,box-shadow,transform] duration-150 ease-out group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-[0_8px_24px_rgba(15,23,18,0.07)]">
+      <CardContent class="flex h-full flex-col gap-4 p-5">
+        <div class="flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/8 text-primary">
+            <component
+              :is="app.icon"
+              class="h-5 w-5"
+            />
+          </div>
+          <div class="min-w-0 space-y-1">
+            <h3 class="text-sm font-semibold text-foreground">
+              {{ t(app.title) }}
+            </h3>
+            <p class="text-sm leading-6 text-muted-foreground">
+              {{ t(app.description) }}
+            </p>
+          </div>
         </div>
-        <div class="min-w-0 space-y-1">
-          <h3 class="text-sm font-semibold text-foreground">
-            {{ t(app.title) }}
-          </h3>
-          <p class="text-sm leading-6 text-muted-foreground">
-            {{ t(app.description) }}
-          </p>
-        </div>
-      </div>
 
-      <div class="mt-auto">
-        <RouterLink :to="app.route">
-          <Button
-            variant="outline"
-            class="w-full justify-center"
-          >
-            {{ t('Ochish') }}
-          </Button>
-        </RouterLink>
-      </div>
-    </CardContent>
-  </Card>
+        <div class="mt-auto flex items-center justify-between border-t border-border pt-4 text-sm font-medium text-primary">
+          <span>{{ t('Ochish') }}</span>
+          <ArrowUpRight class="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </div>
+      </CardContent>
+    </Card>
+  </RouterLink>
 </template>

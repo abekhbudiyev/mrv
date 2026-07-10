@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue'
 import { LoaderCircle } from 'lucide-vue-next'
 import { Button } from '@/shared/ui/shadcn/button'
 
@@ -14,7 +15,7 @@ interface ConfirmDialogProps {
   loading?: boolean
 }
 
-withDefaults(defineProps<ConfirmDialogProps>(), {
+const props = withDefaults(defineProps<ConfirmDialogProps>(), {
   tone: 'success',
   cancelLabel: 'Bekor qilish',
   loading: false,
@@ -24,18 +25,29 @@ const emit = defineEmits<{
   cancel: []
   confirm: []
 }>()
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (props.open && event.key === 'Escape' && !props.loading) {
+    emit('cancel')
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', handleGlobalKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown))
 </script>
 
 <template>
   <div
     v-if="open"
     class="pointer-events-auto fixed inset-0 z-[80] flex items-center justify-center overscroll-none bg-black/45 p-4 dark:bg-black/60"
-    @click.stop
+    role="dialog"
+    aria-modal="true"
+    @click.self="!loading && emit('cancel')"
     @mousedown.stop
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl">
+    <div class="w-full max-w-md rounded-lg border border-border bg-card p-5 shadow-2xl">
       <div class="flex items-start gap-3">
         <div
           :class="[

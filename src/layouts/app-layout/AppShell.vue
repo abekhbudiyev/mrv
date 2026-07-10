@@ -11,7 +11,7 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="min-h-screen overflow-x-hidden bg-background text-foreground xl:h-screen xl:overflow-hidden">
+  <div class="min-h-screen overflow-x-hidden bg-muted/35 text-foreground xl:h-screen xl:overflow-hidden">
     <div
       v-if="showSidebar && sidebarOpen"
       class="fixed inset-0 z-[80] bg-black/35 dark:bg-black/55 lg:hidden"
@@ -21,8 +21,8 @@ defineEmits<{
     <aside
       v-if="showSidebar"
       :class="[
-        'fixed inset-y-3 left-4 z-[90] w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-sidebar text-sidebar-foreground shadow-[0_24px_60px_rgba(15,20,17,0.18)] transition-[width,transform] duration-300 ease-out dark:shadow-[0_24px_70px_rgba(0,0,0,0.45)] lg:z-30 lg:translate-x-0 lg:shadow-none',
-        sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
+        'fixed inset-y-3 left-4 z-[90] w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border bg-sidebar text-sidebar-foreground shadow-[0_18px_45px_rgba(15,20,17,0.16)] transition-[width,transform] duration-300 ease-out dark:shadow-[0_18px_55px_rgba(0,0,0,0.4)] lg:z-30 lg:translate-x-0 lg:shadow-none',
+        sidebarCollapsed ? 'lg:w-20' : 'lg:w-64',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
       ]"
     >
@@ -32,11 +32,11 @@ defineEmits<{
     <div
       :class="[
         'flex min-h-screen flex-col overflow-visible xl:h-screen xl:overflow-hidden',
-        showSidebar ? (sidebarCollapsed ? 'lg:pl-[6.25rem]' : 'lg:pl-[18.75rem]') : '',
+        showSidebar ? (sidebarCollapsed ? 'lg:pl-[6.25rem]' : 'lg:pl-[17.25rem]') : '',
       ]"
     >
       <header class="sticky top-3 z-20 px-4 lg:px-5">
-        <div class="rounded-2xl border border-border bg-card/95 backdrop-blur">
+        <div class="rounded-lg border border-border bg-card/95 shadow-[0_1px_2px_rgba(15,23,18,0.04)] backdrop-blur">
           <slot name="header" />
         </div>
       </header>

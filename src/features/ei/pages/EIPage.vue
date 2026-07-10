@@ -8,7 +8,7 @@ const providerApplicationDrafts = moduleRef<EiDraftRecord[]>([])
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CalendarDays, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, Eye, FilePenLine, Plus, RotateCcw, Search, Send } from 'lucide-vue-next'
+import { Building2, CalendarDays, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, ExternalLink, Eye, FilePenLine, FileText, History, LandPlot, Map, Plus, RotateCcw, Search, Send, UserCheck, UserRound } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -111,6 +111,14 @@ type EiDetailField = {
 
 type ChildApplicationViewMode = 'sections' | 'tabs'
 type ChildApplicationDetailTab = 'main' | 'basis' | 'process' | 'history'
+type ProviderApplicationDetailTab = 'main' | 'conclusion' | 'history'
+
+const providerApplicationRequirements = [
+  "Davolovchi jismoniy tarbiya yo'riqchisi va maxsus pedagogik ma'lumotga ega mutaxassis (maxsus pedagog, defektolog, logoped, tiflopedagog, surdopedagog, oligofrenopedagog) faoliyati tashkil etilganligi",
+  "Individual va guruhli mashg'ulotlar o'tkazishni tashkil etish uchun xonalar mavjudligi",
+  'Xonalarda jihoz va buyumlar mavjudligi',
+  'Xonalar, jihoz va buyumlarning minimal talablarga javob berishi',
+]
 
 const providerApplicationApplicantsByPinfl: Record<string, ProviderApplicationApplicantLookup> = {
   '11111111111111': {
@@ -554,6 +562,7 @@ const selectedAttendanceDay = ref(toInputDate())
 const selectedAttendanceListTab = ref<AttendanceListTab>('all')
 const childApplicationViewMode = ref<ChildApplicationViewMode>('sections')
 const selectedChildApplicationDetailTab = ref<ChildApplicationDetailTab>('main')
+const selectedProviderApplicationDetailTab = ref<ProviderApplicationDetailTab>('main')
 const draftAttendanceRegion = ref('')
 const draftAttendanceProvider = ref('')
 const isAttendanceFilterOpen = ref(false)
@@ -752,6 +761,7 @@ const providerApplicationBusinessRows = computed<ProviderApplicationInfoRow[]>((
 const isProvidersApplicationsPage = computed(() => props.pageKey === 'providers-applications')
 const isProvidersApplicationsReportPage = computed(() => props.pageKey === 'providers-applications-report')
 const isProvidersApplicationsCreatePage = computed(() => props.pageKey === 'providers-applications-create')
+const isProvidersApplicationViewPage = computed(() => props.pageKey === 'providers-application-view')
 const isProvidersConclusionsPage = computed(() => props.pageKey === 'providers-conclusions')
 const isProvidersRegistryPage = computed(() => props.pageKey === 'providers-registry')
 const isChildrenApplicationsPage = computed(() => props.pageKey === 'children-questionnaires')
@@ -785,6 +795,76 @@ const pageRecords = computed(() => {
   }
 
   return records
+})
+const providerApplicationRecords = computed(() => [
+  ...providerApplicationDrafts.value,
+  ...getEiRecords('providers-applications'),
+])
+const selectedProviderApplicationId = computed(() => String(route.params.id ?? ''))
+const selectedProviderApplication = computed(() => (
+  providerApplicationRecords.value.find((record) => record.id === selectedProviderApplicationId.value)
+))
+const selectedProviderApplicationDetail = computed(() => (
+  selectedProviderApplication.value ? getProviderApplicationDetail(selectedProviderApplication.value) : null
+))
+const selectedProviderApplicationConclusion = computed(() => {
+  if (!selectedProviderApplication.value) {
+    return null
+  }
+
+  return getEiRecords('providers-conclusions').find((record) => (
+    record.tin === selectedProviderApplication.value?.tin
+  )) ?? null
+})
+const selectedProviderApplicationConclusionFields = computed<EiDetailField[]>(() => {
+  const conclusion = selectedProviderApplicationConclusion.value
+
+  if (!conclusion) {
+    return []
+  }
+
+  const result = conclusion.result || getMetadataValue(conclusion, 'Xulosa turi') || '-'
+  return [
+    { label: 'ID', value: conclusion.id },
+    { label: 'Sana', value: formatDate(conclusion.submittedAt) },
+    { label: 'Natija', value: result, kind: result === 'Ijobiy' ? 'success' : result === 'Salbiy' ? 'danger' : 'neutral' },
+    { label: 'Holat', value: conclusion.status, kind: 'status' },
+  ]
+})
+const selectedProviderApplicationRequirementResults = computed(() => {
+  const conclusion = selectedProviderApplicationConclusion.value
+  const result = conclusion
+    ? conclusion.result || getMetadataValue(conclusion, 'Xulosa turi')
+    : ''
+
+  return providerApplicationRequirements.map((label, index) => {
+    const savedResult = conclusion ? getMetadataValue(conclusion, `Talab ${index + 1}`) : ''
+
+    return {
+      label,
+      isMet: savedResult
+        ? savedResult === 'Javob beradi'
+        : result === 'Ijobiy' || (result === 'Salbiy' && [1, 2].includes(index)),
+    }
+  })
+})
+const selectedProviderApplicationHistory = computed(() => {
+  const application = selectedProviderApplication.value
+
+  if (!application) {
+    return []
+  }
+
+  const applicationHistory = application.history.map((item, index) => ({
+    ...item,
+    actor: index === 0 ? getApplicantName(application) : application.owner,
+  }))
+  const conclusionHistory = selectedProviderApplicationConclusion.value?.history.map((item) => ({
+    ...item,
+    actor: selectedProviderApplicationConclusion.value?.owner || '-',
+  })) ?? []
+
+  return [...applicationHistory, ...conclusionHistory]
 })
 const childApplicationRecords = computed(() => (
   getEiRecords('children-questionnaires').map((record) => applyChildApplicationStatusOverride(record))
@@ -1674,6 +1754,92 @@ function applyChildApplicationStatusOverride(record: EiRecord): EiRecord {
   }
 }
 
+function openProviderApplication(record: EiRecord) {
+  closeActionMenu()
+  router.push(`/apps/ei/providers/applications/${record.id}`)
+}
+
+function getProviderApplicationCoordinates(record: EiRecord) {
+  const coordinatesByRegion: Record<string, { latitude: number; longitude: number }> = {
+    'Toshkent shahri': { latitude: 41.3111, longitude: 69.2797 },
+    Samarqand: { latitude: 39.6542, longitude: 66.9597 },
+    "Farg'ona": { latitude: 40.3864, longitude: 71.7864 },
+  }
+
+  return coordinatesByRegion[record.region] ?? { latitude: 41.3775, longitude: 64.5853 }
+}
+
+function getProviderApplicationDetail(record: EiRecord) {
+  const applicantLookup = providerApplicationApplicantsByPinfl[getApplicantPinfl(record)]
+  const organizationType = getMetadataValue(record, 'Tashkilot turi')
+    || (record.subject.toLocaleLowerCase('uz-UZ').includes('yakka') ? 'YaTT' : 'NNT')
+  const isIndividualEntrepreneur = ['ytt', 'yatt'].includes(organizationType.toLocaleLowerCase('uz-UZ'))
+  const applicantAddress = getMetadataValue(record, 'Ariza beruvchi manzili')
+    || `${record.region}, ${record.district}, Yangi hayot MFY, Mustaqillik ko'chasi, 12-uy`
+  const organizationAddress = getMetadataValue(record, 'Tadbirkorlik subyekti manzili')
+    || getMetadataValue(record, 'Xizmat manzili')
+    || `${record.region}, ${record.district}, Barkamol MFY, Markaziy ko'cha, 8-uy`
+  const organizationStatus = getMetadataValue(record, 'Tadbirkorlik subyekti holati') || 'Faol'
+  const coordinates = getProviderApplicationCoordinates(record)
+  const coordinatePair = `${coordinates.latitude},${coordinates.longitude}`
+  const mapDelta = 0.012
+  const mapBounds = [
+    coordinates.longitude - mapDelta,
+    coordinates.latitude - mapDelta,
+    coordinates.longitude + mapDelta,
+    coordinates.latitude + mapDelta,
+  ].join('%2C')
+
+  return {
+    document: [
+      { label: 'ID', value: record.id },
+      { label: 'Sana', value: formatDate(record.submittedAt) },
+      { label: 'Holat', value: record.status, kind: 'status' },
+      { label: 'Murojaat kanali', value: getMetadataValue(record, 'Murojaat kanali') || 'Operator orqali' },
+      { label: 'Manzil', value: `${record.region}, ${record.district}` },
+    ] as EiDetailField[],
+    receiver: {
+      photo: applicantManPhoto,
+      fullName: record.owner === 'Ishchi guruh'
+        ? 'Tursunov Sardor Akmalovich'
+        : 'Mamadaliyev Shavkat Ilhom ogli',
+      pinfl: record.owner === 'Ishchi guruh' ? '30908765432109' : '31101876543210',
+      fields: [
+        { label: 'Lavozim', value: record.owner === 'Ishchi guruh' ? 'Yetakchi mutaxassis' : 'Hududiy operator' },
+      ] as EiDetailField[],
+    },
+    applicant: {
+      photo: applicantLookup?.photo || applicantManPhoto,
+      fields: [
+        { label: 'FIO', value: getApplicantName(record) },
+        { label: 'JSHSHIR', value: getApplicantPinfl(record) },
+        { label: "Tug'ilgan sanasi", value: applicantLookup?.birthDate ? formatDate(applicantLookup.birthDate) : '01.04.1990' },
+        { label: 'Jinsi', value: applicantLookup?.gender || 'Erkak' },
+        { label: 'Manzil', value: applicantAddress },
+        { label: 'Telefon raqami', value: '+998 90 123 45 67' },
+      ] as EiDetailField[],
+    },
+    organization: [
+      { label: 'Nomi', value: formatName(record.title) },
+      { label: 'Turi', value: organizationType },
+      { label: isIndividualEntrepreneur ? 'JSHSHIR' : 'STIR', value: record.tin || '-' },
+      { label: 'Manzil', value: organizationAddress },
+      { label: 'Telefon raqami', value: '+998 71 200 10 20' },
+      { label: 'Holati', value: organizationStatus, kind: organizationStatus.toLocaleLowerCase('uz-UZ') === 'faol' ? 'success' : 'neutral' },
+    ] as EiDetailField[],
+    cadastre: [
+      { label: 'Nomi', value: `${formatName(record.title)} xizmat ko'rsatish binosi` },
+      { label: 'Kadastr raqami', value: `10:01:02:03:${record.id.slice(-4)}` },
+      { label: 'Manzil', value: organizationAddress },
+    ] as EiDetailField[],
+    location: {
+      mapEmbedUrl: `https://www.openstreetmap.org/export/embed.html?bbox=${mapBounds}&layer=mapnik&marker=${coordinates.latitude}%2C${coordinates.longitude}`,
+      googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinatePair)}`,
+      yandexMapsUrl: `https://yandex.com/maps/?ll=${coordinates.longitude}%2C${coordinates.latitude}&z=16&pt=${coordinates.longitude}%2C${coordinates.latitude}`,
+    },
+  }
+}
+
 function openChildApplication(record: EiRecord) {
   closeActionMenu()
   router.push(`/apps/ei/children/applications/${record.id}`)
@@ -2405,9 +2571,455 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 <template>
   <PageContainer>
     <SectionBlock
-      v-if="isChildrenApplicationViewPage"
-      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
-      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-y-auto p-5 pb-10"
+      v-if="isProvidersApplicationViewPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden border-0 bg-transparent shadow-none"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-y-auto p-0 pb-6"
+      title=""
+      description=""
+    >
+      <div class="ei-detail-toolbar flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-w-0 items-center gap-3">
+          <Button
+            variant="outline"
+            class="h-10 gap-2"
+            @click="router.push('/apps/ei/providers/applications')"
+          >
+            <ChevronLeft class="h-4 w-4" />
+            Ortga
+          </Button>
+          <div
+            v-if="selectedProviderApplication"
+            class="min-w-0"
+          >
+            <p class="truncate text-sm font-semibold text-foreground">
+              Xizmat ko'rsatuvchi arizasini ko'rish
+            </p>
+            <p class="mt-1 truncate text-sm text-muted-foreground">
+              {{ selectedProviderApplication.id }} · {{ formatName(selectedProviderApplication.title) }}
+            </p>
+          </div>
+        </div>
+
+        <span
+          v-if="selectedProviderApplication"
+          :class="cn('inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[selectedProviderApplication.tone])"
+        >
+          {{ selectedProviderApplication.status }}
+        </span>
+      </div>
+
+      <div
+        v-if="!selectedProviderApplication || !selectedProviderApplicationDetail"
+        class="flex min-h-[24rem] items-center justify-center rounded-lg border border-border bg-card p-8 text-center"
+      >
+        <div class="max-w-md">
+          <p class="text-sm font-medium text-foreground">
+            Ariza topilmadi
+          </p>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Berilgan ID bo'yicha xizmat ko'rsatuvchi arizasi mavjud emas.
+          </p>
+          <Button
+            variant="outline"
+            class="mt-4"
+            @click="router.push('/apps/ei/providers/applications')"
+          >
+            Arizalarga qaytish
+          </Button>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedProviderApplication && selectedProviderApplicationDetail"
+        class="grid w-full grid-cols-3 rounded-lg border border-border bg-card p-1 sm:w-fit"
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          :class="selectedProviderApplicationDetailTab === 'main' ? 'h-9 min-w-28 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-28 px-4'"
+          @click="selectedProviderApplicationDetailTab = 'main'"
+        >
+          Asosiy
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          :class="selectedProviderApplicationDetailTab === 'conclusion' ? 'h-9 min-w-44 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-44 px-4'"
+          @click="selectedProviderApplicationDetailTab = 'conclusion'"
+        >
+          Xulosa ma'lumotlari
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          :class="selectedProviderApplicationDetailTab === 'history' ? 'h-9 min-w-36 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-36 px-4'"
+          @click="selectedProviderApplicationDetailTab = 'history'"
+        >
+          Hujjat tarixi
+        </Button>
+      </div>
+
+      <div
+        v-if="selectedProviderApplication && selectedProviderApplicationDetail && selectedProviderApplicationDetailTab === 'main'"
+        class="ei-detail-view grid gap-4"
+      >
+        <div class="grid items-stretch gap-4 xl:grid-cols-2">
+        <div class="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card">
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <FileText class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              Hujjat ma'lumotlari
+            </p>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <table class="ei-detail-data-table w-full border-separate border-spacing-0 text-sm">
+              <tbody>
+                <tr
+                  v-for="field in selectedProviderApplicationDetail.document"
+                  :key="`provider-document-${field.label}`"
+                >
+                  <td class="w-52 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                    {{ field.label }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span
+                      v-if="field.kind"
+                      :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
+                    >
+                      {{ field.value }}
+                    </span>
+                    <p
+                      v-else
+                      class="break-words font-medium text-foreground"
+                    >
+                      {{ field.value }}
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card">
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <UserCheck class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              Arizani qabul qiluvchi ma'lumotlari
+            </p>
+          </div>
+          <div class="flex items-center gap-3 border-b border-border bg-muted/15 px-4 py-4">
+              <img
+                :src="selectedProviderApplicationDetail.receiver.photo"
+                alt=""
+                class="h-14 w-14 rounded-full border border-border object-cover"
+              >
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-foreground">
+                  {{ formatName(selectedProviderApplicationDetail.receiver.fullName) }}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  JSHSHIR: {{ selectedProviderApplicationDetail.receiver.pinfl }}
+                </p>
+              </div>
+          </div>
+          <div class="overflow-hidden">
+            <table class="ei-detail-data-table w-full border-separate border-spacing-0 text-sm">
+              <tbody>
+                <tr
+                  v-for="field in selectedProviderApplicationDetail.receiver.fields"
+                  :key="`provider-receiver-${field.label}`"
+                >
+                  <td class="w-52 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                    {{ field.label }}
+                  </td>
+                  <td class="px-4 py-3 align-top font-medium text-foreground">
+                    {{ field.value }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-card">
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <UserRound class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              Ariza beruvchi ma'lumotlari
+            </p>
+          </div>
+          <div class="flex items-center gap-3 border-b border-border bg-muted/15 px-4 py-4">
+              <img
+                :src="selectedProviderApplicationDetail.applicant.photo"
+                alt=""
+                class="h-14 w-14 rounded-full border border-border object-cover"
+              >
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold text-foreground">
+                  {{ selectedProviderApplicationDetail.applicant.fields[0]?.value }}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  JSHSHIR: {{ selectedProviderApplicationDetail.applicant.fields[1]?.value }}
+                </p>
+              </div>
+          </div>
+            <div class="overflow-hidden">
+              <table class="ei-detail-data-table w-full border-separate border-spacing-0 text-sm">
+                <tbody>
+                  <tr
+                    v-for="field in selectedProviderApplicationDetail.applicant.fields.slice(2)"
+                    :key="`provider-applicant-${field.label}`"
+                  >
+                    <td class="w-72 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                      {{ field.label }}
+                    </td>
+                    <td class="border-b border-border px-4 py-3 align-top font-medium text-foreground">
+                      {{ field.value }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        <div class="grid items-stretch gap-4 xl:grid-cols-2">
+          <div
+            v-for="section in [
+              { key: 'organization', title: 'Tadbirkorlik subyekti ma\'lumotlari', fields: selectedProviderApplicationDetail.organization, icon: Building2 },
+              { key: 'cadastre', title: 'Kadastr ma\'lumotlari', fields: selectedProviderApplicationDetail.cadastre, icon: LandPlot },
+            ]"
+            :key="section.key"
+            class="flex h-full min-w-0 flex-col rounded-lg border border-border bg-card"
+          >
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <component :is="section.icon" class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              {{ section.title }}
+            </p>
+          </div>
+          <div class="overflow-hidden">
+            <table class="ei-detail-data-table w-full border-separate border-spacing-0 text-sm">
+              <tbody>
+                <tr
+                  v-for="field in section.fields"
+                  :key="`${section.key}-${field.label}`"
+                >
+                  <td class="w-52 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                    {{ field.label }}
+                  </td>
+                  <td class="border-b border-border px-4 py-3 align-top">
+                    <span
+                      v-if="field.kind"
+                      :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
+                    >
+                      {{ field.value }}
+                    </span>
+                    <p
+                      v-else
+                      class="break-words font-medium text-foreground"
+                    >
+                      {{ field.value }}
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-card">
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Map class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              Joylashuv
+            </p>
+          </div>
+          <div class="p-4">
+            <div class="min-h-[20rem] overflow-hidden rounded-lg border border-border bg-muted/20">
+              <iframe
+                :src="selectedProviderApplicationDetail.location.mapEmbedUrl"
+                title="Tadbirkorlik subyekti joylashuvi"
+                class="h-full min-h-[20rem] w-full border-0"
+                loading="lazy"
+              />
+            </div>
+            <div class="mt-4 flex flex-col justify-end gap-2 border-t border-border pt-4 sm:flex-row">
+              <a
+                :href="selectedProviderApplicationDetail.location.googleMapsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
+              >
+                Google Maps
+                <ExternalLink class="h-4 w-4" />
+              </a>
+              <a
+                :href="selectedProviderApplicationDetail.location.yandexMapsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+              >
+                Yandex Maps
+                <ExternalLink class="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedProviderApplication && selectedProviderApplicationDetail && selectedProviderApplicationDetailTab === 'conclusion'"
+        class="ei-detail-view"
+      >
+        <div
+          v-if="selectedProviderApplicationConclusion"
+          class="overflow-hidden rounded-lg border border-border bg-card"
+        >
+          <div class="flex flex-col gap-3 border-b border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2.5">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <FileText class="h-4 w-4" />
+              </span>
+              <p class="text-sm font-semibold text-foreground">
+                Xulosa ma'lumotlari
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              class="w-full gap-2 sm:w-auto"
+              @click="router.push('/apps/ei/providers/conclusions')"
+            >
+              <FileText class="h-4 w-4" />
+              Xulosaga o'tish
+            </Button>
+          </div>
+          <table class="ei-detail-data-table w-full border-separate border-spacing-0 text-sm">
+            <tbody>
+              <tr
+                v-for="field in selectedProviderApplicationConclusionFields"
+                :key="`provider-conclusion-${field.label}`"
+              >
+                <td class="w-72 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
+                  {{ field.label }}
+                </td>
+                <td class="border-b border-border px-4 py-3 align-top">
+                  <span
+                    v-if="field.kind"
+                    :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', field.kind === 'status' ? eiStatusClasses[selectedProviderApplicationConclusion.tone] : getDetailFieldBadgeClass(field.kind))"
+                  >
+                    {{ field.value }}
+                  </span>
+                  <p
+                    v-else
+                    class="break-words font-medium text-foreground"
+                  >
+                    {{ field.value }}
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="border-t border-border px-4 py-4">
+            <p class="mb-3 text-sm font-semibold text-foreground">
+              Talablar haqida ma'lumot
+            </p>
+            <div class="overflow-hidden rounded-md border border-border">
+              <div
+                v-for="requirement in selectedProviderApplicationRequirementResults"
+                :key="requirement.label"
+                :class="cn('flex items-start gap-3 border-b border-border px-3 py-3 last:border-b-0', requirement.isMet ? 'bg-emerald-50/70 dark:bg-emerald-950/20' : 'bg-card')"
+              >
+                <span
+                  :class="cn('mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] border', requirement.isMet ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-border bg-background')"
+                  aria-hidden="true"
+                >
+                  <Check
+                    v-if="requirement.isMet"
+                    class="h-3 w-3"
+                    :stroke-width="3"
+                  />
+                </span>
+                <p class="text-sm leading-5 text-foreground">
+                  {{ requirement.label }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          v-else
+          class="flex min-h-[18rem] items-center justify-center rounded-lg border border-border bg-card p-8 text-center"
+        >
+          <div class="max-w-md">
+            <p class="text-sm font-medium text-foreground">
+              Xulosa hali shakllanmagan
+            </p>
+            <p class="mt-2 text-sm text-muted-foreground">
+              Ushbu ariza bo'yicha xulosa yaratilgach, uning ma'lumotlari shu yerda ko'rsatiladi.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-if="selectedProviderApplication && selectedProviderApplicationDetail && selectedProviderApplicationDetailTab === 'history'"
+        class="ei-detail-view"
+      >
+        <div class="overflow-hidden rounded-lg border border-border bg-card">
+          <div class="flex items-center gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <History class="h-4 w-4" />
+            </span>
+            <p class="text-sm font-semibold text-foreground">
+              Hujjat tarixi
+            </p>
+          </div>
+          <div class="divide-y divide-border">
+            <div
+              v-for="(item, index) in selectedProviderApplicationHistory"
+              :key="`${item.label}-${item.date}-${index}`"
+              class="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto]"
+            >
+              <div>
+                <p class="text-sm font-medium text-foreground">
+                  {{ item.label }}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Amal bajargan: {{ item.actor }}
+                </p>
+              </div>
+              <p class="text-sm font-medium text-muted-foreground sm:text-right">
+                {{ item.date }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="isChildrenApplicationViewPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden border-0 bg-transparent shadow-none"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-y-auto p-0 pb-6"
       title=""
       description=""
     >
@@ -2784,7 +3396,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
       description=""
     >
       <div class="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-visible">
-        <div class="flex min-h-[74px] flex-col gap-3 rounded-xl border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="flex min-w-0 items-center gap-2">
             <Button
               v-if="selectedProviderApplicationReportRegion"
@@ -2852,7 +3464,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
           </div>
         </div>
 
-        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <div class="relative flex min-h-[calc(100vh-16rem)] flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
           <div class="min-h-[22rem] flex-1 overflow-auto">
             <table class="w-full min-w-[900px] border-separate border-spacing-0 text-sm">
               <thead class="bg-muted/45 text-left text-muted-foreground">
@@ -3832,7 +4444,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                         >
                           <DropdownMenuItem
                             class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
-                            @select.prevent="closeActionMenu"
+                            @select.prevent="isProvidersApplicationsPage ? openProviderApplication(record) : closeActionMenu()"
                           >
                             <Eye class="h-4 w-4 shrink-0" />
                             <span>Ko'rish</span>
@@ -4349,23 +4961,23 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
             <p
               v-if="providerApplicationFormErrors.applicantPinfl"
-              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+              class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
             >
               {{ providerApplicationFormErrors.applicantPinfl }}
             </p>
             <p
               v-if="providerApplicationFormErrors.applicantFullName"
-              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+              class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
             >
               {{ providerApplicationFormErrors.applicantFullName }}
             </p>
 
             <div
               v-if="isProviderApplicationApplicantFound"
-              class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+              class="grid gap-4 rounded-lg border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
             >
-              <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-3 py-4">
-                <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted">
+              <div class="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-3 py-4">
+                <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted">
                   <img
                     :src="providerApplicationForm.applicantPhoto"
                     alt="Ariza beruvchi rasmi"
@@ -4377,7 +4989,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                 </p>
               </div>
 
-              <div class="overflow-hidden rounded-2xl border border-border bg-card">
+              <div class="overflow-hidden rounded-lg border border-border bg-card">
                 <table class="w-full border-collapse text-sm">
                   <tbody>
                     <tr
@@ -4408,7 +5020,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
               </p>
             </div>
 
-            <div class="rounded-xl border border-border/70 bg-card p-4">
+            <div class="rounded-lg border border-border/70 bg-card p-4">
               <div class="grid gap-4 md:grid-cols-3">
                 <label class="space-y-2">
                   <span class="text-sm font-medium text-foreground">Hudud</span>
@@ -4546,20 +5158,20 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
             <p
               v-if="providerApplicationFormErrors.tin"
-              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+              class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
             >
               {{ providerApplicationFormErrors.tin }}
             </p>
             <p
               v-if="providerApplicationFormErrors.organizationName"
-              class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+              class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
             >
               {{ providerApplicationFormErrors.organizationName }}
             </p>
 
             <div
               v-if="isProviderApplicationBusinessFound"
-              class="overflow-hidden rounded-2xl border border-border bg-card"
+              class="overflow-hidden rounded-lg border border-border bg-card"
             >
               <table class="w-full border-collapse text-sm">
                 <tbody>
@@ -4611,18 +5223,13 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
 <style scoped>
 .ei-detail-toolbar {
-  border-radius: 0.875rem;
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 18, 0.04);
 }
 
 .ei-detail-view :deep(.rounded-lg.border.border-border.bg-card) {
-  border-radius: 0.875rem;
-  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.04);
-}
-
-.ei-detail-view :deep(.rounded-lg.border.border-border.bg-card > .border-b) {
-  background: hsl(var(--muted) / 0.26);
-  padding: 0.875rem 1.25rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 18, 0.035);
 }
 
 .ei-detail-view :deep(table) {
@@ -4636,24 +5243,23 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 }
 
 .ei-detail-view :deep(tbody tr:hover) {
-  background: hsl(var(--muted) / 0.18);
+  background: color-mix(in oklab, var(--muted) 65%, transparent);
 }
 
 .ei-detail-view :deep(td:first-child) {
-  width: 17rem;
-  border-right: 1px solid hsl(var(--border));
-  border-bottom: 1px solid hsl(var(--border));
-  background: hsl(var(--muted) / 0.3);
-  padding: 0.875rem 1.25rem;
-  color: hsl(var(--muted-foreground));
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.625rem 1rem;
+  color: var(--muted-foreground);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .ei-detail-view :deep(td:last-child) {
-  border-bottom: 1px solid hsl(var(--border));
-  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.625rem 1rem;
 }
 
 .ei-detail-view :deep(tbody tr:last-child td) {
@@ -4661,7 +5267,26 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 }
 
 .ei-detail-view :deep(img) {
-  box-shadow: 0 0 0 3px hsl(var(--background));
+  box-shadow: 0 0 0 3px var(--background);
+}
+
+.ei-detail-view :deep(.ei-detail-data-table td:first-child) {
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+
+.ei-detail-view :deep(.ei-detail-data-table td:last-child) {
+  border-bottom: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.ei-detail-view :deep(.ei-detail-data-table tbody tr:hover) {
+  background: transparent;
 }
 
 @media (max-width: 640px) {

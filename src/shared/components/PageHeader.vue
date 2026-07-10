@@ -16,7 +16,7 @@ const { t } = useI18n()
   <div class="flex flex-col gap-1">
     <h1
       v-if="showTitle"
-      class="text-xl font-semibold tracking-tight text-foreground"
+      class="text-xl font-semibold text-foreground"
     >
       {{ t(title) }}
     </h1>

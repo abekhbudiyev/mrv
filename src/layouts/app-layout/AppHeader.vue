@@ -27,13 +27,15 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
 </script>
 
 <template>
-  <div class="flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-6">
+  <div class="flex min-h-16 items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 lg:px-6">
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <Button
         v-if="showSidebar"
         variant="ghost"
         size="icon"
         class="hidden lg:inline-flex"
+        aria-label="Yon menyuni yig'ish yoki ochish"
+        title="Yon menyuni yig'ish yoki ochish"
         @click="$emit('toggleSidebarCollapse')"
       >
         <PanelLeft class="h-5 w-5" />
@@ -44,6 +46,7 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
         variant="ghost"
         size="icon"
         class="shrink-0 lg:hidden"
+        aria-label="Yon menyuni ochish"
         @click="$emit('toggleSidebar')"
       >
         <Menu class="h-5 w-5" />
@@ -52,6 +55,7 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
       <div class="min-w-0 flex-1">
         <PageBreadcrumbs
           v-if="breadcrumbs.length"
+          class="hidden sm:flex"
           :items="breadcrumbs"
         />
         <h1 class="truncate text-[15px] font-semibold text-foreground">
@@ -60,15 +64,14 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
       </div>
     </div>
 
-    <div class="flex shrink-0 items-center gap-2 self-start sm:self-center">
-      <RouterLink to="/apps">
-        <Button
-          variant="outline"
-          size="icon"
-          class="h-10 w-10"
-        >
-          <LayoutGrid class="h-4 w-4" />
-        </Button>
+    <div class="flex shrink-0 items-center gap-1.5 self-start sm:gap-2 sm:self-center">
+      <RouterLink
+        to="/apps"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-input bg-background text-foreground outline-none transition-colors duration-150 hover:border-primary/45 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        aria-label="Ilovalar"
+        title="Ilovalar"
+      >
+        <LayoutGrid class="h-4 w-4" />
       </RouterLink>
       <AppHeaderLanguageMenu />
       <ThemeToggle />

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -863,7 +863,7 @@ onBeforeUnmount(() => {
                 {{ stat.description }}
               </p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/40 text-muted-foreground">
               <component
                 :is="stat.icon"
                 class="h-5 w-5"
@@ -878,7 +878,7 @@ onBeforeUnmount(() => {
         :description="mapSectionDescription"
         content-class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]"
       >
-        <div class="relative min-h-[34rem] min-w-0 overflow-hidden rounded-xl border border-border bg-muted/30">
+        <div class="relative min-h-[34rem] min-w-0 overflow-hidden rounded-lg border border-border bg-muted/30">
           <div
             ref="mapElement"
             class="h-[34rem] w-full min-w-0"
@@ -886,13 +886,13 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="min-w-0 space-y-3">
-          <div class="rounded-xl border border-border bg-card p-4">
+          <div class="rounded-lg border border-border bg-card p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <p class="text-sm font-semibold text-foreground">Eng yaqin tashkilotlar</p>
                 <p class="text-xs text-muted-foreground">Har bir tashkilot turi bo'yicha masofa hisoblanadi.</p>
               </div>
-              <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-muted/40 text-primary">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/40 text-primary">
                 <MapPin class="h-4 w-4" />
               </div>
             </div>
@@ -969,7 +969,7 @@ onBeforeUnmount(() => {
           <div
             v-for="organization in organizations"
             :key="organization.id"
-            class="rounded-xl border border-border bg-card p-4"
+            class="rounded-lg border border-border bg-card p-4"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 space-y-1">
@@ -1015,7 +1015,7 @@ onBeforeUnmount(() => {
         title=""
         content-class="space-y-4"
       >
-        <div class="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -1053,7 +1053,7 @@ onBeforeUnmount(() => {
 
         <div
           v-if="isTypesPage"
-          class="overflow-hidden rounded-xl border border-border bg-card"
+          class="overflow-hidden rounded-lg border border-border bg-card"
         >
           <div class="hidden lg:block">
             <table class="w-full border-collapse text-sm">
@@ -1111,7 +1111,7 @@ onBeforeUnmount(() => {
             <div
               v-for="item in filteredTypes"
               :key="item.id"
-              class="rounded-xl border border-border p-4"
+              class="rounded-lg border border-border p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -1147,7 +1147,7 @@ onBeforeUnmount(() => {
 
         <div
           v-if="isOrganizationsPage"
-          class="overflow-hidden rounded-xl border border-border bg-card"
+          class="overflow-hidden rounded-lg border border-border bg-card"
         >
           <div class="hidden lg:block">
             <table class="w-full border-collapse text-sm">
@@ -1211,7 +1211,7 @@ onBeforeUnmount(() => {
             <div
               v-for="item in filteredOrganizations"
               :key="item.id"
-              class="rounded-xl border border-border p-4"
+              class="rounded-lg border border-border p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -1250,7 +1250,7 @@ onBeforeUnmount(() => {
 
         <div
           v-if="isReceptionSchedulesPage"
-          class="overflow-hidden rounded-xl border border-border bg-card"
+          class="overflow-hidden rounded-lg border border-border bg-card"
         >
           <div class="hidden lg:block">
             <table class="w-full border-collapse text-sm">
@@ -1326,7 +1326,7 @@ onBeforeUnmount(() => {
             <div
               v-for="item in filteredReceptions"
               :key="item.id"
-              class="rounded-xl border border-border p-4"
+              class="rounded-lg border border-border p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -1379,7 +1379,7 @@ onBeforeUnmount(() => {
       class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/45 p-4"
     >
       <div
-        class="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl"
+        class="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl"
         :class="selectedType ? 'max-w-2xl' : 'max-w-3xl'"
         :style="selectedType ? { maxWidth: '58rem' } : undefined"
       >
@@ -1412,7 +1412,7 @@ onBeforeUnmount(() => {
             v-if="selectedType"
             class="grid gap-3 md:grid-cols-2"
           >
-            <div class="rounded-xl border border-border bg-card p-3 md:col-span-2">
+            <div class="rounded-lg border border-border bg-card p-3 md:col-span-2">
               <div class="grid gap-3 md:grid-cols-2">
                 <label class="space-y-2 text-sm font-medium text-foreground">
                   Qisqa nomi
@@ -1425,7 +1425,7 @@ onBeforeUnmount(() => {
               </div>
 
               <div class="mt-3 grid gap-3 md:grid-cols-2">
-                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                <div class="rounded-lg border border-border bg-muted/20 p-3">
                   <p class="text-sm font-semibold text-foreground">Qisqa nomi tarjimalari</p>
                   <div class="mt-3 grid gap-3">
                     <label class="space-y-2 text-xs font-semibold uppercase text-muted-foreground">
@@ -1458,7 +1458,7 @@ onBeforeUnmount(() => {
                     </label>
                   </div>
                 </div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                <div class="rounded-lg border border-border bg-muted/20 p-3">
                   <p class="text-sm font-semibold text-foreground">To'liq nomi tarjimalari</p>
                   <div class="mt-3 grid gap-3">
                     <label class="space-y-2 text-xs font-semibold uppercase text-muted-foreground">
@@ -1634,7 +1634,7 @@ onBeforeUnmount(() => {
                 <div
                   v-for="slot in selectedReception.weeklySlots"
                   :key="`${selectedReception.id}-edit-${slot.day}-${slot.time}`"
-                  class="rounded-xl border border-border bg-muted/30 p-3"
+                  class="rounded-lg border border-border bg-muted/30 p-3"
                 >
                   <p class="font-medium text-foreground">{{ slot.day }}</p>
                   <p class="text-sm text-muted-foreground">{{ slot.time }}</p>
@@ -1664,7 +1664,7 @@ onBeforeUnmount(() => {
       v-if="isReceptionDialogOpen && selectedReceptionOrganization"
       class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/45 p-4"
     >
-      <div class="w-full max-w-4xl max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl">
+      <div class="w-full max-w-4xl max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl">
         <div class="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div>
             <h2 class="text-lg font-semibold text-foreground">
@@ -1684,7 +1684,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="max-h-[70vh] overflow-x-hidden overflow-y-auto p-6">
-          <div class="rounded-xl border border-border bg-muted/20 p-4">
+          <div class="rounded-lg border border-border bg-muted/20 p-4">
             <p class="text-sm font-semibold text-foreground">
               {{ selectedReceptionOrganization.region }}, {{ selectedReceptionOrganization.district }}
             </p>
@@ -1697,11 +1697,11 @@ onBeforeUnmount(() => {
             <div
               v-for="schedule in selectedOrganizationReceptions"
               :key="schedule.id"
-              class="rounded-xl border border-border bg-card p-4"
+              class="rounded-lg border border-border bg-card p-4"
             >
               <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div class="flex items-start gap-3">
-                  <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-muted/40 text-primary">
+                  <div class="flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted/40 text-primary">
                     <UserRound class="h-5 w-5" />
                   </div>
                   <div>
@@ -1719,7 +1719,7 @@ onBeforeUnmount(() => {
                 <div
                   v-for="(slot, slotIndex) in schedule.weeklySlots"
                   :key="`${schedule.id}-slot-${slot.day}-${slot.time}`"
-                  class="rounded-xl border border-border bg-muted/20 p-3"
+                  class="rounded-lg border border-border bg-muted/20 p-3"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div>
@@ -1792,7 +1792,7 @@ onBeforeUnmount(() => {
 
             <div
               v-if="selectedOrganizationReceptions.length === 0"
-              class="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+              class="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
             >
               Ushbu tashkilot uchun qabul jadvali kiritilmagan.
             </div>

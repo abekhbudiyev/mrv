@@ -41,7 +41,7 @@ const { t } = useI18n()
 const NOTIFICATION_DURATION = 2600
 const EXPORT_MIN_LOADING_DURATION = 1000
 const filterOverlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
-const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const filterPanelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
 const filterPanelContentClass = 'flex flex-col gap-3'
 
 type ApplicationStatus = 'Jarayonda' | 'Tasdiqlangan' | 'Bekor qilingan'
@@ -3648,7 +3648,7 @@ watch(serviceRecipientLookupResult, () => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <p class="text-lg font-semibold text-foreground">
@@ -3671,12 +3671,12 @@ watch(serviceRecipientLookupResult, () => {
 
           <div class="flex-1 space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <p class="text-base font-semibold text-foreground">
                   Ariza rekvizitlari
                 </p>
                 <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                  <div class="rounded-lg border border-border bg-background px-4 py-3">
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Ariza raqami
                     </p>
@@ -3684,7 +3684,7 @@ watch(serviceRecipientLookupResult, () => {
                       {{ selectedViewRow.id }}
                     </p>
                   </div>
-                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                  <div class="rounded-lg border border-border bg-background px-4 py-3">
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Sana
                     </p>
@@ -3692,7 +3692,7 @@ watch(serviceRecipientLookupResult, () => {
                       {{ selectedViewRow.date }}
                     </p>
                   </div>
-                  <div class="rounded-xl border border-border bg-background px-4 py-3">
+                  <div class="rounded-lg border border-border bg-background px-4 py-3">
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {{ getApplicationStageColumnLabel() }}
                     </p>
@@ -3710,11 +3710,11 @@ watch(serviceRecipientLookupResult, () => {
                 </div>
               </div>
 
-              <div class="rounded-2xl border border-border bg-card p-4">
+              <div class="rounded-lg border border-border bg-card p-4">
                 <p class="text-base font-semibold text-foreground">
                   Xizmat turi
                 </p>
-                <div class="mt-4 rounded-xl border border-border bg-background px-4 py-3">
+                <div class="mt-4 rounded-lg border border-border bg-background px-4 py-3">
                   <p class="text-sm font-medium leading-6 text-foreground">
                     {{ getServiceOptionFullName(selectedViewDetail.service) }}
                   </p>
@@ -3722,20 +3722,20 @@ watch(serviceRecipientLookupResult, () => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <p class="text-base font-semibold text-foreground">
                 Arizachi
               </p>
               <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
-                <div class="flex h-full min-h-[180px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-4 py-4 text-center">
+                <div class="flex h-full min-h-[180px] flex-col items-center justify-center rounded-lg border border-border bg-background px-4 py-4 text-center">
                   <img
                     :src="selectedViewApplicantImage"
                     alt="Arizachi rasmi"
-                    class="h-32 w-24 rounded-2xl border border-border/60 object-cover"
+                    class="h-32 w-24 rounded-lg border border-border/60 object-cover"
                   >
                   <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
                 </div>
-                <div class="overflow-hidden rounded-2xl border border-border bg-background">
+                <div class="overflow-hidden rounded-lg border border-border bg-background">
                   <div
                     v-for="[label, value] in selectedViewApplicantRows"
                     :key="`view-applicant-${label}`"
@@ -3752,18 +3752,18 @@ watch(serviceRecipientLookupResult, () => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <p class="text-base font-semibold text-foreground">
                 Xizmat oluvchi
               </p>
               <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
-                <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
-                  <div class="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/8 text-4xl font-semibold text-primary">
+                <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-lg border border-border bg-background px-5 py-6 text-center">
+                  <div class="flex h-24 w-24 items-center justify-center rounded-lg bg-primary/8 text-4xl font-semibold text-primary">
                     {{ selectedViewDetail.serviceRecipientInitials }}
                   </div>
                   <span class="mt-4 text-sm text-muted-foreground">Rasm</span>
                 </div>
-                <div class="overflow-hidden rounded-2xl border border-border bg-background">
+                <div class="overflow-hidden rounded-lg border border-border bg-background">
                   <div
                     v-for="[label, value] in selectedViewServiceRecipientRows"
                     :key="`view-service-recipient-${label}`"
@@ -3780,7 +3780,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <p class="text-base font-semibold text-foreground">
                 Tibbiy hujjatlar
               </p>
@@ -3788,7 +3788,7 @@ watch(serviceRecipientLookupResult, () => {
                 <div
                   v-for="document in selectedViewDetail.documents"
                   :key="document.id"
-                  class="rounded-xl border border-border bg-background px-4 py-3"
+                  class="rounded-lg border border-border bg-background px-4 py-3"
                 >
                   <p class="text-sm font-medium leading-6 text-foreground">
                     {{ document.label }}
@@ -3812,12 +3812,12 @@ watch(serviceRecipientLookupResult, () => {
               </div>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <p class="text-base font-semibold text-foreground">
                 SMS-kod orqali tasdiqlash
               </p>
               <div class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-                <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <div class="rounded-lg border border-border bg-background px-4 py-3">
                   <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Telefon raqami
                   </p>
@@ -3825,7 +3825,7 @@ watch(serviceRecipientLookupResult, () => {
                     +998 {{ selectedViewDetail.phoneNumber }}
                   </p>
                 </div>
-                <div class="rounded-xl border border-border bg-background px-4 py-3">
+                <div class="rounded-lg border border-border bg-background px-4 py-3">
                   <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     SMS-kod
                   </p>
@@ -3839,7 +3839,7 @@ watch(serviceRecipientLookupResult, () => {
               </p>
             </div>
 
-            <div class="rounded-2xl border border-border bg-card p-4">
+            <div class="rounded-lg border border-border bg-card p-4">
               <p class="text-base font-semibold text-foreground">
                 Hujjat tarixi
               </p>
@@ -3847,7 +3847,7 @@ watch(serviceRecipientLookupResult, () => {
                 <div
                   v-for="(history, index) in selectedViewHistory"
                   :key="`${history.operation}-${index}`"
-                  class="grid gap-3 rounded-xl border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_9rem]"
+                  class="grid gap-3 rounded-lg border border-border bg-background px-4 py-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_9rem]"
                 >
                   <div class="flex min-w-0 gap-3">
                     <span
@@ -3910,7 +3910,7 @@ watch(serviceRecipientLookupResult, () => {
         @touchmove.self.prevent
         @wheel.self.prevent
       >
-        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
           <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <p class="text-lg font-semibold text-foreground">
@@ -3954,13 +3954,13 @@ watch(serviceRecipientLookupResult, () => {
           </div>
 
           <div class="flex-1 overflow-y-auto p-5">
-            <div class="rounded-2xl border border-border bg-card p-4 sm:p-5">
-              <div class="rounded-2xl border border-border bg-muted/20 p-4">
+            <div class="rounded-lg border border-border bg-card p-4 sm:p-5">
+              <div class="rounded-lg border border-border bg-muted/20 p-4">
                 <p class="text-sm font-semibold text-foreground">
                   BPMN / flowchart ko‘rinishidagi umumiy jarayon
                 </p>
                 <div class="mt-4">
-                  <div class="overflow-x-auto rounded-2xl border border-border bg-background p-4">
+                  <div class="overflow-x-auto rounded-lg border border-border bg-background p-4">
                     <div class="relative min-w-[900px]">
                       <div
                         ref="iptkFlowDiagramRef"
@@ -3984,7 +3984,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
 
               <div class="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-                <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="rounded-lg border border-border bg-background p-4">
                   <p class="text-sm font-semibold text-foreground">
                     Bosqichlar
                   </p>
@@ -4011,7 +4011,7 @@ watch(serviceRecipientLookupResult, () => {
 
                 <div
                   v-if="selectedIptkFlowStep"
-                  class="rounded-2xl border border-border bg-background p-4"
+                  class="rounded-lg border border-border bg-background p-4"
                 >
                   <div class="flex items-start justify-between gap-3">
                     <div>
@@ -4032,7 +4032,7 @@ watch(serviceRecipientLookupResult, () => {
                   </p>
 
                   <div class="mt-4 space-y-3">
-                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                    <div class="rounded-lg border border-border bg-card px-4 py-3">
                       <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Mas’ul
                       </p>
@@ -4041,7 +4041,7 @@ watch(serviceRecipientLookupResult, () => {
                       </p>
                     </div>
 
-                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                    <div class="rounded-lg border border-border bg-card px-4 py-3">
                       <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Muddat
                       </p>
@@ -4050,7 +4050,7 @@ watch(serviceRecipientLookupResult, () => {
                       </p>
                     </div>
 
-                    <div class="rounded-xl border border-border bg-card px-4 py-3">
+                    <div class="rounded-lg border border-border bg-card px-4 py-3">
                       <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Normativ asos
                       </p>
@@ -4083,7 +4083,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div
                         v-for="outcome in selectedIptkFlowStep.outcomes"
                         :key="`${selectedIptkFlowStep.id}-${outcome}`"
-                        class="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground"
+                        class="rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground"
                       >
                         {{ outcome }}
                       </div>
@@ -4092,7 +4092,7 @@ watch(serviceRecipientLookupResult, () => {
 
                   <div
                     v-if="selectedIptkStepGuides.length"
-                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                    class="mt-5 rounded-lg border border-border bg-card p-4"
                   >
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Shu bosqichdagi validatsiyalar
@@ -4101,7 +4101,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div
                         v-for="guide in selectedIptkStepGuides"
                         :key="guide.id"
-                        class="rounded-xl border border-border bg-background px-4 py-3"
+                        class="rounded-lg border border-border bg-background px-4 py-3"
                       >
                         <p class="text-sm font-semibold text-foreground">
                           {{ guide.title }}
@@ -4115,7 +4115,7 @@ watch(serviceRecipientLookupResult, () => {
 
                   <div
                     v-if="selectedIptkQuestionnaireGuides.length"
-                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                    class="mt-5 rounded-lg border border-border bg-card p-4"
                   >
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Savolnoma bo‘limlari
@@ -4124,7 +4124,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div
                         v-for="section in selectedIptkQuestionnaireGuides"
                         :key="section.id"
-                        class="rounded-xl border border-border bg-background px-4 py-3"
+                        class="rounded-lg border border-border bg-background px-4 py-3"
                       >
                         <p class="text-sm font-semibold text-foreground">
                           {{ section.title }}
@@ -4138,7 +4138,7 @@ watch(serviceRecipientLookupResult, () => {
 
                   <div
                     v-if="selectedIptkAssessmentGuides.length"
-                    class="mt-5 rounded-2xl border border-border bg-card p-4"
+                    class="mt-5 rounded-lg border border-border bg-card p-4"
                   >
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Baholash metodikalari
@@ -4147,7 +4147,7 @@ watch(serviceRecipientLookupResult, () => {
                       <div
                         v-for="assessment in selectedIptkAssessmentGuides"
                         :key="assessment.id"
-                        class="rounded-xl border border-border bg-background px-4 py-3"
+                        class="rounded-lg border border-border bg-background px-4 py-3"
                       >
                         <p class="text-sm font-semibold text-foreground">
                           {{ assessment.title }}
@@ -4170,7 +4170,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
 
               <div class="mt-6 grid gap-4 xl:grid-cols-2">
-                <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="rounded-lg border border-border bg-background p-4">
                   <p class="text-sm font-semibold text-foreground">
                     Validatsiyalar
                   </p>
@@ -4181,7 +4181,7 @@ watch(serviceRecipientLookupResult, () => {
                     <div
                       v-for="guide in iptkValidationGuides"
                       :key="guide.id"
-                      class="rounded-xl border border-border bg-card px-4 py-3"
+                      class="rounded-lg border border-border bg-card px-4 py-3"
                     >
                       <p class="text-sm font-semibold text-foreground">
                         {{ guide.title }}
@@ -4203,7 +4203,7 @@ watch(serviceRecipientLookupResult, () => {
                   </div>
                 </div>
 
-                <div class="rounded-2xl border border-border bg-background p-4">
+                <div class="rounded-lg border border-border bg-background p-4">
                   <p class="text-sm font-semibold text-foreground">
                     Savolnoma shakli
                   </p>
@@ -4214,7 +4214,7 @@ watch(serviceRecipientLookupResult, () => {
                     <div
                       v-for="section in iptkQuestionnaireSections"
                       :key="section.id"
-                      class="rounded-xl border border-border bg-card px-4 py-3"
+                      class="rounded-lg border border-border bg-card px-4 py-3"
                     >
                       <p class="text-sm font-semibold text-foreground">
                         {{ section.title }}
@@ -4237,7 +4237,7 @@ watch(serviceRecipientLookupResult, () => {
                 </div>
               </div>
 
-              <div class="mt-4 rounded-2xl border border-border bg-background p-4">
+              <div class="mt-4 rounded-lg border border-border bg-background p-4">
                 <p class="text-sm font-semibold text-foreground">
                   Baholash metodikalari
                 </p>
@@ -4248,7 +4248,7 @@ watch(serviceRecipientLookupResult, () => {
                   <div
                     v-for="assessment in iptkAssessmentGuides"
                     :key="assessment.id"
-                    class="rounded-xl border border-border bg-card px-4 py-3"
+                    class="rounded-lg border border-border bg-card px-4 py-3"
                   >
                     <p class="text-sm font-semibold text-foreground">
                       {{ assessment.title }}
@@ -5716,7 +5716,7 @@ watch(serviceRecipientLookupResult, () => {
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="w-full max-w-5xl overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+    <div class="w-full max-w-5xl overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <p class="text-lg font-semibold text-foreground">
           Yangi ariza yaratish
@@ -5774,27 +5774,27 @@ watch(serviceRecipientLookupResult, () => {
 
         <p
           v-if="applicantLookupError"
-          class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+          class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
         >
           {{ applicantLookupError }}
         </p>
 
         <div
           v-if="applicantLookupResult"
-          class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+          class="grid gap-4 rounded-lg border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
         >
-          <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-3 py-4">
+          <div class="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-3 py-4">
             <img
               :src="applicantImage"
               alt="Arizachi rasmi"
-              class="h-28 w-20 rounded-2xl border border-border/60 object-cover"
+              class="h-28 w-20 rounded-lg border border-border/60 object-cover"
             >
             <p class="mt-2 text-center text-sm text-muted-foreground">
               Rasm
             </p>
           </div>
 
-          <div class="overflow-hidden rounded-2xl border border-border bg-card">
+          <div class="overflow-hidden rounded-lg border border-border bg-card">
             <table class="w-full border-collapse text-sm">
               <tbody>
                 <tr
@@ -5816,7 +5816,7 @@ watch(serviceRecipientLookupResult, () => {
 
         <div
           v-if="applicantLookupResult"
-          class="space-y-3 rounded-xl border border-border/70 bg-card p-4"
+          class="space-y-3 rounded-lg border border-border/70 bg-card p-4"
         >
           <label class="flex items-start gap-3 text-sm text-foreground">
             <input
@@ -6055,17 +6055,17 @@ watch(serviceRecipientLookupResult, () => {
 
           <p
             v-if="serviceRecipientLookupError"
-            class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
           >
             {{ serviceRecipientLookupError }}
           </p>
 
           <div
             v-if="serviceRecipientLookupResult"
-            class="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
+            class="grid gap-4 rounded-lg border border-border bg-muted/20 p-4 md:grid-cols-[136px_1fr]"
           >
-            <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-5">
-              <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-primary/5">
+            <div class="flex flex-col items-center justify-center rounded-lg border border-border bg-card px-4 py-5">
+              <div class="flex h-28 w-20 items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-primary/5">
                 <img
                   v-if="serviceRecipientPhotoPreview"
                   :src="serviceRecipientPhotoPreview"
@@ -6093,7 +6093,7 @@ watch(serviceRecipientLookupResult, () => {
               </p>
             </div>
 
-            <div class="overflow-hidden rounded-2xl border border-border bg-card">
+            <div class="overflow-hidden rounded-lg border border-border bg-card">
               <table class="w-full border-collapse text-sm">
                 <tbody>
                   <tr
@@ -6115,7 +6115,7 @@ watch(serviceRecipientLookupResult, () => {
 
           <div
             v-if="serviceRecipientLookupResult"
-            class="space-y-3 rounded-xl border border-border/70 bg-card p-4"
+            class="space-y-3 rounded-lg border border-border/70 bg-card p-4"
           >
             <label class="flex items-start gap-3 text-sm text-foreground">
               <input
@@ -6315,7 +6315,7 @@ watch(serviceRecipientLookupResult, () => {
           v-if="serviceRecipientLookupResult"
           class="space-y-4 border-t border-border pt-5"
         >
-          <div class="rounded-xl border border-primary/15 bg-primary/5 p-4">
+          <div class="rounded-lg border border-primary/15 bg-primary/5 p-4">
             <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <p class="text-sm font-semibold text-foreground">
@@ -6331,7 +6331,7 @@ watch(serviceRecipientLookupResult, () => {
             </div>
 
             <div class="mt-4 grid gap-3 md:grid-cols-2">
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Aniqlangan tashxis
                 </p>
@@ -6340,7 +6340,7 @@ watch(serviceRecipientLookupResult, () => {
                 </p>
               </div>
 
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Aniqlangan nogironlik guruhi
                 </p>
@@ -6355,7 +6355,7 @@ watch(serviceRecipientLookupResult, () => {
             {{ t('Xizmat turi') }}
           </p>
 
-          <div class="rounded-xl border border-border/70 bg-card p-4">
+          <div class="rounded-lg border border-border/70 bg-card p-4">
             <label class="space-y-2 lg:relative">
               <span class="text-sm font-medium text-foreground">{{ t('Xizmat turi') }}</span>
               <button
@@ -6440,7 +6440,7 @@ watch(serviceRecipientLookupResult, () => {
 
           <p
             v-if="selectedServiceEligibility && !selectedServiceEligibility.eligible"
-            class="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            class="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
           >
             {{ selectedServiceEligibility.reasons.join(' ') }}
           </p>
@@ -6458,7 +6458,7 @@ watch(serviceRecipientLookupResult, () => {
             <div
               v-for="document in activeMedicalDocumentFields"
               :key="document.id"
-              class="rounded-xl border border-border bg-card p-3"
+              class="rounded-lg border border-border bg-card p-3"
             >
               <span class="block text-sm font-medium text-foreground">
                 {{ document.label }}
@@ -6491,7 +6491,7 @@ watch(serviceRecipientLookupResult, () => {
             SMS-kod bilan tasdiqlash arizachi tomonidan so‘rovnomaning tasdiqlanishi hisoblanadi va u hamda nogironligi bo‘lgan shaxsga tegishli shaxsga doir ma’lumotlarni olish va ishlov berishga rozilikni bildiradi.
           </p>
 
-          <div class="space-y-3 rounded-xl border border-border/70 bg-card p-4">
+          <div class="space-y-3 rounded-lg border border-border/70 bg-card p-4">
             <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,220px)_190px] md:items-end">
               <label class="space-y-2">
                 <span class="text-sm font-medium text-foreground">Telefon raqami</span>
@@ -6568,7 +6568,7 @@ watch(serviceRecipientLookupResult, () => {
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-2xl">
+    <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-2xl">
       <div class="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <p class="text-lg font-semibold text-foreground">
@@ -6592,19 +6592,19 @@ watch(serviceRecipientLookupResult, () => {
 
       <div class="flex-1 space-y-6 overflow-y-auto p-5">
         <div class="space-y-3">
-          <div class="rounded-2xl border border-border bg-card p-4">
+          <div class="rounded-lg border border-border bg-card p-4">
             <p class="text-base font-semibold text-foreground">
               Xizmat oluvchi
             </p>
             <div class="mt-4 grid gap-4 lg:grid-cols-[160px_minmax(0,1fr)]">
-              <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-background px-5 py-6 text-center">
-                <div class="flex h-32 w-24 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
+              <div class="flex h-full min-h-[220px] flex-col items-center justify-center rounded-lg border border-border bg-background px-5 py-6 text-center">
+                <div class="flex h-32 w-24 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-sm font-semibold text-muted-foreground">
                   Rasm yo'q
                 </div>
                 <span class="mt-3 text-sm text-muted-foreground">Rasm</span>
               </div>
 
-              <div class="overflow-hidden rounded-2xl border border-border bg-background">
+              <div class="overflow-hidden rounded-lg border border-border bg-background">
                 <div
                   v-for="[label, value] in selectedAssessmentServiceRecipientRows"
                   :key="`assessment-service-recipient-${label}`"
@@ -6623,7 +6623,7 @@ watch(serviceRecipientLookupResult, () => {
 
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="text-base font-semibold text-foreground">
@@ -6642,7 +6642,7 @@ watch(serviceRecipientLookupResult, () => {
             <div
               v-for="question in barthelQuestions"
               :key="question.id"
-              class="rounded-2xl border border-border bg-background p-4"
+              class="rounded-lg border border-border bg-background p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -6662,7 +6662,7 @@ watch(serviceRecipientLookupResult, () => {
                   :key="option.id"
                   type="button"
                   :class="[
-                    'rounded-xl border px-3 py-3 text-left transition-colors',
+                    'rounded-lg border px-3 py-3 text-left transition-colors',
                     getAssessmentSelectedOption(question)?.id === option.id
                       ? 'border-primary bg-primary/10'
                       : 'border-border bg-card hover:bg-muted/40',
@@ -6691,7 +6691,7 @@ watch(serviceRecipientLookupResult, () => {
           </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="text-base font-semibold text-foreground">
@@ -6710,7 +6710,7 @@ watch(serviceRecipientLookupResult, () => {
             <div
               v-for="question in lawtonQuestions"
               :key="question.id"
-              class="rounded-2xl border border-border bg-background p-4"
+              class="rounded-lg border border-border bg-background p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
@@ -6730,7 +6730,7 @@ watch(serviceRecipientLookupResult, () => {
                   :key="option.id"
                   type="button"
                   :class="[
-                    'rounded-xl border px-3 py-3 text-left transition-colors',
+                    'rounded-lg border px-3 py-3 text-left transition-colors',
                     getAssessmentSelectedOption(question)?.id === option.id
                       ? 'border-primary bg-primary/10'
                       : 'border-border bg-card hover:bg-muted/40',
@@ -6759,11 +6759,11 @@ watch(serviceRecipientLookupResult, () => {
           </div>
         </div>
 
-        <div class="rounded-2xl border border-border bg-card p-4">
+        <div class="rounded-lg border border-border bg-card p-4">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-stretch">
             <div
               :class="[
-                'flex min-w-0 flex-1 flex-col justify-between rounded-xl border p-4',
+                'flex min-w-0 flex-1 flex-col justify-between rounded-lg border p-4',
                 assessmentGroupLabel === 'Tezkor'
                   ? 'border-destructive/25 bg-destructive/5'
                   : assessmentGroupLabel === 'Rejali'
@@ -6794,7 +6794,7 @@ watch(serviceRecipientLookupResult, () => {
               </div>
             </div>
             <div class="grid flex-[1.4] gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">
                   Barthel
                 </p>
@@ -6802,7 +6802,7 @@ watch(serviceRecipientLookupResult, () => {
                   {{ formatAssessmentScore(assessmentBarthelTotal) }} ball
                 </p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">
                   Lawton
                 </p>
@@ -6810,7 +6810,7 @@ watch(serviceRecipientLookupResult, () => {
                   {{ formatAssessmentScore(assessmentLawtonTotal) }} ball
                 </p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">
                   Yaqin qarindoshlari
                 </p>
@@ -6818,7 +6818,7 @@ watch(serviceRecipientLookupResult, () => {
                   {{ assessmentRelativesAvailable ? 'Bor' : "Yo'q" }}
                 </p>
               </div>
-              <div class="rounded-xl border border-border bg-background px-4 py-3">
+              <div class="rounded-lg border border-border bg-background px-4 py-3">
                 <p class="text-xs font-medium text-muted-foreground">
                   Uy-joyi
                 </p>

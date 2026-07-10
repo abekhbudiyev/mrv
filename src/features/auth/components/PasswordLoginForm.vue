@@ -40,7 +40,7 @@ const emit = defineEmits<{
         v-model="username"
         autocomplete="username"
         placeholder="Loginni kiriting"
-        class="h-[3.25rem] rounded-[1.05rem] border-border/80 bg-white px-5 text-[15px] shadow-none placeholder:text-muted-foreground/70"
+        class="h-11 rounded-md bg-background px-3.5 text-sm shadow-none"
         :aria-invalid="Boolean(errors.username)"
         @update:model-value="emit('clearError', 'username')"
       />
@@ -66,13 +66,13 @@ const emit = defineEmits<{
           :type="isPasswordVisible ? 'text' : 'password'"
           autocomplete="current-password"
           placeholder="Parolni kiriting"
-          class="h-[3.25rem] rounded-[1.05rem] border-border/80 bg-white px-5 pr-12 text-[15px] shadow-none placeholder:text-muted-foreground/70"
+          class="h-11 rounded-md bg-background px-3.5 pr-11 text-sm shadow-none"
           :aria-invalid="Boolean(errors.password)"
           @update:model-value="emit('clearError', 'password')"
         />
         <button
           type="button"
-          class="absolute right-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:bg-secondary/70 hover:text-foreground"
+          class="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-150 ease-out hover:bg-secondary/70 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/35"
           :aria-label="isPasswordVisible ? 'Parolni yashirish' : 'Parolni ko‘rsatish'"
           @click="emit('togglePasswordVisibility')"
         >
@@ -94,7 +94,7 @@ const emit = defineEmits<{
       </p>
     </div>
 
-    <div class="flex items-center justify-between gap-4 text-sm">
+    <div class="flex flex-col items-start justify-between gap-3 text-sm sm:flex-row sm:items-center">
       <label class="flex items-center gap-2.5 text-muted-foreground">
         <input
           v-model="remember"
@@ -115,14 +115,14 @@ const emit = defineEmits<{
 
     <p
       v-if="errors.form"
-      class="rounded-[1rem] border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+      class="rounded-md border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive"
     >
       {{ errors.form }}
     </p>
 
     <Button
       type="submit"
-      class="h-[3.25rem] w-full rounded-[1.05rem] text-base font-semibold shadow-sm"
+      class="h-11 w-full rounded-md text-sm font-semibold shadow-sm"
       :disabled="isSubmitting"
     >
       <span>{{ isSubmitting ? 'Kirilmoqda' : 'Kirish' }}</span>

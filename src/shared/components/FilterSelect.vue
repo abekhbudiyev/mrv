@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Check, ChevronDown, Search } from 'lucide-vue-next'
 import { Input } from '@/shared/ui/shadcn/input'
 import { cn } from '@/shared/lib/utils'
@@ -26,6 +26,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const searchQuery = ref('')
 const searchInputRef = ref<InstanceType<typeof Input> | null>(null)
+const rootElement = ref<HTMLElement | null>(null)
 
 const selectedLabel = computed(() => props.modelValue || props.allLabel)
 const filteredOptions = computed(() => {
@@ -66,16 +67,47 @@ function selectOption(value: string) {
   isOpen.value = false
   searchQuery.value = ''
 }
+
+function closeSelect() {
+  isOpen.value = false
+  searchQuery.value = ''
+}
+
+function handleOutsidePointerDown(event: PointerEvent) {
+  if (!isOpen.value || rootElement.value?.contains(event.target as Node)) {
+    return
+  }
+
+  closeSelect()
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isOpen.value) {
+    closeSelect()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('pointerdown', handleOutsidePointerDown, true)
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', handleOutsidePointerDown, true)
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
 </script>
 
 <template>
-  <label class="space-y-2 text-sm xl:relative xl:space-y-0">
+  <div ref="rootElement" class="space-y-2 text-sm xl:relative xl:space-y-0">
     <span class="font-medium text-foreground">{{ label }}</span>
 
     <div class="space-y-2 xl:mt-2 xl:space-y-0">
       <button
         type="button"
         :disabled="disabled"
+        :aria-label="label"
+        :aria-expanded="isOpen"
         :class="[
           'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50',
           isOpen
@@ -150,5 +182,5 @@ function selectOption(value: string) {
         </div>
       </div>
     </div>
-  </label>
+  </div>
 </template>

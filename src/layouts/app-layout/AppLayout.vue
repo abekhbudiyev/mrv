@@ -6,7 +6,7 @@ import AppShell from './AppShell.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 
-const LAPTOP_SIDEBAR_COLLAPSE_WIDTH = 1440
+const LAPTOP_SIDEBAR_COLLAPSE_WIDTH = 1200
 const DESKTOP_SIDEBAR_BREAKPOINT = 1024
 
 const route = useRoute()

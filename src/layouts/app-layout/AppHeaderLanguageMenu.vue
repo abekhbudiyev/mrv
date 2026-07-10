@@ -22,13 +22,13 @@ const isOpen = ref(false)
       <Button
         variant="outline"
         :class="cn(
-          'h-10 gap-2 px-3 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2',
+          'h-10 gap-2 px-2.5 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-3',
           isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
         )"
         aria-label="Til tanlash"
       >
         <Languages class="h-4 w-4" />
-        <span class="min-w-7 text-xs font-semibold uppercase">
+        <span class="hidden min-w-7 text-xs font-semibold uppercase sm:inline">
           {{ currentLanguage?.shortLabel ?? 'UZ' }}
         </span>
       </Button>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ChevronDown } from 'lucide-vue-next'
 import logoMark from '@/assets/logo-mark.svg'
 import { appModules } from '@/features/apps/registry/apps'
@@ -13,7 +13,7 @@ import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { useI18n } from '@/shared/i18n'
 import { cn } from '@/shared/lib/utils'
 
-defineProps<{
+const props = defineProps<{
   collapsed: boolean
 }>()
 
@@ -22,6 +22,7 @@ defineEmits<{
 }>()
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 const { locale, t } = useI18n()
 const modules = computed(() => appModules.filter((module) => (
@@ -143,11 +144,17 @@ function sidebarTitle(item: MuruvvatMenuItem) {
 }
 
 function isActive(path: string) {
-  return route.path === path
+  if (route.path === path) {
+    return true
+  }
+
+  const segmentCount = path.split('/').filter(Boolean).length
+
+  return segmentCount > 3 && route.path.startsWith(`${path}/`)
 }
 
 function isItemActive(item: MuruvvatMenuItem): boolean {
-  if (item.route && route.path === item.route) {
+  if (item.route && isActive(item.route)) {
     return true
   }
 
@@ -173,6 +180,20 @@ function toggleSection(sectionId: string) {
   }
 }
 
+function handleSectionClick(item: MuruvvatMenuItem) {
+  if (!props.collapsed) {
+    toggleSection(item.id)
+    return
+  }
+
+  const activeChild = item.children?.find((child) => child.route && isActive(child.route))
+  const destination = activeChild?.route ?? item.children?.find((child) => child.route)?.route
+
+  if (destination) {
+    router.push(destination)
+  }
+}
+
 watch(() => route.path, syncOpenSections, { immediate: true })
 </script>
 
@@ -185,7 +206,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
         collapsed ? 'justify-center px-3' : 'gap-3 px-5',
       )"
     >
-      <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card p-1">
+      <div class="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card p-1 shadow-sm">
         <img
           :src="logoMark"
           alt="IHMA logo"
@@ -196,7 +217,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
         v-if="!collapsed"
         class="min-w-0 flex-1"
       >
-        <p class="truncate text-sm font-semibold tracking-wide text-sidebar-foreground">
+        <p class="truncate text-sm font-semibold text-sidebar-foreground">
           IHMA
         </p>
         <p class="truncate text-xs text-muted-foreground">
@@ -212,7 +233,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
       >
         <p
           v-if="!collapsed"
-          class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          class="px-3 pb-2 text-xs font-semibold uppercase text-muted-foreground"
         >
           {{ currentModuleLabel }}
         </p>
@@ -228,7 +249,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
               'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
               collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
               isItemActive(item)
-                ? 'border border-primary/35 bg-primary/12 text-foreground'
+                ? 'border-l-2 border-primary bg-primary/12 text-foreground'
                 : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
             )"
             :title="collapsed ? sidebarTitle(item) : undefined"
@@ -249,12 +270,12 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             <button
               type="button"
               :class="cn(
-                'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out hover:bg-accent/80',
+                'flex items-center gap-3 rounded-md text-sm outline-none transition-colors duration-150 ease-out hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-ring/35',
                 collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'w-full px-3 py-2',
                 isItemActive(item) ? 'bg-primary/10 text-foreground' : 'text-sidebar-foreground',
               )"
               :title="collapsed ? sidebarTitle(item) : undefined"
-              @click="toggleSection(item.id)"
+              @click="handleSectionClick(item)"
             >
               <component
                 :is="item.icon"
@@ -314,7 +335,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
       >
         <p
           v-if="!collapsed"
-          class="px-3 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          class="px-3 pb-2 text-xs font-semibold uppercase text-muted-foreground"
         >
           {{ t('Modullar') }}
         </p>
@@ -327,7 +348,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
             collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
             isActive(module.route)
-              ? 'border border-primary/35 bg-primary/12 text-foreground'
+              ? 'border-l-2 border-primary bg-primary/12 text-foreground'
               : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
           )"
           :title="collapsed ? t(module.title) : undefined"

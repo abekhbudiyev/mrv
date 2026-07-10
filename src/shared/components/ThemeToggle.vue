@@ -10,7 +10,9 @@ const { isDark, toggleTheme } = useTheme()
   <Button
     variant="outline"
     size="icon"
+    class="h-10 w-10"
     aria-label="Mavzuni almashtirish"
+    title="Mavzuni almashtirish"
     @click="toggleTheme"
   >
     <Sun

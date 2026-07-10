@@ -224,6 +224,38 @@ export const eiRecordsByPageKey: Record<string, EiRecord[]> = {
         { label: 'Qabul qilindi', date: '15.06.2026' },
       ],
     },
+    {
+      id: 'EA-CON-2026-0033',
+      title: 'Bolajon Terapiya Markazi',
+      tin: '614923780',
+      applicant: {
+        fullName: 'Abdullayev Javlon Bahodir o\'g\'li',
+        pinfl: '30603876543212',
+      },
+      subject: 'Xizmat ko\'rsatishga tayyorlik xulosasi',
+      region: 'Farg\'ona',
+      district: 'Qo\'qon',
+      owner: 'Hududiy boshqarma',
+      status: 'Qabul qilingan',
+      tone: 'success',
+      submittedAt: '2026-06-16',
+      dueAt: '2026-06-17',
+      nextAction: 'Rad etish sababini ariza beruvchiga yuborish',
+      summary: 'Tashkilot mutaxassislar malakasi hamda xona va jihozlarning minimal talablariga javob bermagan.',
+      result: 'Salbiy',
+      metadata: [
+        { label: 'Xulosa turi', value: 'Salbiy' },
+        { label: 'Talab 1', value: 'Javob bermaydi' },
+        { label: 'Talab 2', value: 'Javob beradi' },
+        { label: 'Talab 3', value: 'Javob beradi' },
+        { label: 'Talab 4', value: 'Javob bermaydi' },
+      ],
+      history: [
+        { label: 'O\'rganish yakunlandi', date: '16.06.2026' },
+        { label: 'Salbiy xulosa shakllantirildi', date: '16.06.2026' },
+        { label: 'Xulosa qabul qilindi', date: '17.06.2026' },
+      ],
+    },
   ],
   'providers-registry': [
     {

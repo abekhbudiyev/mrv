@@ -34,7 +34,7 @@ async function handleLogout() {
       <Button
         variant="outline"
         :class="cn(
-          'justify-between gap-3 px-3 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2',
+          'h-10 justify-between gap-3 px-2 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-3',
           isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
         )"
       >
@@ -60,15 +60,10 @@ async function handleLogout() {
         :side-offset="8"
         class="z-50 min-w-56 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
       >
-        <DropdownMenuLabel class="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Profil maydoni
+        <DropdownMenuLabel class="px-2 py-2">
+          <span class="block text-sm font-medium text-foreground">{{ userLabel }}</span>
+          <span class="mt-0.5 block text-xs font-normal text-muted-foreground">{{ userRole }}</span>
         </DropdownMenuLabel>
-        <DropdownMenuItem class="rounded-sm px-2 py-2 text-sm text-muted-foreground outline-none">
-          Profil ma'lumotlari keyinroq qo‘shiladi
-        </DropdownMenuItem>
-        <DropdownMenuItem class="rounded-sm px-2 py-2 text-sm text-muted-foreground outline-none">
-          Ruxsatlar va rollar integratsiyasi rejalashtirilgan
-        </DropdownMenuItem>
         <DropdownMenuSeparator class="my-1 h-px bg-border" />
         <DropdownMenuItem
           class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
