@@ -4079,9 +4079,9 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
         @select="handleStatusSelect"
       />
 
-      <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
-        <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
-          <div class="relative flex-1 xl:hidden">
+      <div class="flex min-w-0 w-full max-w-full flex-col overflow-hidden rounded-lg border border-border bg-card">
+        <div class="flex min-w-0 max-w-full flex-col">
+          <div class="relative xl:hidden">
             <div
               v-if="paginatedRecords.length === 0"
               class="flex min-h-[18rem] items-center justify-center px-4 py-10 text-center"
@@ -4316,7 +4316,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             </div>
           </div>
 
-          <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
+          <div class="relative hidden min-w-0 max-w-full overflow-auto [touch-action:pan-x_pan-y] xl:block xl:max-h-[calc(100vh-18rem)] xl:[overscroll-behavior:contain]">
             <table
               v-if="usesProviderApplicationsTable"
               class="border-separate border-spacing-0 text-sm"
