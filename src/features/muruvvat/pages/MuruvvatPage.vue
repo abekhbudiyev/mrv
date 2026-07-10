@@ -5189,7 +5189,7 @@ watch(serviceRecipientLookupResult, () => {
                     class="transition-colors duration-200 ease-out hover:bg-muted/30"
                   >
                       <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="font-medium text-foreground">
+                        <div class="whitespace-nowrap font-medium text-foreground">
                           {{ row.id }}
                         </div>
                         <div class="mt-1 text-muted-foreground">
@@ -5216,7 +5216,7 @@ watch(serviceRecipientLookupResult, () => {
                         </div>
                       </td>
                       <td class="border-b border-border px-4 py-3 align-top">
-                        <div class="font-medium text-foreground">
+                        <div class="whitespace-nowrap font-medium text-foreground">
                           {{ row.region }}
                         </div>
                         <div class="mt-1 text-muted-foreground">

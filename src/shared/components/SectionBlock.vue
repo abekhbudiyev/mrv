@@ -20,7 +20,7 @@ const { t } = useI18n()
   >
     <CardHeader
       v-if="title || description"
-      class="pb-3"
+      class="pb-2.5"
     >
       <CardTitle v-if="title">
         {{ t(title) }}
@@ -32,7 +32,7 @@ const { t } = useI18n()
         {{ t(description) }}
       </p>
     </CardHeader>
-    <CardContent :class="contentClass || 'space-y-4'">
+    <CardContent :class="contentClass || 'space-y-3'">
       <slot />
     </CardContent>
   </Card>
@@ -41,7 +41,7 @@ const { t } = useI18n()
     v-else
     :class="cn('min-w-0', $props.class)"
   >
-    <div :class="cn(contentClass || 'space-y-4', '!px-0 !pt-0')">
+    <div :class="cn(contentClass || 'space-y-3', '!px-0 !pt-0')">
       <slot />
     </div>
   </section>

@@ -28,10 +28,10 @@ function handleForgotPassword() {
 <template>
   <div class="min-h-screen bg-muted/45 px-4 py-4 sm:px-6 sm:py-6">
     <div class="mx-auto flex min-h-[calc(100vh-2rem)] max-w-[1440px] items-center justify-center sm:min-h-[calc(100vh-3rem)]">
-      <Card class="w-full max-w-[460px] rounded-lg border border-border bg-card shadow-[0_20px_55px_rgba(15,23,18,0.11)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <Card class="w-full max-w-[460px] rounded-xl bg-card shadow-[0_20px_55px_rgba(15,23,18,0.11)] ring-1 ring-foreground/10 dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <CardContent class="space-y-6 p-6 sm:p-7">
           <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/7 p-1.5">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 p-1.5 ring-1 ring-primary/15">
               <img
                 :src="logoMark"
                 alt="IHMA"

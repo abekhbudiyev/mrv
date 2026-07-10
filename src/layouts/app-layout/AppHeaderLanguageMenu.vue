@@ -20,10 +20,10 @@ const isOpen = ref(false)
   <DropdownMenuRoot v-model:open="isOpen">
     <DropdownMenuTrigger as-child>
       <Button
-        variant="outline"
+        variant="ghost"
         :class="cn(
-          'h-10 gap-2 px-2.5 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-3',
-          isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
+          'h-8 gap-1.5 px-2 text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-2.5',
+          isOpen ? 'bg-accent text-foreground' : '',
         )"
         aria-label="Til tanlash"
       >
@@ -44,7 +44,7 @@ const isOpen = ref(false)
           v-for="language in languages"
           :key="language.code"
           :class="[
-            'flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 text-sm outline-none transition-colors duration-200 ease-out hover:bg-muted',
+            'flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors duration-200 ease-out hover:bg-muted',
             locale === language.code ? 'bg-primary/10 text-foreground' : '',
           ]"
           @select="setLocale(language.code)"

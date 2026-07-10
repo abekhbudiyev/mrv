@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div :class="cn('p-5 pt-0', $props.class)">
+  <div :class="cn('p-4 pt-0', $props.class)">
     <slot />
   </div>
 </template>

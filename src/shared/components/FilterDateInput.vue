@@ -277,7 +277,7 @@ onBeforeUnmount(() => {
       <div class="relative">
         <Input
           :model-value="modelValue"
-          class="h-10 pr-10"
+          class="h-8 pr-9"
           :aria-label="label"
           inputmode="numeric"
           maxlength="10"
@@ -291,7 +291,7 @@ onBeforeUnmount(() => {
         />
         <button
           type="button"
-          class="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
+          class="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted/80 hover:text-foreground"
           :aria-label="`${label} kalendarini ochish`"
           @click="toggleCalendar"
         >
@@ -301,14 +301,14 @@ onBeforeUnmount(() => {
 
       <div
         v-if="isOpen"
-        class="rounded-lg border border-border bg-background p-3 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.5rem)] xl:z-20"
+        class="rounded-xl border border-border bg-background p-2.5 shadow-sm xl:absolute xl:left-0 xl:right-0 xl:top-[calc(100%+0.375rem)] xl:z-20"
       >
         <div class="mb-3 flex items-center justify-between gap-2">
           <div class="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 w-8 p-0"
+              class="h-7 w-7 p-0"
               aria-label="Oldingi yil"
               @click="shiftCalendarYear(-1)"
             >
@@ -317,7 +317,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 w-8 p-0"
+              class="h-7 w-7 p-0"
               aria-label="Oldingi oy"
               @click="shiftCalendarMonth(-1)"
             >
@@ -333,7 +333,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 w-8 p-0"
+              class="h-7 w-7 p-0"
               aria-label="Keyingi oy"
               @click="shiftCalendarMonth(1)"
             >
@@ -342,7 +342,7 @@ onBeforeUnmount(() => {
             <Button
               variant="ghost"
               size="sm"
-              class="h-8 w-8 p-0"
+              class="h-7 w-7 p-0"
               aria-label="Keyingi yil"
               @click="shiftCalendarYear(1)"
             >
@@ -366,7 +366,7 @@ onBeforeUnmount(() => {
             v-for="day in calendarDays"
             :key="day.key"
             type="button"
-            class="flex h-8 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
+            class="flex h-7 items-center justify-center rounded-md text-sm transition-colors duration-200 ease-out"
             :class="day.isCurrentMonth
               ? isCalendarDateSelected(day.value)
                 ? 'bg-primary text-primary-foreground'

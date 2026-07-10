@@ -9,7 +9,7 @@ defineProps<{
 <template>
   <nav
     aria-label="Breadcrumb"
-    class="flex min-w-0 items-center gap-2 overflow-hidden text-xs text-muted-foreground"
+    class="flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-muted-foreground"
   >
     <template
       v-for="(item, index) in items"
@@ -20,7 +20,7 @@ defineProps<{
       </span>
       <ChevronRight
         v-if="index < items.length - 1"
-        class="h-3 w-3 shrink-0 opacity-60"
+        class="h-3.5 w-3.5 shrink-0 opacity-60"
       />
     </template>
   </nav>

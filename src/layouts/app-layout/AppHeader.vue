@@ -27,7 +27,7 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
 </script>
 
 <template>
-  <div class="flex min-h-16 items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 sm:px-5 lg:px-6">
+  <div class="flex h-14 items-center justify-between gap-2 px-4 sm:gap-3">
     <div class="flex min-w-0 flex-1 items-center gap-3">
       <Button
         v-if="showSidebar"
@@ -58,16 +58,16 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
           class="hidden sm:flex"
           :items="breadcrumbs"
         />
-        <h1 class="truncate text-[15px] font-semibold text-foreground">
+        <h1 :class="['truncate text-sm font-semibold text-foreground', breadcrumbs.length ? 'sm:hidden' : '']">
           {{ currentTitle }}
         </h1>
       </div>
     </div>
 
-    <div class="flex shrink-0 items-center gap-1.5 self-start sm:gap-2 sm:self-center">
+    <div class="flex shrink-0 items-center gap-1">
       <RouterLink
         to="/apps"
-        class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-input bg-background text-foreground outline-none transition-colors duration-150 hover:border-primary/45 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-transparent text-muted-foreground outline-none transition-colors duration-150 hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label="Ilovalar"
         title="Ilovalar"
       >

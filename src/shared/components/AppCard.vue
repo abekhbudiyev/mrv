@@ -15,12 +15,12 @@ const { t } = useI18n()
 <template>
   <RouterLink
     :to="app.route"
-    class="group block h-full rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    class="group block h-full rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring/45 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
   >
-    <Card class="h-full transition-[border-color,background-color,box-shadow,transform] duration-150 ease-out group-hover:-translate-y-0.5 group-hover:border-primary/35 group-hover:shadow-[0_8px_24px_rgba(15,23,18,0.07)]">
-      <CardContent class="flex h-full flex-col gap-4 p-5">
+    <Card class="h-full transition-[background-color,box-shadow,transform] duration-150 ease-out group-hover:-translate-y-0.5 group-hover:ring-primary/25 group-hover:shadow-[0_8px_24px_rgba(15,23,18,0.07)]">
+      <CardContent class="flex h-full flex-col gap-3 p-4">
         <div class="flex items-start gap-3">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/8 text-primary">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
             <component
               :is="app.icon"
               class="h-5 w-5"

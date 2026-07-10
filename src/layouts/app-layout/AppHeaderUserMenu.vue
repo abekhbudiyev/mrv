@@ -32,21 +32,21 @@ async function handleLogout() {
   <DropdownMenuRoot v-model:open="isOpen">
     <DropdownMenuTrigger as-child>
       <Button
-        variant="outline"
+        variant="ghost"
         :class="cn(
-          'h-10 justify-between gap-3 px-2 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-3',
-          isOpen ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background' : '',
+          'h-9 justify-between gap-2 px-1.5 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-2',
+          isOpen ? 'bg-accent text-foreground' : '',
         )"
       >
         <div class="flex items-center gap-2">
-          <div class="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
+          <div class="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <UserRound class="h-4 w-4" />
           </div>
           <div class="hidden text-left sm:block">
-            <div class="text-sm font-medium">
+            <div class="text-sm font-medium leading-4">
               {{ userLabel }}
             </div>
-            <div class="text-xs text-muted-foreground">
+            <div class="text-[11px] leading-3 text-muted-foreground">
               {{ userRole }}
             </div>
           </div>
@@ -60,13 +60,13 @@ async function handleLogout() {
         :side-offset="8"
         class="z-50 min-w-56 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
       >
-        <DropdownMenuLabel class="px-2 py-2">
+        <DropdownMenuLabel class="px-2 py-1.5">
           <span class="block text-sm font-medium text-foreground">{{ userLabel }}</span>
           <span class="mt-0.5 block text-xs font-normal text-muted-foreground">{{ userRole }}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator class="my-1 h-px bg-border" />
         <DropdownMenuItem
-          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
           @select.prevent="handleLogout"
         >
           <LogOut class="h-4 w-4" />

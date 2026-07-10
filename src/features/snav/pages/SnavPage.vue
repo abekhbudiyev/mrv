@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { Building2, CalendarClock, Check, ChevronDown, Compass, Download, Filter, MapPin, MoreHorizontal, Navigation, Pencil, Plus, Search, Tags, UserRound, X } from 'lucide-vue-next'
+import { Building2, CalendarClock, Check, CheckCircle2, ChevronDown, Compass, Download, Filter, MapPin, MoreHorizontal, Navigation, Pencil, Plus, Search, Tags, UserRound, X } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -62,7 +62,7 @@ type Organization = {
 type ReceptionSlot = {
   day: string
   time: string
-  status: 'Boâ€˜sh' | 'Yozilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
+  status: 'Bo‘sh' | 'Yozilgan' | 'Tasdiqlangan' | 'Bekor qilingan'
 }
 
 type ReceptionSchedule = {
@@ -333,7 +333,7 @@ const organizations: Organization[] = [
     type: 'Inson markazi',
     region: 'Toshkent shahri',
     district: 'Yunusobod tumani',
-    address: 'Amir Temur koâ€˜chasi, 12-uy',
+    address: 'Amir Temur ko‘chasi, 12-uy',
     phone: '+998 71 200 11 01',
     status: 'Faol',
     latitude: 41.3662,
@@ -346,7 +346,7 @@ const organizations: Organization[] = [
     type: 'Hududiy boshqarma',
     region: 'Samarqand viloyati',
     district: 'Samarqand shahri',
-    address: 'Koâ€˜ksaroy maydoni, 4-uy',
+    address: 'Ko‘ksaroy maydoni, 4-uy',
     phone: '+998 66 200 21 02',
     status: 'Faol',
     latitude: 39.6542,
@@ -359,7 +359,7 @@ const organizations: Organization[] = [
     type: 'Sanatoriylar',
     region: 'Namangan viloyati',
     district: 'Chortoq tumani',
-    address: 'Chortoq shaharchasi, Istirohat koâ€˜chasi',
+    address: 'Chortoq shaharchasi, Istirohat ko‘chasi',
     phone: '+998 69 200 31 03',
     status: 'Faol',
     latitude: 41.0692,
@@ -372,7 +372,7 @@ const organizations: Organization[] = [
     type: 'Internat uyi',
     region: 'Buxoro viloyati',
     district: 'Buxoro shahri',
-    address: 'Mustaqillik koâ€˜chasi, 8-uy',
+    address: 'Mustaqillik ko‘chasi, 8-uy',
     phone: '+998 65 200 41 04',
     status: 'Faol',
     latitude: 39.7747,
@@ -383,9 +383,9 @@ const organizations: Organization[] = [
     date: '05.06.2026',
     name: 'Saxovat uyi markazi',
     type: 'Internat uyi',
-    region: 'Qoraqalpogâ€˜iston Respublikasi',
+    region: 'Qoraqalpog‘iston Respublikasi',
     district: 'Nukus shahri',
-    address: 'A. Dosnazarov koâ€˜chasi, 18-uy',
+    address: 'A. Dosnazarov ko‘chasi, 18-uy',
     phone: '+998 61 200 51 05',
     status: 'Faol',
     latitude: 42.4617,
@@ -416,7 +416,7 @@ const receptionSchedules = ref<ReceptionSchedule[]>([
     phone: '+998 90 123 45 67',
     status: 'Faol',
     weeklySlots: [
-      { day: 'Dushanba', time: '10:00 - 12:00', status: 'Boâ€˜sh' },
+      { day: 'Dushanba', time: '10:00 - 12:00', status: 'Bo‘sh' },
       { day: 'Chorshanba', time: '15:00 - 17:00', status: 'Yozilgan' },
     ],
   },
@@ -424,12 +424,12 @@ const receptionSchedules = ref<ReceptionSchedule[]>([
     id: 'SNAV-QABUL-002',
     date: '05.06.2026',
     person: 'KARIMOVA DILNOZA BAHROM QIZI',
-    position: 'Boâ€˜lim boshligâ€˜i',
+    position: 'Bo‘lim boshlig‘i',
     organizationId: 'SNAV-ORG-002',
     phone: '+998 93 222 44 66',
     status: 'Faol',
     weeklySlots: [
-      { day: 'Seshanba', time: '09:00 - 11:00', status: 'Boâ€˜sh' },
+      { day: 'Seshanba', time: '09:00 - 11:00', status: 'Bo‘sh' },
       { day: 'Payshanba', time: '14:00 - 16:00', status: 'Tasdiqlangan' },
     ],
   },
@@ -442,7 +442,7 @@ const receptionSchedules = ref<ReceptionSchedule[]>([
     phone: '+998 91 456 78 90',
     status: 'Faol',
     weeklySlots: [
-      { day: 'Juma', time: '11:00 - 13:00', status: 'Boâ€˜sh' },
+      { day: 'Juma', time: '11:00 - 13:00', status: 'Bo‘sh' },
       { day: 'Shanba', time: '10:00 - 12:00', status: 'Bekor qilingan' },
     ],
   },
@@ -455,8 +455,8 @@ const receptionSchedules = ref<ReceptionSchedule[]>([
     phone: '+998 94 111 22 33',
     status: 'Faol',
     weeklySlots: [
-      { day: 'Dushanba', time: '14:00 - 16:00', status: 'Boâ€˜sh' },
-      { day: 'Payshanba', time: '10:00 - 12:00', status: 'Boâ€˜sh' },
+      { day: 'Dushanba', time: '14:00 - 16:00', status: 'Bo‘sh' },
+      { day: 'Payshanba', time: '10:00 - 12:00', status: 'Bo‘sh' },
     ],
   },
 ])
@@ -564,13 +564,13 @@ const stats = computed(() => [
   {
     title: 'Tashkilotlar',
     value: organizations.length,
-    description: 'Xaritada koâ€˜rsatiladigan tashkilotlar',
+    description: 'Xaritada ko‘rsatiladigan tashkilotlar',
     icon: Building2,
   },
   {
     title: 'Tashkilot turlari',
     value: organizationTypes.length,
-    description: 'Maâ€™lumotnomadagi turlar',
+    description: 'Ma’lumotnomadagi turlar',
     icon: Tags,
   },
   {
@@ -580,7 +580,7 @@ const stats = computed(() => [
     icon: MapPin,
   },
   {
-    title: 'Yoâ€˜nalishlar',
+    title: 'Yo‘nalishlar',
     value: organizations.length,
     description: 'Direction uchun tayyor manzillar',
     icon: Compass,
@@ -595,10 +595,10 @@ const stats = computed(() => [
 
 const editDialogTitle = computed(() => {
   if (selectedType.value) {
-    return 'Tashkilot turini oâ€˜zgartirish'
+    return 'Tashkilot turini o‘zgartirish'
   }
 
-  return 'Tashkilotni oâ€˜zgartirish'
+  return 'Tashkilotni o‘zgartirish'
 })
 
 function openTypeEditDialog(item: OrganizationType) {
@@ -622,14 +622,14 @@ function closeEditDialog() {
 
 const activeEditDialogTitle = computed(() => {
   if (selectedReception.value) {
-    return 'Qabul jadvalini oâ€˜zgartirish'
+    return 'Qabul jadvalini o‘zgartirish'
   }
 
   if (selectedType.value) {
-    return 'Tashkilot turini oâ€˜zgartirish'
+    return 'Tashkilot turini o‘zgartirish'
   }
 
-  return 'Tashkilotni oâ€˜zgartirish'
+  return 'Tashkilotni o‘zgartirish'
 })
 
 const selectedOrganizationReceptions = computed(() => {
@@ -703,7 +703,7 @@ function requestUserLocation() {
   locationError.value = ''
 
   if (!navigator.geolocation) {
-    locationError.value = 'Browser joylashuvni aniqlashni qoÃ¢â‚¬Ëœllab-quvvatlamaydi.'
+    locationError.value = 'Browser joylashuvni aniqlashni qo‘llab-quvvatlamaydi.'
     return
   }
 
@@ -719,7 +719,7 @@ function requestUserLocation() {
       void nextTick(renderMap)
     },
     (error) => {
-      locationError.value = error.message || 'Joylashuvni aniqlab boÃ¢â‚¬Ëœlmadi.'
+      locationError.value = error.message || 'Joylashuvni aniqlab bo‘lmadi.'
       isLocating.value = false
     },
     {
@@ -980,7 +980,7 @@ onBeforeUnmount(() => {
                   {{ organization.type }}
                 </p>
               </div>
-              <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+              <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                 {{ organization.status }}
               </span>
             </div>
@@ -995,7 +995,7 @@ onBeforeUnmount(() => {
               @click="openDirections(organization)"
             >
               <Navigation class="h-4 w-4" />
-              Yoâ€˜nalish qoâ€˜yish
+              Yo‘nalish qo‘yish
             </Button>
             <Button
               type="button"
@@ -1061,7 +1061,7 @@ onBeforeUnmount(() => {
                 <tr>
                   <th class="px-4 py-3 text-left">Hujjat</th>
                   <th class="px-4 py-3 text-left">Qisqa nomi</th>
-                  <th class="px-4 py-3 text-left">Toâ€˜liq nomi</th>
+                  <th class="px-4 py-3 text-left">To‘liq nomi</th>
                   <th class="px-4 py-3 text-left">Tashkilotlar</th>
                   <th class="px-4 py-3 text-left">Status</th>
                   <th class="px-4 py-3 text-right">Amallar</th>
@@ -1074,14 +1074,14 @@ onBeforeUnmount(() => {
                   class="border-t border-border"
                 >
                   <td class="px-4 py-3">
-                    <p class="font-semibold text-foreground">{{ item.id }}</p>
+                    <p class="whitespace-nowrap font-semibold text-foreground">{{ item.id }}</p>
                     <p class="text-muted-foreground">{{ item.date }}</p>
                   </td>
                   <td class="px-4 py-3 font-medium text-foreground">{{ item.shortName }}</td>
                   <td class="px-4 py-3 text-foreground">{{ item.fullName }}</td>
                   <td class="px-4 py-3 text-foreground">{{ item.organizationsCount }} ta</td>
                   <td class="px-4 py-3">
-                    <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       {{ item.status }}
                     </span>
                   </td>
@@ -1116,10 +1116,10 @@ onBeforeUnmount(() => {
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold text-foreground">{{ item.shortName }}</p>
-                  <p class="text-sm text-muted-foreground">{{ item.id }} Â· {{ item.date }}</p>
+                  <p class="text-sm text-muted-foreground">{{ item.id }} · {{ item.date }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                     {{ item.status }}
                   </span>
                   <DropdownMenuRoot>
@@ -1169,7 +1169,7 @@ onBeforeUnmount(() => {
                   class="border-t border-border"
                 >
                   <td class="px-4 py-3">
-                    <p class="font-semibold text-foreground">{{ item.id }}</p>
+                    <p class="whitespace-nowrap font-semibold text-foreground">{{ item.id }}</p>
                     <p class="text-muted-foreground">{{ item.date }}</p>
                   </td>
                   <td class="px-4 py-3 font-medium text-foreground">{{ item.name }}</td>
@@ -1179,9 +1179,9 @@ onBeforeUnmount(() => {
                     <p class="text-muted-foreground">{{ item.district }}</p>
                     <p class="text-muted-foreground">{{ item.address }}</p>
                   </td>
-                  <td class="px-4 py-3 text-foreground">{{ item.phone }}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-foreground">{{ item.phone }}</td>
                   <td class="px-4 py-3">
-                    <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       {{ item.status }}
                     </span>
                   </td>
@@ -1216,10 +1216,10 @@ onBeforeUnmount(() => {
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold text-foreground">{{ item.name }}</p>
-                  <p class="text-sm text-muted-foreground">{{ item.id }} Â· {{ item.date }}</p>
+                  <p class="text-sm text-muted-foreground">{{ item.id }} · {{ item.date }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                     {{ item.status }}
                   </span>
                   <DropdownMenuRoot>
@@ -1272,12 +1272,12 @@ onBeforeUnmount(() => {
                   class="border-t border-border"
                 >
                   <td class="px-4 py-3">
-                    <p class="font-semibold text-foreground">{{ item.id }}</p>
+                    <p class="whitespace-nowrap font-semibold text-foreground">{{ item.id }}</p>
                     <p class="text-muted-foreground">{{ item.date }}</p>
                   </td>
                   <td class="px-4 py-3">
                     <p class="font-semibold text-foreground">{{ item.person }}</p>
-                    <p class="text-muted-foreground">{{ item.phone }}</p>
+                    <p class="whitespace-nowrap text-muted-foreground">{{ item.phone }}</p>
                   </td>
                   <td class="px-4 py-3 text-foreground">{{ item.position }}</td>
                   <td class="px-4 py-3">
@@ -1291,12 +1291,12 @@ onBeforeUnmount(() => {
                         :key="`${item.id}-${slot.day}-${slot.time}`"
                         class="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground"
                       >
-                        {{ slot.day }} Â· {{ slot.time }} Â· {{ slot.status }}
+                        {{ slot.day }} · {{ slot.time }} · {{ slot.status }}
                       </span>
                     </div>
                   </td>
                   <td class="px-4 py-3">
-                    <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       {{ item.status }}
                     </span>
                   </td>
@@ -1331,10 +1331,10 @@ onBeforeUnmount(() => {
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="font-semibold text-foreground">{{ item.person }}</p>
-                  <p class="text-sm text-muted-foreground">{{ item.id }} Â· {{ item.date }}</p>
+                  <p class="text-sm text-muted-foreground">{{ item.id }} · {{ item.date }}</p>
                 </div>
                 <div class="flex items-center gap-2">
-                  <span class="rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  <span class="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                     {{ item.status }}
                   </span>
                   <DropdownMenuRoot>
@@ -1365,7 +1365,7 @@ onBeforeUnmount(() => {
                   :key="`${item.id}-mobile-${slot.day}-${slot.time}`"
                   class="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground"
                 >
-                  {{ slot.day }} Â· {{ slot.time }} Â· {{ slot.status }}
+                  {{ slot.day }} · {{ slot.time }} · {{ slot.status }}
                 </span>
               </div>
             </div>
@@ -1710,7 +1710,7 @@ onBeforeUnmount(() => {
                     <p class="text-sm text-muted-foreground">{{ schedule.phone }}</p>
                   </div>
                 </div>
-                <span class="w-fit rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                <span class="w-fit rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                   {{ schedule.status }}
                 </span>
               </div>

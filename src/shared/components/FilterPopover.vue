@@ -31,7 +31,7 @@ const emit = defineEmits<{
 const rootElement = ref<HTMLElement | null>(null)
 
 const overlayClass = 'fixed inset-0 z-40 bg-background/40 xl:hidden'
-const panelClass = 'fixed inset-x-3 top-24 z-50 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.5rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-10rem))] xl:p-3.5 xl:origin-top-right'
+const panelClass = 'fixed inset-x-3 top-20 z-50 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-xl border border-border bg-popover p-3.5 text-popover-foreground shadow-xl outline-none xl:absolute xl:left-auto xl:right-0 xl:top-[calc(100%+0.375rem)] xl:w-[22rem] xl:max-h-[min(34rem,calc(100vh-9rem))] xl:p-3 xl:origin-top-right'
 
 function setOpen(nextOpen: boolean) {
   emit('update:open', nextOpen)
@@ -76,7 +76,8 @@ onBeforeUnmount(() => {
 
     <Button
       variant="outline"
-      :class="open ? 'h-10 gap-2 border-ring bg-accent/40 ring-2 ring-ring/20' : 'h-10 gap-2'"
+      size="sm"
+      :class="open ? 'h-7 gap-1.5 border-ring bg-muted ring-2 ring-ring/20' : 'h-7 gap-1.5'"
       :aria-expanded="open"
       @click="toggleOpen"
     >
@@ -98,7 +99,7 @@ onBeforeUnmount(() => {
       :class="cn(panelClass, props.panelClass)"
     >
       <div
-        :class="cn('flex flex-col gap-3', contentClass)"
+        :class="cn('flex flex-col gap-2.5', contentClass)"
         :style="contentStyle"
       >
         <div class="flex items-start justify-between gap-2">
@@ -109,7 +110,7 @@ onBeforeUnmount(() => {
           <Button
             variant="ghost"
             size="sm"
-            class="h-8 w-8 p-0"
+            class="h-7 w-7 p-0"
             :aria-label="closeLabel"
             @click="setOpen(false)"
           >

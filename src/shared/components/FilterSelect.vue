@@ -109,7 +109,7 @@ onBeforeUnmount(() => {
         :aria-label="label"
         :aria-expanded="isOpen"
         :class="[
-          'flex h-10 w-full items-center justify-between rounded-md border bg-background px-3 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-8 w-full items-center justify-between rounded-lg border bg-background px-2.5 text-sm text-foreground outline-none transition-colors duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50',
           isOpen
             ? 'border-ring bg-accent/40 ring-2 ring-ring/20'
             : 'border-input hover:border-ring',
@@ -149,7 +149,7 @@ onBeforeUnmount(() => {
         <div class="max-h-52 overflow-y-auto pr-1">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+            class="flex w-full items-center justify-between rounded-sm px-3 py-1.5 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
             @click.stop.prevent="selectOption('')"
           >
             <span>{{ allLabel }}</span>
@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
             v-for="option in filteredOptions"
             :key="option"
             type="button"
-            class="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
+            class="flex w-full items-center justify-between rounded-sm px-3 py-1.5 text-left text-sm text-foreground transition-colors duration-200 ease-out hover:bg-muted/80"
             @click.stop.prevent="selectOption(option)"
           >
             <span>{{ option }}</span>

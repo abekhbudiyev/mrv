@@ -202,11 +202,11 @@ watch(() => route.path, syncOpenSections, { immediate: true })
     <RouterLink
       :to="brandHomeRoute"
       :class="cn(
-        'flex h-16 items-center border-b border-border',
-        collapsed ? 'justify-center px-3' : 'gap-3 px-5',
+        'flex h-16 items-center',
+        collapsed ? 'justify-center px-2' : 'gap-2 px-4',
       )"
     >
-      <div class="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card p-1 shadow-sm">
+      <div class="flex h-8 w-8 items-center justify-center p-0.5">
         <img
           :src="logoMark"
           alt="IHMA logo"
@@ -226,14 +226,14 @@ watch(() => route.path, syncOpenSections, { immediate: true })
       </div>
     </RouterLink>
 
-    <div :class="cn('flex-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')">
+    <div class="flex-1 overflow-y-auto p-2">
       <div
         v-if="moduleNavigation.length"
         class="space-y-1"
       >
         <p
           v-if="!collapsed"
-          class="px-3 pb-2 text-xs font-semibold uppercase text-muted-foreground"
+          class="px-2 pb-2 text-xs font-medium text-muted-foreground"
         >
           {{ currentModuleLabel }}
         </p>
@@ -246,10 +246,10 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             v-if="item.route"
             :to="item.route"
             :class="cn(
-              'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
-              collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
+              'flex h-8 items-center gap-2 rounded-md text-sm transition-colors duration-200 ease-out',
+              collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
               isItemActive(item)
-                ? 'border-l-2 border-primary bg-primary/12 text-foreground'
+                ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'
                 : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
             )"
             :title="collapsed ? sidebarTitle(item) : undefined"
@@ -270,9 +270,9 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             <button
               type="button"
               :class="cn(
-                'flex items-center gap-3 rounded-md text-sm outline-none transition-colors duration-150 ease-out hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-ring/35',
-                collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'w-full px-3 py-2',
-                isItemActive(item) ? 'bg-primary/10 text-foreground' : 'text-sidebar-foreground',
+                'flex h-8 items-center gap-2 rounded-md text-sm outline-none transition-colors duration-150 ease-out hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/35',
+                collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
+                isItemActive(item) ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary' : 'text-sidebar-foreground',
               )"
               :title="collapsed ? sidebarTitle(item) : undefined"
               @click="handleSectionClick(item)"
@@ -306,7 +306,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
             >
               <div
                 v-if="!collapsed && item.children?.length && openSections[item.id]"
-                class="ml-7 mt-1 grid"
+                class="ml-4 grid border-l border-sidebar-border pl-2"
               >
                 <div class="min-h-0 space-y-1 overflow-hidden">
                   <RouterLink
@@ -314,9 +314,9 @@ watch(() => route.path, syncOpenSections, { immediate: true })
                     :key="child.id"
                     :to="child.route ?? '/apps'"
                     :class="cn(
-                      'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-200 ease-out',
+                      'flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors duration-200 ease-out',
                       isItemActive(child)
-                        ? 'border-l-2 border-primary bg-primary/10 text-foreground'
+                        ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)]'
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground',
                     )"
                   >
@@ -335,7 +335,7 @@ watch(() => route.path, syncOpenSections, { immediate: true })
       >
         <p
           v-if="!collapsed"
-          class="px-3 pb-2 text-xs font-semibold uppercase text-muted-foreground"
+          class="px-2 pb-2 text-xs font-medium text-muted-foreground"
         >
           {{ t('Modullar') }}
         </p>
@@ -345,10 +345,10 @@ watch(() => route.path, syncOpenSections, { immediate: true })
           :key="module.id"
           :to="module.route"
           :class="cn(
-            'flex items-center gap-3 rounded-md text-sm transition-colors duration-200 ease-out',
-            collapsed ? 'mx-auto h-10 w-10 justify-center p-0' : 'px-3 py-2',
+            'flex h-8 items-center gap-2 rounded-md text-sm transition-colors duration-200 ease-out',
+            collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
             isActive(module.route)
-              ? 'border-l-2 border-primary bg-primary/12 text-foreground'
+              ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'
               : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
           )"
           :title="collapsed ? t(module.title) : undefined"

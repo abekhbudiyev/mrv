@@ -47,7 +47,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
     @touchmove.self.prevent
     @wheel.self.prevent
   >
-    <div class="w-full max-w-md rounded-lg border border-border bg-card p-5 shadow-2xl">
+    <div class="w-full max-w-md rounded-xl bg-card p-5 shadow-2xl ring-1 ring-foreground/10">
       <div class="flex items-start gap-3">
         <div
           :class="[

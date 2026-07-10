@@ -8,9 +8,9 @@ const { isDark, toggleTheme } = useTheme()
 
 <template>
   <Button
-    variant="outline"
+    variant="ghost"
     size="icon"
-    class="h-10 w-10"
+    class="h-8 w-8 text-muted-foreground hover:text-foreground"
     aria-label="Mavzuni almashtirish"
     title="Mavzuni almashtirish"
     @click="toggleTheme"

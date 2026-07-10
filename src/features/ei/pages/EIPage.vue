@@ -2631,13 +2631,13 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
       <div
         v-if="selectedProviderApplication && selectedProviderApplicationDetail"
-        class="grid w-full grid-cols-3 rounded-lg border border-border bg-card p-1 sm:w-fit"
+        class="grid w-full grid-cols-2 rounded-lg border border-border bg-card p-1 sm:w-fit sm:grid-cols-3"
       >
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          :class="selectedProviderApplicationDetailTab === 'main' ? 'h-9 min-w-28 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-28 px-4'"
+          :class="selectedProviderApplicationDetailTab === 'main' ? 'h-9 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:min-w-28 sm:px-4' : 'h-9 px-3 sm:min-w-28 sm:px-4'"
           @click="selectedProviderApplicationDetailTab = 'main'"
         >
           Asosiy
@@ -2646,7 +2646,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
           type="button"
           variant="ghost"
           size="sm"
-          :class="selectedProviderApplicationDetailTab === 'conclusion' ? 'h-9 min-w-44 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-44 px-4'"
+          :class="selectedProviderApplicationDetailTab === 'conclusion' ? 'h-9 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:min-w-44 sm:px-4' : 'h-9 px-3 sm:min-w-44 sm:px-4'"
           @click="selectedProviderApplicationDetailTab = 'conclusion'"
         >
           Xulosa ma'lumotlari
@@ -2655,7 +2655,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
           type="button"
           variant="ghost"
           size="sm"
-          :class="selectedProviderApplicationDetailTab === 'history' ? 'h-9 min-w-36 bg-primary px-4 text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-9 min-w-36 px-4'"
+          :class="cn('col-span-2 sm:col-span-1', selectedProviderApplicationDetailTab === 'history' ? 'h-9 bg-primary px-3 text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:min-w-36 sm:px-4' : 'h-9 px-3 sm:min-w-36 sm:px-4')"
           @click="selectedProviderApplicationDetailTab = 'history'"
         >
           Hujjat tarixi
@@ -2686,7 +2686,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                   <td class="w-52 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
                     {{ field.label }}
                   </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <span
                       v-if="field.kind"
                       :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
@@ -2820,7 +2820,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                   <td class="w-52 border-b border-r border-border bg-muted/35 px-4 py-3 align-top text-xs font-medium text-muted-foreground">
                     {{ field.label }}
                   </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <span
                       v-if="field.kind"
                       :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getDetailFieldBadgeClass(field.kind))"
@@ -3973,11 +3973,11 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
     <SectionBlock
       v-else-if="!isProvidersApplicationsCreatePage"
       class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
-      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-3 overflow-visible p-0"
       title=""
       description=""
     >
-      <div class="flex min-h-[74px] flex-col gap-4 rounded-lg border border-border bg-card p-4">
+      <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div class="relative w-full lg:max-w-sm">
             <Search class="pointer-events-none absolute z-10 left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -4050,7 +4050,8 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
 
             <Button
               v-if="isProvidersApplicationsPage"
-              class="order-3 h-10 gap-2"
+              size="sm"
+              class="order-3 h-7 gap-1.5"
               @click="openCreateDialog"
             >
               <Plus class="h-4 w-4" />
@@ -4058,7 +4059,8 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             </Button>
             <Button
               variant="outline"
-              class="order-2 h-10 gap-2"
+              size="sm"
+              class="order-2 h-7 gap-1.5"
               :disabled="isExportingRecords || filteredRecords.length === 0"
               @click="downloadRecordsAsExcel"
             >
@@ -4317,33 +4319,33 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
           <div class="relative hidden min-h-0 min-w-0 max-w-full flex-1 overflow-x-auto overflow-y-hidden [touch-action:pan-x_pan-y] xl:block xl:overflow-auto xl:[overscroll-behavior:contain]">
             <table
               v-if="usesProviderApplicationsTable"
-              class="border-separate border-spacing-0 text-sm xl:min-w-full"
-              :class="isProvidersConclusionsPage ? 'min-w-[1240px]' : 'min-w-[1140px]'"
+              class="border-separate border-spacing-0 text-sm"
+              :class="isProvidersConclusionsPage ? 'min-w-[1480px]' : 'min-w-[1360px]'"
             >
               <thead class="sticky top-0 z-10 bg-card text-left text-muted-foreground">
                 <tr>
-                  <th class="rounded-tl-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 whitespace-nowrap rounded-tl-lg border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Hujjat
                   </th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Ariza beruvchi
                   </th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Tadbirkor
                   </th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Manzil
                   </th>
                   <th
                     v-if="isProvidersConclusionsPage"
-                    class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide"
+                    class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground"
                   >
                     Natija
                   </th>
-                  <th class="border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 whitespace-nowrap border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Holat
                   </th>
-                  <th class="w-24 rounded-tr-lg border-b-2 border-border px-4 py-3 text-xs font-semibold uppercase tracking-wide">
+                  <th class="h-10 w-24 whitespace-nowrap rounded-tr-lg border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground">
                     Amallar
                   </th>
                 </tr>
@@ -4377,41 +4379,41 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                   :key="record.id"
                   class="transition-colors duration-200 ease-out hover:bg-muted/30"
                 >
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <div class="font-medium text-foreground">
                       {{ record.id }}
                     </div>
-                    <div class="mt-1 text-muted-foreground">
+                    <div class="mt-0.5 text-xs text-muted-foreground">
                       {{ formatDate(record.submittedAt) }}
                     </div>
                   </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <div class="font-medium text-foreground">
                       {{ getApplicantName(record) }}
                     </div>
-                    <div class="mt-1 text-muted-foreground">
+                    <div class="mt-0.5 text-xs text-muted-foreground">
                       JSHSHIR: {{ getApplicantPinfl(record) }}
                     </div>
                   </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <div class="font-medium text-foreground">
                       {{ formatName(record.title) }}
                     </div>
-                    <div class="mt-1 text-muted-foreground">
+                    <div class="mt-0.5 text-xs text-muted-foreground">
                       STIR: {{ record.tin ?? '-' }}
                     </div>
                   </td>
-                  <td class="border-b border-border px-4 py-3 align-top">
+                  <td class="whitespace-nowrap border-b border-border p-2 align-middle">
                     <div class="font-medium text-foreground">
                       {{ record.region }}
                     </div>
-                    <div class="mt-1 text-muted-foreground">
+                    <div class="mt-0.5 text-xs text-muted-foreground">
                       {{ record.district }}
                     </div>
                   </td>
                   <td
                     v-if="isProvidersConclusionsPage"
-                    class="border-b border-border px-4 py-3 align-top"
+                    class="whitespace-nowrap border-b border-border p-2 align-middle"
                   >
                     <span :class="cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', getConclusionResultClasses(record))">
                       {{ getConclusionResult(record) }}
@@ -4428,7 +4430,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                         <Button
                           variant="outline"
                           size="sm"
-                          :class="openActionMenuId === record.id ? 'h-8 w-8 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-8 w-8 rounded-md p-0'"
+                          :class="openActionMenuId === record.id ? 'h-7 w-7 rounded-md border-ring bg-accent/40 p-0 ring-2 ring-ring/20' : 'h-7 w-7 rounded-md p-0'"
                         >
                           <Ellipsis class="h-4 w-4" />
                         </Button>
