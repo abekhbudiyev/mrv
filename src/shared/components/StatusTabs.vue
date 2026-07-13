@@ -16,10 +16,12 @@ const props = withDefaults(defineProps<{
   selectedValues?: string[]
   allValue?: string
   itemKeyPrefix?: string
+  showIndicator?: boolean
 }>(), {
   selectedValues: () => [],
   allValue: 'all',
   itemKeyPrefix: 'status-tab',
+  showIndicator: true,
 })
 
 const emit = defineEmits<{
@@ -62,6 +64,7 @@ function handleSelect(event: MouseEvent, value: string) {
         @click="handleSelect($event, tab.value)"
       >
         <span
+          v-if="showIndicator"
           :class="cn(
             'h-1.5 w-1.5 shrink-0 rounded-full',
             tab.dotClass,

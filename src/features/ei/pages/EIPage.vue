@@ -2576,7 +2576,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
       title=""
       description=""
     >
-      <div class="ei-detail-toolbar flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+      <div class="ei-detail-toolbar flex items-center rounded-lg border border-border bg-card p-3">
         <div class="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"
@@ -2586,25 +2586,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             <ChevronLeft class="h-4 w-4" />
             Ortga
           </Button>
-          <div
-            v-if="selectedProviderApplication"
-            class="min-w-0"
-          >
-            <p class="truncate text-sm font-semibold text-foreground">
-              Xizmat ko'rsatuvchi arizasini ko'rish
-            </p>
-            <p class="mt-1 truncate text-sm text-muted-foreground">
-              {{ selectedProviderApplication.id }} · {{ formatName(selectedProviderApplication.title) }}
-            </p>
-          </div>
         </div>
-
-        <span
-          v-if="selectedProviderApplication"
-          :class="cn('inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-medium', eiStatusClasses[selectedProviderApplication.tone])"
-        >
-          {{ selectedProviderApplication.status }}
-        </span>
       </div>
 
       <div
@@ -4072,6 +4054,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
       <StatusTabs
         :tabs="statusTabs"
         :selected-values="selectedStatuses"
+        :show-indicator="!isProvidersApplicationsPage"
         item-key-prefix="ei-status"
         @select="handleStatusSelect"
       />
