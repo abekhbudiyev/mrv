@@ -29,6 +29,7 @@ import StatusTabs from '@/shared/components/StatusTabs.vue'
 import FilterPopover from '@/shared/components/FilterPopover.vue'
 import FilterSelect from '@/shared/components/FilterSelect.vue'
 import FilterDateInput from '@/shared/components/FilterDateInput.vue'
+import YandexMap from '@/shared/components/YandexMap.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
 import { Input } from '@/shared/ui/shadcn/input'
@@ -1782,13 +1783,6 @@ function getProviderApplicationDetail(record: EiRecord) {
   const organizationStatus = getMetadataValue(record, 'Tadbirkorlik subyekti holati') || 'Faol'
   const coordinates = getProviderApplicationCoordinates(record)
   const coordinatePair = `${coordinates.latitude},${coordinates.longitude}`
-  const mapDelta = 0.012
-  const mapBounds = [
-    coordinates.longitude - mapDelta,
-    coordinates.latitude - mapDelta,
-    coordinates.longitude + mapDelta,
-    coordinates.latitude + mapDelta,
-  ].join('%2C')
 
   return {
     document: [
@@ -1833,7 +1827,12 @@ function getProviderApplicationDetail(record: EiRecord) {
       { label: 'Manzil', value: organizationAddress },
     ] as EiDetailField[],
     location: {
-      mapEmbedUrl: `https://www.openstreetmap.org/export/embed.html?bbox=${mapBounds}&layer=mapnik&marker=${coordinates.latitude}%2C${coordinates.longitude}`,
+      coordinates: [coordinates.latitude, coordinates.longitude] as [number, number],
+      markers: [{
+        coordinates: [coordinates.latitude, coordinates.longitude] as [number, number],
+        title: formatName(record.title),
+        description: organizationAddress,
+      }],
       googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coordinatePair)}`,
       yandexMapsUrl: `https://yandex.com/maps/?ll=${coordinates.longitude}%2C${coordinates.latitude}&z=16&pt=${coordinates.longitude}%2C${coordinates.latitude}`,
     },
@@ -2851,14 +2850,12 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             </p>
           </div>
           <div class="p-4">
-            <div class="min-h-[20rem] overflow-hidden rounded-lg border border-border bg-muted/20">
-              <iframe
-                :src="selectedProviderApplicationDetail.location.mapEmbedUrl"
-                title="Tadbirkorlik subyekti joylashuvi"
-                class="h-full min-h-[20rem] w-full border-0"
-                loading="lazy"
-              />
-            </div>
+            <YandexMap
+              :center="selectedProviderApplicationDetail.location.coordinates"
+              :markers="selectedProviderApplicationDetail.location.markers"
+              :zoom="16"
+              height="20rem"
+            />
             <div class="mt-4 flex flex-col justify-end gap-2 border-t border-border pt-4 sm:flex-row">
               <a
                 :href="selectedProviderApplicationDetail.location.googleMapsUrl"
