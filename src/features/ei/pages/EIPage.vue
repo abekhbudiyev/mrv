@@ -8,7 +8,7 @@ const providerApplicationDrafts = moduleRef<EiDraftRecord[]>([])
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Building2, CalendarDays, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, ExternalLink, Eye, FilePenLine, FileText, History, LandPlot, Map, Plus, RotateCcw, Search, Send, UserCheck, UserRound } from 'lucide-vue-next'
+import { Building2, CalendarDays, Check, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Ellipsis, ExternalLink, Eye, FilePenLine, FileText, History, LandPlot, Map, Plus, RotateCcw, Search, Send, Table2, UserCheck, UserRound } from 'lucide-vue-next'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -561,12 +561,11 @@ const selectedAttendanceRegion = ref('')
 const selectedAttendanceProvider = ref('')
 const selectedAttendanceDay = ref(toInputDate())
 const selectedAttendanceListTab = ref<AttendanceListTab>('all')
+const attendanceViewMode = ref<AttendanceViewMode>('calendar')
+const attendanceScopeLevel = ref<AttendanceScopeLevel>('republic')
 const childApplicationViewMode = ref<ChildApplicationViewMode>('sections')
 const selectedChildApplicationDetailTab = ref<ChildApplicationDetailTab>('main')
 const selectedProviderApplicationDetailTab = ref<ProviderApplicationDetailTab>('main')
-const draftAttendanceRegion = ref('')
-const draftAttendanceProvider = ref('')
-const isAttendanceFilterOpen = ref(false)
 
 type ProviderApplicationForm = {
   applicantFullName: string
@@ -614,6 +613,24 @@ type ProviderApplicationReportCellSelection = {
 type AttendanceStatus = 'Keldi' | 'Kelmadi' | 'Kechikdi' | 'Tasdiqlanmagan'
 type AttendanceCalculationStatus = 'Hisoblanadi' | 'Hisoblanmaydi' | 'Limitdan tashqari' | 'Biometrik tasdiqlanmagan' | 'Geolokatsiya mos emas'
 type AttendanceListTab = 'all' | 'present' | 'absent'
+type AttendanceViewMode = 'calendar' | 'timesheet'
+type AttendanceScopeLevel = 'republic' | 'region' | 'provider'
+type AttendanceTimesheetTone = 'success' | 'info' | 'warning' | 'danger'
+type AttendanceMetrics = {
+  planned: number
+  plannedHours: number
+  actualHours: number
+  varianceHours: number
+  billableHours: number
+  present: number
+  absent: number
+  late: number
+  issues: number
+  completionRate: number
+  attendanceRate: number
+  uniqueBeneficiaries: number
+  providers: number
+}
 type AttendanceRecord = {
   id: string
   date: string
@@ -634,6 +651,42 @@ type AttendanceRecord = {
   biometricStatus: string
   geoStatus: string
 }
+type AttendanceTimesheetEntry = {
+  date: string
+  hours: number
+  plannedHours: number
+  billableHours: number
+  planned: number
+  present: number
+  absent: number
+  late: number
+  issues: number
+  completionRate: number
+  tone: AttendanceTimesheetTone
+}
+type AttendanceTimesheetRow = {
+  key: string
+  label: string
+  meta: string
+  region: string
+  provider: string
+  records: AttendanceRecord[]
+  entries: Record<number, AttendanceTimesheetEntry>
+  plannedHours: number
+  actualHours: number
+  varianceHours: number
+  billableHours: number
+  completionRate: number
+  present: number
+  absent: number
+  late: number
+  issues: number
+}
+const attendanceScopeOptions: Array<{ value: AttendanceScopeLevel; label: string }> = [
+  { value: 'republic', label: 'Respublika' },
+  { value: 'region', label: 'Hudud' },
+  { value: 'provider', label: 'Tadbirkor' },
+]
 
 function toInputDate(value = new Date()) {
   const year = value.getFullYear()
@@ -1054,30 +1107,53 @@ const attendanceRegionOptions = computed(() => (
   [...new Set(attendanceRecords.map((record) => record.region))]
     .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
 ))
-const draftAttendanceProviderOptions = computed(() => (
+const attendanceProviderOptions = computed(() => (
   [...new Set(
     attendanceRecords
-      .filter((record) => !draftAttendanceRegion.value || record.region === draftAttendanceRegion.value)
+      .filter((record) => !selectedAttendanceRegion.value || record.region === selectedAttendanceRegion.value)
       .map((record) => record.provider),
   )].sort((left, right) => left.localeCompare(right, 'uz-UZ'))
 ))
-const activeAttendanceFilterCount = computed(() => [
-  selectedAttendanceRegion.value,
-  selectedAttendanceProvider.value,
-].filter(Boolean).length)
-const hasPendingAttendanceFilterChanges = computed(() => (
-  draftAttendanceRegion.value !== selectedAttendanceRegion.value
-  || draftAttendanceProvider.value !== selectedAttendanceProvider.value
-))
+const attendanceScopeLabel = computed(() => {
+  if (attendanceScopeLevel.value === 'provider') {
+    return selectedAttendanceProvider.value || 'Tadbirkor tanlanmagan'
+  }
+
+  if (attendanceScopeLevel.value === 'region') {
+    return selectedAttendanceRegion.value || 'Hudud tanlanmagan'
+  }
+
+  return 'O‘zbekiston Respublikasi'
+})
+const attendanceTimesheetFirstColumnLabel = computed(() => {
+  if (attendanceScopeLevel.value === 'republic') {
+    return 'Hudud'
+  }
+
+  if (attendanceScopeLevel.value === 'region') {
+    return 'Tadbirkor'
+  }
+
+  return 'Xizmat oluvchi'
+})
+const attendanceTimesheetTitle = computed(() => {
+  if (attendanceScopeLevel.value === 'republic') {
+    return 'Respublika bo‘yicha oylik davomat tabeli'
+  }
+
+  if (attendanceScopeLevel.value === 'region') {
+    return `${selectedAttendanceRegion.value || 'Hudud'} bo‘yicha oylik davomat tabeli`
+  }
+
+  return `${selectedAttendanceProvider.value || 'Tadbirkor'} bo‘yicha oylik davomat tabeli`
+})
 const filteredAttendanceRecords = computed(() => {
   const monthPrefix = selectedAttendanceMonth.value
 
   return attendanceRecords.filter((record) => {
     const matchesMonth = record.date.startsWith(monthPrefix)
-    const matchesRegion = !selectedAttendanceRegion.value || record.region === selectedAttendanceRegion.value
-    const matchesProvider = !selectedAttendanceProvider.value || record.provider === selectedAttendanceProvider.value
 
-    return matchesMonth && matchesRegion && matchesProvider
+    return matchesMonth && isAttendanceRecordInScope(record)
   })
 })
 const attendanceCalendarDays = computed(() => {
@@ -1094,6 +1170,11 @@ const attendanceCalendarDays = computed(() => {
     present: number
     absent: number
     hours: number
+    plannedHours: number
+    billableHours: number
+    late: number
+    issues: number
+    completionRate: number
   }> = []
 
   for (let index = 0; index < leadingBlankCount; index += 1) {
@@ -1106,6 +1187,11 @@ const attendanceCalendarDays = computed(() => {
       present: 0,
       absent: 0,
       hours: 0,
+      plannedHours: 0,
+      billableHours: 0,
+      late: 0,
+      issues: 0,
+      completionRate: 0,
     })
   }
 
@@ -1113,41 +1199,138 @@ const attendanceCalendarDays = computed(() => {
     const date = `${selectedAttendanceMonth.value}-${String(day).padStart(2, '0')}`
     const records = filteredAttendanceRecords.value.filter((record) => record.date === date)
 
+    const metrics = buildAttendanceMetrics(records)
+
     days.push({
       key: date,
       date,
       day,
       isBlank: false,
-      planned: records.length,
-      present: records.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi').length,
-      absent: records.filter((record) => record.status === 'Kelmadi').length,
-      hours: records.reduce((total, record) => total + record.hours, 0),
+      planned: metrics.planned,
+      present: metrics.present,
+      absent: metrics.absent,
+      hours: metrics.actualHours,
+      plannedHours: metrics.plannedHours,
+      billableHours: metrics.billableHours,
+      late: metrics.late,
+      issues: metrics.issues,
+      completionRate: metrics.completionRate,
     })
   }
 
   return days
 })
 const attendanceSummary = computed(() => {
-  const records = filteredAttendanceRecords.value
-  const planned = records.length
-  const present = records.filter((record) => record.status === 'Keldi' || record.status === 'Kechikdi').length
-  const absent = records.filter((record) => record.status === 'Kelmadi').length
-  const hours = records.reduce((total, record) => total + record.hours, 0)
-
-  return {
-    planned,
-    present,
-    absent,
-    hours,
-  }
+  return buildAttendanceMetrics(filteredAttendanceRecords.value)
 })
+const previousAttendanceSummary = computed(() => {
+  const previousMonth = getAttendanceMonthKey(selectedAttendanceMonth.value, -1)
+  const records = attendanceRecords.filter((record) => (
+    record.date.startsWith(previousMonth)
+    && isAttendanceRecordInScope(record)
+  ))
+
+  return buildAttendanceMetrics(records)
+})
+const attendanceCompletionTrend = computed(() => (
+  previousAttendanceSummary.value.plannedHours > 0
+    ? attendanceSummary.value.completionRate - previousAttendanceSummary.value.completionRate
+    : null
+))
+const attendanceCompletionTrendLabel = computed(() => {
+  const trend = attendanceCompletionTrend.value
+
+  if (trend === null) {
+    return 'Oldingi oy uchun ma’lumot yo‘q'
+  }
+
+  const prefix = trend > 0 ? '+' : ''
+  const formattedTrend = trend.toLocaleString('uz-UZ', { maximumFractionDigits: 1 })
+  return `Oldingi oyga nisbatan ${prefix}${formattedTrend} foiz punkt`
+})
+const attendanceMonthDays = computed(() => {
+  const { year, month } = parseAttendanceMonth(selectedAttendanceMonth.value)
+  const daysInMonth = new Date(year, month, 0).getDate()
+
+  return Array.from({ length: daysInMonth }, (_, index) => index + 1)
+})
+const attendanceTimesheetRows = computed(() => {
+  const rows = new globalThis.Map<string, Omit<AttendanceTimesheetRow, 'entries' | 'plannedHours' | 'actualHours' | 'varianceHours' | 'billableHours' | 'completionRate' | 'present' | 'absent' | 'late' | 'issues'>>()
+
+  filteredAttendanceRecords.value.forEach((record) => {
+    const key = attendanceScopeLevel.value === 'republic'
+      ? record.region
+      : attendanceScopeLevel.value === 'region'
+        ? record.tin
+        : `${record.childPinfl}-${record.tin}`
+    const existing = rows.get(key)
+
+    if (existing) {
+      existing.records.push(record)
+      return
+    }
+
+    rows.set(key, {
+      key,
+      label: attendanceScopeLevel.value === 'republic'
+        ? record.region
+        : attendanceScopeLevel.value === 'region'
+          ? record.provider
+          : formatName(record.childName),
+      meta: attendanceScopeLevel.value === 'provider'
+        ? `JSHSHIR: ${record.childPinfl}`
+        : '',
+      region: record.region,
+      provider: record.provider,
+      records: [record],
+    })
+  })
+
+  return [...rows.values()]
+    .map((row): AttendanceTimesheetRow => {
+      const recordsByDay = new globalThis.Map<number, AttendanceRecord[]>()
+
+      row.records.forEach((record) => {
+        const day = Number(record.date.slice(-2))
+        recordsByDay.set(day, [...(recordsByDay.get(day) ?? []), record])
+      })
+
+      if (attendanceScopeLevel.value === 'republic') {
+        const providerCount = new Set(row.records.map((record) => record.tin)).size
+        row.meta = `${providerCount} ta tadbirkor`
+      } else if (attendanceScopeLevel.value === 'region') {
+        row.meta = `STIR: ${row.records[0]?.tin ?? ''}`
+      }
+
+      return {
+        ...row,
+        entries: Object.fromEntries([...recordsByDay.entries()].map(([day, records]) => [
+          day,
+          buildAttendanceTimesheetEntry(records),
+        ])) as Record<number, AttendanceTimesheetEntry>,
+        ...buildAttendanceMetrics(row.records),
+      }
+    })
+    .sort((left, right) => left.label.localeCompare(right.label, 'uz-UZ'))
+})
+const attendanceTimesheetDayTotals = computed(() => Object.fromEntries(
+  attendanceMonthDays.value.map((day) => [
+    day,
+    filteredAttendanceRecords.value
+      .filter((record) => Number(record.date.slice(-2)) === day)
+      .reduce((total, record) => total + record.hours, 0),
+  ]),
+) as Record<number, number>)
 const attendanceDayRouteDate = computed(() => {
   const date = Array.isArray(route.params.date) ? route.params.date[0] : route.params.date
 
   return /^\d{4}-\d{2}-\d{2}$/.test(date ?? '') ? String(date) : toInputDate()
 })
 const selectedAttendanceDayRecords = computed(() => (
-  attendanceRecords.filter((record) => record.date === attendanceDayRouteDate.value)
+  attendanceRecords.filter((record) => (
+    record.date === attendanceDayRouteDate.value
+    && isAttendanceRecordInScope(record)
+  ))
 ))
 const attendanceListTabs = computed(() => {
   const records = selectedAttendanceDayRecords.value
@@ -1299,17 +1482,19 @@ watch(draftProviderRegion, () => {
   draftProviderDistrict.value = ''
 })
 
-watch(selectedAttendanceRegion, () => {
-  selectedAttendanceProvider.value = ''
+watch(selectedAttendanceRegion, (region) => {
+  if (!region && attendanceScopeLevel.value !== 'republic') {
+    attendanceScopeLevel.value = 'republic'
+  }
+
+  if (!attendanceProviderOptions.value.includes(selectedAttendanceProvider.value)) {
+    selectedAttendanceProvider.value = ''
+  }
 })
 
-watch(draftAttendanceRegion, () => {
-  draftAttendanceProvider.value = ''
-})
-
-watch(isAttendanceFilterOpen, (isOpen) => {
-  if (isOpen) {
-    syncAttendanceDraftFilters()
+watch(selectedAttendanceProvider, (provider) => {
+  if (!provider && attendanceScopeLevel.value === 'provider') {
+    attendanceScopeLevel.value = selectedAttendanceRegion.value ? 'region' : 'republic'
   }
 })
 
@@ -1625,24 +1810,6 @@ function applyProviderApplicationReportFilters() {
   isProviderApplicationReportFilterOpen.value = false
 }
 
-function syncAttendanceDraftFilters() {
-  draftAttendanceRegion.value = selectedAttendanceRegion.value
-  draftAttendanceProvider.value = selectedAttendanceProvider.value
-}
-
-function clearAttendanceFilters() {
-  selectedAttendanceRegion.value = ''
-  selectedAttendanceProvider.value = ''
-  draftAttendanceRegion.value = ''
-  draftAttendanceProvider.value = ''
-}
-
-function applyAttendanceFilters() {
-  selectedAttendanceRegion.value = draftAttendanceRegion.value
-  selectedAttendanceProvider.value = draftAttendanceProvider.value
-  isAttendanceFilterOpen.value = false
-}
-
 function parseAttendanceMonth(value: string): { year: number; month: number } {
   const match = /^(\d{4})-(\d{2})$/.exec(value)
   const fallbackDate = new Date()
@@ -1663,19 +1830,209 @@ function openAttendanceDay(date: string) {
   router.push(`/apps/ei/service/attendance/${date}`)
 }
 
-function shiftAttendanceMonth(offset: number) {
-  const { year, month } = parseAttendanceMonth(selectedAttendanceMonth.value)
-  const date = new Date(year, month - 1 + offset, 1)
-  selectedAttendanceMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+function isAttendancePresent(record: AttendanceRecord) {
+  return record.status === 'Keldi' || record.status === 'Kechikdi'
 }
 
-function getAttendanceDayClass(day: { planned: number; absent: number; date: string }) {
+function isAttendanceRecordInScope(record: AttendanceRecord) {
+  if (attendanceScopeLevel.value === 'republic') {
+    return true
+  }
+
+  if (record.region !== selectedAttendanceRegion.value) {
+    return false
+  }
+
+  return attendanceScopeLevel.value !== 'provider'
+    || record.provider === selectedAttendanceProvider.value
+}
+
+function setAttendanceScopeLevel(level: AttendanceScopeLevel) {
+  attendanceScopeLevel.value = level
+
+  if (level === 'republic') {
+    selectedAttendanceRegion.value = ''
+    selectedAttendanceProvider.value = ''
+    return
+  }
+
+  if (!selectedAttendanceRegion.value) {
+    selectedAttendanceRegion.value = attendanceRegionOptions.value[0] ?? ''
+  }
+
+  if (level === 'region') {
+    selectedAttendanceProvider.value = ''
+    return
+  }
+
+  if (!selectedAttendanceProvider.value) {
+    selectedAttendanceProvider.value = attendanceProviderOptions.value[0] ?? ''
+  }
+}
+
+function drillDownAttendanceTimesheetRow(row: AttendanceTimesheetRow) {
+  if (attendanceScopeLevel.value === 'republic') {
+    selectedAttendanceRegion.value = row.region
+    selectedAttendanceProvider.value = ''
+    attendanceScopeLevel.value = 'region'
+    return
+  }
+
+  if (attendanceScopeLevel.value === 'region') {
+    selectedAttendanceProvider.value = row.provider
+    attendanceScopeLevel.value = 'provider'
+  }
+}
+
+function openAttendanceTimesheetCell(row: AttendanceTimesheetRow, entry: AttendanceTimesheetEntry) {
+  drillDownAttendanceTimesheetRow(row)
+  openAttendanceDay(entry.date)
+}
+
+function shiftAttendanceMonth(offset: number) {
+  selectedAttendanceMonth.value = getAttendanceMonthKey(selectedAttendanceMonth.value, offset)
+}
+
+function getAttendanceMonthKey(monthValue: string, offset: number) {
+  const { year, month } = parseAttendanceMonth(monthValue)
+  const date = new Date(year, month - 1 + offset, 1)
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getAttendancePlannedHours(record: AttendanceRecord) {
+  const match = /^(\d{2}):(\d{2})-(\d{2}):(\d{2})$/.exec(record.plannedTime)
+
+  if (!match) {
+    return 0
+  }
+
+  const startHour = Number(match[1])
+  const startMinute = Number(match[2])
+  const endHour = Number(match[3])
+  const endMinute = Number(match[4])
+
+  return ((endHour * 60 + endMinute) - (startHour * 60 + startMinute)) / 60
+}
+
+function formatAttendanceHours(hours: number) {
+  const totalMinutes = Math.round(hours * 60)
+  const hourPart = Math.floor(totalMinutes / 60)
+  const minutePart = String(totalMinutes % 60).padStart(2, '0')
+
+  return `${hourPart}:${minutePart}`
+}
+
+function formatSignedAttendanceHours(hours: number) {
+  if (hours === 0) {
+    return '0:00'
+  }
+
+  return `${hours > 0 ? '+' : '−'}${formatAttendanceHours(Math.abs(hours))}`
+}
+
+function formatAttendancePercentage(value: number) {
+  return `${value.toLocaleString('uz-UZ', { maximumFractionDigits: 1 })}%`
+}
+
+function isAttendanceIssue(record: AttendanceRecord) {
+  if (record.status === 'Tasdiqlanmagan') {
+    return true
+  }
+
+  if (!isAttendancePresent(record)) {
+    return false
+  }
+
+  return record.calculationStatus !== 'Hisoblanadi'
+    || record.biometricStatus !== 'Tasdiqlandi'
+    || record.geoStatus !== 'Mos'
+}
+
+function buildAttendanceMetrics(records: AttendanceRecord[]): AttendanceMetrics {
+  const plannedHours = records.reduce((total, record) => total + getAttendancePlannedHours(record), 0)
+  const actualHours = records.reduce((total, record) => total + record.hours, 0)
+  const present = records.filter(isAttendancePresent).length
+
+  return {
+    planned: records.length,
+    plannedHours,
+    actualHours,
+    varianceHours: actualHours - plannedHours,
+    billableHours: records
+      .filter((record) => record.calculationStatus === 'Hisoblanadi')
+      .reduce((total, record) => total + record.hours, 0),
+    present,
+    absent: records.filter((record) => record.status === 'Kelmadi').length,
+    late: records.filter((record) => record.status === 'Kechikdi').length,
+    issues: records.filter(isAttendanceIssue).length,
+    completionRate: plannedHours > 0 ? (actualHours / plannedHours) * 100 : 0,
+    attendanceRate: records.length > 0 ? (present / records.length) * 100 : 0,
+    uniqueBeneficiaries: new Set(records.map((record) => record.childPinfl)).size,
+    providers: new Set(records.map((record) => record.tin)).size,
+  }
+}
+
+function buildAttendanceTimesheetEntry(records: AttendanceRecord[]): AttendanceTimesheetEntry {
+  const metrics = buildAttendanceMetrics(records)
+  const requiresReview = metrics.issues > 0
+  const hasLateArrival = metrics.late > 0
+
+  let tone: AttendanceTimesheetTone = 'success'
+  if (requiresReview || (metrics.present > 0 && metrics.absent > 0)) {
+    tone = 'warning'
+  } else if (metrics.absent > 0 && metrics.present === 0) {
+    tone = 'danger'
+  } else if (hasLateArrival) {
+    tone = 'info'
+  }
+
+  return {
+    date: records[0]?.date ?? '',
+    hours: metrics.actualHours,
+    plannedHours: metrics.plannedHours,
+    billableHours: metrics.billableHours,
+    planned: metrics.planned,
+    present: metrics.present,
+    absent: metrics.absent,
+    late: metrics.late,
+    issues: metrics.issues,
+    completionRate: metrics.completionRate,
+    tone,
+  }
+}
+
+function getAttendanceTimesheetCellClass(entry?: AttendanceTimesheetEntry) {
+  if (!entry) {
+    return 'bg-background text-muted-foreground'
+  }
+
+  if (entry.tone === 'danger') {
+    return 'bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/25 dark:text-red-300'
+  }
+
+  if (entry.tone === 'warning') {
+    return 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/25 dark:text-amber-300'
+  }
+
+  if (entry.tone === 'info') {
+    return 'bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/25 dark:text-blue-300'
+  }
+
+  return 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/25 dark:text-emerald-300'
+}
+
+function getAttendanceDayClass(day: { planned: number; absent: number; issues: number; date: string }) {
   if (selectedAttendanceDay.value === day.date) {
     return 'border-primary bg-primary/10 ring-2 ring-primary/20'
   }
 
   if (day.absent > 0) {
     return 'border-red-200 bg-red-50/70 hover:bg-red-50 dark:border-red-800 dark:bg-red-950/20'
+  }
+
+  if (day.issues > 0) {
+    return 'border-amber-200 bg-amber-50/70 hover:bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20'
   }
 
   if (day.planned > 0) {
@@ -3616,6 +3973,9 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             <p class="text-sm font-semibold text-foreground">
               {{ formatDate(attendanceDayRouteDate) }}
             </p>
+            <p class="mt-1 truncate text-xs text-muted-foreground">
+              {{ attendanceScopeLabel }}
+            </p>
           </div>
         </div>
 
@@ -3668,7 +4028,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             <tbody>
               <tr v-if="selectedAttendanceDayTableRecords.length === 0">
                 <td
-                  colspan="6"
+                  colspan="7"
                   class="border-b border-border px-4 py-12 text-center text-sm text-muted-foreground"
                 >
                   Tanlangan kun va tab bo'yicha ma'lumot topilmadi.
@@ -3803,84 +4163,163 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <FilterPopover
-              v-model:open="isAttendanceFilterOpen"
-              :active-count="activeAttendanceFilterCount"
-            >
-              <div class="flex flex-col gap-3">
-                <FilterSelect
-                  v-model="draftAttendanceRegion"
-                  label="Hudud"
-                  :options="attendanceRegionOptions"
-                />
-
-                <FilterSelect
-                  v-model="draftAttendanceProvider"
-                  label="Tashkilot"
-                  :options="draftAttendanceProviderOptions"
-                />
-              </div>
-
-              <template #footer>
-                <div class="flex justify-end gap-2 border-t border-border pt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="activeAttendanceFilterCount === 0 && !hasPendingAttendanceFilterChanges"
-                    @click="clearAttendanceFilters"
-                  >
-                    Tozalash
-                  </Button>
-                  <Button
-                    size="sm"
-                    @click="applyAttendanceFilters"
-                  >
-                    Qo'llash
-                  </Button>
-                </div>
-              </template>
-            </FilterPopover>
+            <div class="inline-flex h-10 items-center rounded-lg border border-border bg-background p-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                :class="attendanceViewMode === 'calendar' ? 'h-8 gap-2 bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-8 gap-2'"
+                @click="attendanceViewMode = 'calendar'"
+              >
+                <CalendarDays class="h-4 w-4" />
+                Kalendar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                :class="attendanceViewMode === 'timesheet' ? 'h-8 gap-2 bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground' : 'h-8 gap-2'"
+                @click="attendanceViewMode = 'timesheet'"
+              >
+                <Table2 class="h-4 w-4" />
+                Tabel
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div class="grid gap-3 md:grid-cols-4">
+        <div class="flex flex-col gap-3 border-t border-border pt-3 xl:flex-row xl:items-end xl:justify-between">
+          <div class="min-w-0">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Ko‘rish darajasi
+            </p>
+            <p class="mt-1 truncate text-sm font-semibold text-foreground">
+              {{ attendanceScopeLabel }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="inline-flex h-10 w-full items-center rounded-lg border border-border bg-background p-0.5 sm:w-auto">
+              <Button
+                v-for="scope in attendanceScopeOptions"
+                :key="scope.value"
+                type="button"
+                variant="ghost"
+                size="sm"
+                :class="attendanceScopeLevel === scope.value ? 'h-8 flex-1 bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:flex-none' : 'h-8 flex-1 sm:flex-none'"
+                @click="setAttendanceScopeLevel(scope.value)"
+              >
+                {{ scope.label }}
+              </Button>
+            </div>
+
+            <div
+              v-if="attendanceScopeLevel !== 'republic'"
+              class="min-w-56"
+            >
+              <FilterSelect
+                v-model="selectedAttendanceRegion"
+                label="Hudud"
+                all-label="Respublika"
+                :options="attendanceRegionOptions"
+              />
+            </div>
+
+            <div
+              v-if="attendanceScopeLevel === 'provider'"
+              class="min-w-64"
+            >
+              <FilterSelect
+                v-model="selectedAttendanceProvider"
+                label="Tadbirkor"
+                all-label="Barcha tadbirkorlar"
+                :options="attendanceProviderOptions"
+                :disabled="!selectedAttendanceRegion"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
           <div class="rounded-lg border border-border bg-background px-4 py-3">
             <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Reja
+              Reja soat
             </p>
             <p class="mt-1 text-2xl font-semibold text-foreground">
-              {{ attendanceSummary.planned }}
+              {{ formatAttendanceHours(attendanceSummary.plannedHours) }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ attendanceSummary.planned }} mashg‘ulot · {{ attendanceSummary.uniqueBeneficiaries }} xizmat oluvchi
             </p>
           </div>
           <div class="rounded-lg border border-border bg-background px-4 py-3">
             <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Kelgan
+              Fakt soat
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-foreground">
+              {{ formatAttendanceHours(attendanceSummary.actualHours) }}
+            </p>
+            <p
+              :class="cn('mt-1 text-xs', attendanceSummary.varianceHours < 0 ? 'text-red-600' : 'text-emerald-600')"
+            >
+              Rejadan {{ formatSignedAttendanceHours(attendanceSummary.varianceHours) }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Bajarilish
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-foreground">
+              {{ formatAttendancePercentage(attendanceSummary.completionRate) }}
+            </p>
+            <p
+              :class="cn('mt-1 text-xs', (attendanceCompletionTrend ?? 0) < 0 ? 'text-red-600' : 'text-muted-foreground')"
+            >
+              {{ attendanceCompletionTrendLabel }}
+            </p>
+          </div>
+          <div class="rounded-lg border border-border bg-background px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Davomat
             </p>
             <p class="mt-1 text-2xl font-semibold text-emerald-600">
-              {{ attendanceSummary.present }}
+              {{ formatAttendancePercentage(attendanceSummary.attendanceRate) }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ attendanceSummary.present }} kelgan · {{ attendanceSummary.absent }} kelmagan
             </p>
           </div>
           <div class="rounded-lg border border-border bg-background px-4 py-3">
             <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Kelmagan
-            </p>
-            <p class="mt-1 text-2xl font-semibold text-red-600">
-              {{ attendanceSummary.absent }}
-            </p>
-          </div>
-          <div class="rounded-lg border border-border bg-background px-4 py-3">
-            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Soat
+              Hisoblanadigan
             </p>
             <p class="mt-1 text-2xl font-semibold text-foreground">
-              {{ attendanceSummary.hours }}
+              {{ formatAttendanceHours(attendanceSummary.billableHours) }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ formatAttendanceHours(Math.max(0, attendanceSummary.actualHours - attendanceSummary.billableHours)) }} hisoblanmaydi
+            </p>
+          </div>
+          <div class="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/20">
+            <p class="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">
+              Muammoli qayd
+            </p>
+            <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">
+              {{ attendanceSummary.issues }}
+            </p>
+            <p class="mt-1 text-xs text-amber-700/80 dark:text-amber-300/80">
+              {{ attendanceSummary.late }} kechikish · {{ attendanceSummary.providers }} tadbirkor
             </p>
           </div>
         </div>
       </div>
 
-      <div class="min-h-[34rem]">
-        <div class="overflow-hidden rounded-lg border border-border bg-card">
+      <div
+        v-if="attendanceViewMode === 'calendar'"
+        class="min-h-[34rem]"
+      >
+        <div class="overflow-x-auto rounded-lg border border-border bg-card">
+          <div class="min-w-[52rem]">
           <div class="grid grid-cols-7 border-b border-border bg-muted/45 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <div
               v-for="weekday in ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya']"
@@ -3895,7 +4334,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
             <div
               v-for="day in attendanceCalendarDays"
               :key="day.key"
-              class="min-h-28 border-b border-r border-border p-2 last:border-r-0"
+              class="min-h-36 border-b border-r border-border p-2 last:border-r-0"
             >
               <div
                 v-if="day.isBlank"
@@ -3903,7 +4342,7 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
               />
               <div
                 v-else
-                :class="cn('relative flex h-full min-h-24 w-full flex-col rounded-md border p-2 text-left transition-colors duration-200 ease-out', getAttendanceDayClass(day))"
+                :class="cn('relative flex h-full min-h-32 w-full flex-col rounded-md border p-2 text-left transition-colors duration-200 ease-out', getAttendanceDayClass(day))"
               >
                 <div class="flex items-start justify-between gap-2">
                   <span class="text-sm font-semibold text-foreground">{{ day.day }}</span>
@@ -3925,15 +4364,22 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                 >
                   <span class="flex items-center justify-between gap-2 text-muted-foreground">
                     <span>Reja</span>
-                    <strong class="font-semibold text-foreground">{{ day.planned }}</strong>
+                    <strong class="font-semibold text-foreground">{{ formatAttendanceHours(day.plannedHours) }}</strong>
                   </span>
-                  <span class="flex items-center justify-between gap-2 text-emerald-700">
-                    <span>Kelgan</span>
-                    <strong>{{ day.present }}</strong>
+                  <span class="flex items-center justify-between gap-2 text-foreground">
+                    <span>Fakt</span>
+                    <strong>{{ formatAttendanceHours(day.hours) }} · {{ formatAttendancePercentage(day.completionRate) }}</strong>
                   </span>
-                  <span class="flex items-center justify-between gap-2 text-red-700">
-                    <span>Kelmagan</span>
-                    <strong>{{ day.absent }}</strong>
+                  <span class="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>Davomat</span>
+                    <strong class="text-foreground">{{ day.present }}/{{ day.planned }}</strong>
+                  </span>
+                  <span
+                    v-if="day.late > 0 || day.issues > 0"
+                    class="flex items-center justify-between gap-2 text-amber-700 dark:text-amber-300"
+                  >
+                    <span>{{ day.issues > 0 ? 'Muammoli' : 'Kechikdi' }}</span>
+                    <strong>{{ day.issues > 0 ? day.issues : day.late }}</strong>
                   </span>
                 </span>
                 <span
@@ -3945,6 +4391,227 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
               </div>
             </div>
           </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        v-else
+        class="overflow-hidden rounded-lg border border-border bg-card"
+      >
+        <div class="flex flex-col gap-3 border-b border-border bg-muted/25 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-sm font-semibold text-foreground">
+              {{ attendanceTimesheetTitle }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              Katakda fakt soat va kelganlar ulushi ko‘rsatiladi. Qator orqali keyingi darajaga, katak orqali kunlik ro‘yxatga o‘ting.
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-sm bg-emerald-100 ring-1 ring-emerald-300" />
+              Keldi
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-sm bg-blue-100 ring-1 ring-blue-300" />
+              Kechikdi
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-sm bg-red-100 ring-1 ring-red-300" />
+              Kelmadi
+            </span>
+            <span class="inline-flex items-center gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-sm bg-amber-100 ring-1 ring-amber-300" />
+              Tekshiruv talab etiladi
+            </span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-max border-separate border-spacing-0 text-sm">
+            <thead class="bg-muted/45 text-muted-foreground">
+              <tr>
+                <th class="sticky left-0 z-30 min-w-72 border-b border-r border-border bg-muted px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+                  {{ attendanceTimesheetFirstColumnLabel }}
+                </th>
+                <th
+                  v-for="day in attendanceMonthDays"
+                  :key="`attendance-head-${day}`"
+                  class="h-12 min-w-12 border-b border-r border-border px-1 text-center text-xs font-semibold"
+                >
+                  {{ day }}
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Reja
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Fakt
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Farq
+                </th>
+                <th class="min-w-24 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Bajarilish
+                </th>
+                <th class="min-w-28 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Hisoblanadi
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Kelgan
+                </th>
+                <th class="min-w-24 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Kelmagan
+                </th>
+                <th class="min-w-24 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Kechikdi
+                </th>
+                <th class="min-w-24 border-b border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Muammoli
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="attendanceTimesheetRows.length === 0">
+                <td
+                  :colspan="attendanceMonthDays.length + 10"
+                  class="px-6 py-16 text-center text-sm text-muted-foreground"
+                >
+                  Tanlangan oy va filterlar bo'yicha davomat topilmadi.
+                </td>
+              </tr>
+              <tr
+                v-for="row in attendanceTimesheetRows"
+                :key="row.key"
+                class="group"
+              >
+                <td class="sticky left-0 z-20 border-b border-r border-border bg-card px-4 py-3 group-hover:bg-muted/20">
+                  <button
+                    v-if="attendanceScopeLevel !== 'provider'"
+                    type="button"
+                    class="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :title="`${row.label} bo‘yicha batafsil ko‘rish`"
+                    @click="drillDownAttendanceTimesheetRow(row)"
+                  >
+                    <span class="min-w-0">
+                      <span class="block truncate font-medium text-foreground">{{ row.label }}</span>
+                      <span class="mt-1 block text-xs text-muted-foreground">{{ row.meta }}</span>
+                    </span>
+                    <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div v-else>
+                    <p class="font-medium text-foreground">
+                      {{ row.label }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      {{ row.meta }}
+                    </p>
+                  </div>
+                </td>
+                <td
+                  v-for="day in attendanceMonthDays"
+                  :key="`${row.key}-${day}`"
+                  :class="cn('border-b border-r border-border p-1 text-center', getAttendanceTimesheetCellClass(row.entries[day]))"
+                >
+                  <button
+                    v-if="row.entries[day]"
+                    type="button"
+                    class="flex h-10 w-full min-w-10 flex-col items-center justify-center rounded text-xs font-semibold outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring"
+                    :title="`${formatAttendanceHours(row.entries[day].plannedHours)} reja; ${formatAttendanceHours(row.entries[day].hours)} fakt; ${formatAttendancePercentage(row.entries[day].completionRate)} bajarilish; ${row.entries[day].present}/${row.entries[day].planned} kelgan; ${row.entries[day].issues} muammoli`"
+                    @click="openAttendanceTimesheetCell(row, row.entries[day])"
+                  >
+                    <span>{{ row.entries[day].hours > 0 ? formatAttendanceHours(row.entries[day].hours) : '—' }}</span>
+                    <span
+                      v-if="attendanceScopeLevel !== 'provider'"
+                      class="text-[10px] font-medium opacity-75"
+                    >
+                      {{ row.entries[day].present }}/{{ row.entries[day].planned }}
+                    </span>
+                  </button>
+                  <span
+                    v-else
+                    class="text-muted-foreground/35"
+                  >·</span>
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-medium text-foreground">
+                  {{ formatAttendanceHours(row.plannedHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-foreground">
+                  {{ formatAttendanceHours(row.actualHours) }}
+                </td>
+                <td
+                  :class="cn('border-b border-r border-border bg-muted/20 px-2 text-center font-semibold', row.varianceHours < 0 ? 'text-red-700' : 'text-emerald-700')"
+                >
+                  {{ formatSignedAttendanceHours(row.varianceHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-foreground">
+                  {{ formatAttendancePercentage(row.completionRate) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-foreground">
+                  {{ formatAttendanceHours(row.billableHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-emerald-700">
+                  {{ row.present }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-red-700">
+                  {{ row.absent }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-blue-700">
+                  {{ row.late }}
+                </td>
+                <td class="border-b border-border bg-muted/20 px-2 text-center">
+                  <span
+                    :class="cn('inline-flex min-w-8 justify-center rounded-full px-2 py-0.5 text-xs font-semibold', row.issues > 0 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-muted text-muted-foreground')"
+                  >
+                    {{ row.issues }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot v-if="attendanceTimesheetRows.length > 0">
+              <tr class="bg-muted/50 font-semibold text-foreground">
+                <td class="sticky left-0 z-20 border-r border-t border-border bg-muted px-4 py-3 text-left">
+                  Jami
+                </td>
+                <td
+                  v-for="day in attendanceMonthDays"
+                  :key="`attendance-total-${day}`"
+                  class="border-r border-t border-border px-1 py-3 text-center text-xs"
+                >
+                  {{ (attendanceTimesheetDayTotals[day] ?? 0) > 0 ? formatAttendanceHours(attendanceTimesheetDayTotals[day] ?? 0) : '—' }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(attendanceTimesheetRows.reduce((total, row) => total + row.plannedHours, 0)) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(attendanceSummary.actualHours) }}
+                </td>
+                <td
+                  :class="cn('border-r border-t border-border px-2 text-center', attendanceSummary.varianceHours < 0 ? 'text-red-700' : 'text-emerald-700')"
+                >
+                  {{ formatSignedAttendanceHours(attendanceSummary.varianceHours) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendancePercentage(attendanceSummary.completionRate) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(attendanceSummary.billableHours) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center text-emerald-700">
+                  {{ attendanceSummary.present }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center text-red-700">
+                  {{ attendanceSummary.absent }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center text-blue-700">
+                  {{ attendanceSummary.late }}
+                </td>
+                <td class="border-t border-border px-2 text-center text-amber-700">
+                  {{ attendanceSummary.issues }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
     </SectionBlock>
