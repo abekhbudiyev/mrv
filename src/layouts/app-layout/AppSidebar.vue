@@ -140,7 +140,7 @@ function sidebarTitle(item: MuruvvatMenuItem) {
 
   return (item.route ? sidebarRouteI18nKeys[item.route] : undefined)
     ?? sidebarGroupI18nKeys[item.id]
-    ?? `nav.${item.id}`
+    ?? item.title
 }
 
 function isActive(path: string) {

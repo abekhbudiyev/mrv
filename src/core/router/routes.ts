@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import { eiProductionRoutes } from '@/features/ei/routes'
 
 const AppLayout = () => import('@/layouts/app-layout/AppLayout.vue')
 const LoginPage = () => import('@/features/auth/pages/LoginPage.vue')
@@ -787,6 +788,7 @@ export const routes: RouteRecordRaw[] = [
           breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Hisobotlar', "Xizmat ko'rsatuvchilar arizalari"],
         },
       },
+      ...eiProductionRoutes,
       {
         path: 'apps/ei/entrepreneurs/applications',
         redirect: '/apps/ei/providers/applications',

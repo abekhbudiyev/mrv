@@ -1,7 +1,11 @@
 import {
+  Activity,
   Baby,
   BarChart3,
+  BookOpen,
+  BriefcaseMedical,
   CreditCard,
+  FileQuestion,
   FileCheck2,
   FileText,
   HeartHandshake,
@@ -126,6 +130,67 @@ export const eiMenu: MuruvvatMenuItem[] = [
     icon: Home,
   },
   {
+    id: 'info',
+    title: 'Ma’lumotnomalar',
+    icon: BookOpen,
+    children: [
+      {
+        id: 'requirements',
+        title: 'Talablar',
+        route: '/apps/ei/info/requirements',
+        icon: ListChecks,
+      },
+      {
+        id: 'credentials',
+        title: 'Malakalar',
+        route: '/apps/ei/info/credentials',
+        icon: FileCheck2,
+      },
+      {
+        id: 'credential-types',
+        title: 'Malaka turlari',
+        route: '/apps/ei/info/credential-types',
+        icon: FileText,
+      },
+      {
+        id: 'equipment',
+        title: 'Jihozlar',
+        route: '/apps/ei/info/equipment',
+        icon: Store,
+      },
+      {
+        id: 'diagnoses',
+        title: 'Tashxislar',
+        route: '/apps/ei/info/diagnoses',
+        icon: BriefcaseMedical,
+      },
+      {
+        id: 'answer-templates',
+        title: 'Javob shablonlari',
+        route: '/apps/ei/info/answer-templates',
+        icon: FileQuestion,
+      },
+      {
+        id: 'questionnaires',
+        title: 'So‘rovnoma shablonlari',
+        route: '/apps/ei/info/questionnaires',
+        icon: ScrollText,
+      },
+      {
+        id: 'employees',
+        title: 'Xodimlar',
+        route: '/apps/ei/info/employees',
+        icon: UserCheck,
+      },
+      {
+        id: 'reasons',
+        title: 'Sabablar',
+        route: '/apps/ei/info/reasons',
+        icon: UserX,
+      },
+    ],
+  },
+  {
     id: 'providers',
     title: "Xizmat ko'rsatuvchilar",
     icon: Store,
@@ -156,6 +221,12 @@ export const eiMenu: MuruvvatMenuItem[] = [
     icon: Baby,
     children: [
       {
+        id: 'application-hub',
+        title: 'Arizalar markazi',
+        route: '/apps/ei/children/application-hub',
+        icon: ListChecks,
+      },
+      {
         id: 'children-questionnaires',
         title: 'Arizalar',
         route: '/apps/ei/children/applications',
@@ -173,6 +244,18 @@ export const eiMenu: MuruvvatMenuItem[] = [
         route: '/apps/ei/children/orders',
         icon: FileText,
       },
+      {
+        id: 'medical-surveys',
+        title: 'Tibbiy so‘rovlar',
+        route: '/apps/ei/children/medical-surveys',
+        icon: BriefcaseMedical,
+      },
+      {
+        id: 'medical-monitoring',
+        title: 'Tibbiy monitoring',
+        route: '/apps/ei/children/medical-monitoring',
+        icon: Activity,
+      },
     ],
   },
   {
@@ -180,6 +263,12 @@ export const eiMenu: MuruvvatMenuItem[] = [
     title: "Xizmat ko'rsatish",
     icon: HeartHandshake,
     children: [
+      {
+        id: 'service-surveys',
+        title: 'Baholash so‘rovnomalari',
+        route: '/apps/ei/service/surveys',
+        icon: FileQuestion,
+      },
       {
         id: 'service-active',
         title: 'Xizmat olayotganlar',
