@@ -6,19 +6,18 @@ import {
   ArrowLeft,
   ArrowRight,
   Baby,
-  BookOpenCheck,
   CalendarDays,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ClipboardCheck,
   Clock3,
   Download,
   FileCheck2,
   FileQuestion,
-  Info,
   MoreHorizontal,
   Plus,
   Save,
@@ -27,9 +26,15 @@ import {
   Sparkles,
   Target,
   UserRound,
-  Workflow,
   X,
 } from 'lucide-vue-next'
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuTrigger,
+} from 'reka-ui'
 import {
   answerOptions,
   assessmentChildren,
@@ -69,6 +74,8 @@ import {
 import FilterPopover from '@/shared/components/FilterPopover.vue'
 import FilterSelect from '@/shared/components/FilterSelect.vue'
 import PageContainer from '@/shared/components/PageContainer.vue'
+import SectionBlock from '@/shared/components/SectionBlock.vue'
+import StatusTabs from '@/shared/components/StatusTabs.vue'
 import { useI18n } from '@/shared/i18n'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
@@ -90,7 +97,10 @@ const statusFilter = ref('')
 const instrumentFilter = ref('')
 const regionFilter = ref('')
 const isFilterOpen = ref(false)
-const isGuideExpanded = ref(true)
+const rowsPerPageOptions = [20, 50, 100]
+const selectedRowsPerPage = ref(20)
+const currentPage = ref(1)
+const isRowsPerPageOpen = ref(false)
 const isCreateOpen = ref(false)
 const createChildId = ref('')
 const createDate = ref(new Date().toLocaleDateString('en-CA'))
@@ -105,8 +115,6 @@ const isFinishDialogOpen = ref(false)
 const isPlanBuilderOpen = ref(false)
 const planNotice = ref('')
 const goalSuggestions = ref<ReturnType<typeof getSuggestedGoals>>([])
-
-const assessmentInstruments: AssessmentInstrument[] = ['KID', 'RCDI-2000']
 
 type AssessmentTemplate = {
   id: string
@@ -189,25 +197,6 @@ const activeAssessmentTemplates = computed(() => (
     .map(mapAssessmentTemplate)
     .filter((template): template is AssessmentTemplate => Boolean(template))
 ))
-const assessmentSteps = [
-  {
-    title: 'Bola va respondent',
-    description: 'Ro‘yxatdagi bola, baholash sanasi va ma’lumot beruvchi shaxs tanlanadi.',
-  },
-  {
-    title: 'Yosh va instrument',
-    description: 'Xronologik hamda tuzatilgan yosh hisoblanib, KID yoki RCDI-2000 tavsiya qilinadi.',
-  },
-  {
-    title: 'Savollar va nazorat',
-    description: 'Javoblar avtomatik saqlanadi, javobsiz va mantiqan zid holatlar tekshiriladi.',
-  },
-  {
-    title: 'Profil va reja',
-    description: 'Rivojlanish sohalari profili tuzilib, individual reja maqsadlari shakllantiriladi.',
-  },
-]
-
 const statusOptions: Array<{ value: '' | AssessmentStatus, label: string }> = [
   { value: '', label: 'Barchasi' },
   { value: 'Boshlanmagan', label: 'Boshlanmagan' },
@@ -314,24 +303,40 @@ const filteredRecords = computed(() => {
       && (!regionFilter.value || child?.region === regionFilter.value)
   })
 })
-const summary = computed(() => ({
-  total: assessmentRecords.length,
-  active: assessmentRecords.filter((record) => ['Boshlanmagan', 'Jarayonda'].includes(record.status)).length,
-  review: assessmentRecords.filter((record) => record.status === 'Tekshiruv kerak').length,
-  completed: assessmentRecords.filter((record) => record.status === 'Yakunlangan').length,
-}))
-const coverage = computed(() => {
-  const progresses = assessmentRecords.map((record) => getAssessmentProgress(record).percent)
+const assessmentStatusTabs = computed(() => [
+  {
+    label: 'Barchasi',
+    value: 'all',
+    count: assessmentRecords.length,
+  },
+  ...statusOptions.slice(1).map((status) => ({
+    label: status.label,
+    value: status.value,
+    count: statusCount(status.value),
+  })),
+])
+const selectedAssessmentStatuses = computed(() => (
+  statusFilter.value ? [statusFilter.value] : []
+))
+const totalPages = computed(() => (
+  Math.max(1, Math.ceil(filteredRecords.value.length / selectedRowsPerPage.value))
+))
+const paginatedRecords = computed(() => {
+  const start = (currentPage.value - 1) * selectedRowsPerPage.value
 
-  return {
-    regions: new Set(assessmentChildren.map((child) => child.region)).size,
-    kid: assessmentRecords.filter((record) => record.instrument === 'KID').length,
-    rcdi: assessmentRecords.filter((record) => record.instrument === 'RCDI-2000').length,
-    averageProgress: progresses.length
-      ? Math.round(progresses.reduce((total, value) => total + value, 0) / progresses.length)
-      : 0,
-  }
+  return filteredRecords.value.slice(start, start + selectedRowsPerPage.value)
 })
+const paginationSummary = computed(() => {
+  if (!filteredRecords.value.length) {
+    return '0 / 0'
+  }
+
+  const start = (currentPage.value - 1) * selectedRowsPerPage.value + 1
+  const end = Math.min(currentPage.value * selectedRowsPerPage.value, filteredRecords.value.length)
+
+  return `${start}-${end} / ${filteredRecords.value.length}`
+})
+const currentPageSummary = computed(() => `${currentPage.value}/${totalPages.value}`)
 const createChild = computed(() => getAssessmentChild(createChildId.value))
 const createChronologicalAge = computed(() => {
   if (!createChild.value) {
@@ -442,6 +447,16 @@ const selectedNextReviewDate = computed(() => {
   return formatDate(nextDate.toLocaleDateString('en-CA'))
 })
 const selectedGoalCount = computed(() => goalSuggestions.value.filter((goal) => goal.selected).length)
+
+watch([searchQuery, statusFilter, instrumentFilter, regionFilter], () => {
+  currentPage.value = 1
+})
+
+watch(filteredRecords, () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = totalPages.value
+  }
+})
 
 watch([createChildId, createDate, activeAssessmentTemplates], () => {
   if (!createChild.value) {
@@ -573,6 +588,30 @@ function statusCount(status: '' | AssessmentStatus) {
     : assessmentRecords.length
 }
 
+function handleAssessmentStatusSelect(value: string) {
+  if (value === 'all') {
+    statusFilter.value = ''
+  }
+  else {
+    statusFilter.value = statusFilter.value === value ? '' : value as AssessmentStatus
+  }
+
+  currentPage.value = 1
+}
+
+function setRowsPerPageOpen(isOpen: boolean) {
+  isRowsPerPageOpen.value = isOpen
+}
+
+function setRowsPerPage(value: number) {
+  selectedRowsPerPage.value = value
+  currentPage.value = 1
+}
+
+function goToPage(page: number) {
+  currentPage.value = Math.min(Math.max(page, 1), totalPages.value)
+}
+
 function domainProgress(domain: DevelopmentDomain) {
   if (!selectedRecord.value) {
     return { answered: 0, total: 0, percent: 0 }
@@ -651,6 +690,18 @@ function openRecord(record: AssessmentRecord) {
   router.push(target)
 }
 
+function recordActionLabel(record: AssessmentRecord) {
+  if (record.status === 'Yakunlangan') {
+    return 'Natijani ko‘rish'
+  }
+
+  if (record.status === 'Tekshiruv kerak') {
+    return 'Tekshirish'
+  }
+
+  return record.status === 'Boshlanmagan' ? 'Boshlash' : 'Davom etish'
+}
+
 function backToList() {
   router.push('/apps/ei/service/surveys')
 }
@@ -659,19 +710,21 @@ function downloadCsv() {
   const rows = filteredRecords.value.map((record) => {
     const child = getAssessmentChild(record.childId)
     const progress = getAssessmentProgress(record)
+    const result = recordResult(record)
     return [
       record.id,
+      formatDate(record.assessmentDate),
       child?.fullName ?? '',
       child?.pinfl ?? '',
       record.instrument,
+      childChronologicalAgeForRecord(record),
       childAgeForRecord(record),
       `${progress.answered}/${progress.total}`,
+      result ? `${result.label} (${recordAverageScore(record)}%)` : '',
       record.status,
-      record.assessor,
-      formatDate(record.assessmentDate),
     ]
   })
-  const header = ['Baholash raqami', 'Bola', 'JSHSHIR', 'Instrument', 'Tuzatilgan yosh', 'Javoblar', 'Holat', 'Mutaxassis', 'Sana']
+  const header = ['Hujjat ID', 'Sana', 'Xizmatdan foydalanuvchi', 'JSHSHIR', 'So‘rovnoma', 'Xronologik yosh', 'Tuzatilgan yosh', 'Jarayon', 'Natija', 'Holat']
   const csv = [header, ...rows]
     .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
     .join('\n')
@@ -825,289 +878,126 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
 </script>
 
 <template>
-  <PageContainer class="xl:overflow-y-auto xl:overscroll-contain">
-    <template v-if="mode === 'list'">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div class="flex items-center gap-2">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <ClipboardCheck class="h-4 w-4" />
-            </div>
-            <h1 class="text-xl font-semibold text-foreground">
-              Baholash so‘rovnomalari
-            </h1>
+  <PageContainer :class="mode === 'list' ? undefined : 'xl:overflow-y-auto xl:overscroll-contain'">
+    <SectionBlock
+      v-if="mode === 'list'"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-3 overflow-visible p-0"
+      title=""
+      description=""
+    >
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="relative w-full lg:max-w-sm">
+            <Search class="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input v-model="searchQuery" class="pl-9" placeholder="Bola, JSHSHIR yoki baholash raqami" />
           </div>
-          <p class="mt-1.5 text-sm text-muted-foreground">
-            KID va RCDI-2000 orqali bolaning rivojlanish profilini baholash.
-          </p>
-        </div>
 
-        <Button class="gap-2 self-start sm:self-auto" @click="openCreateDialog">
-          <Plus class="h-4 w-4" />
-          Yangi baholash
-        </Button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Card>
-          <CardContent class="flex items-center justify-between gap-3 p-3.5">
-            <div>
-              <p class="text-xs font-medium text-muted-foreground">Jami baholash</p>
-              <p class="mt-1 text-2xl font-semibold">{{ summary.total }}</p>
-            </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              <FileQuestion class="h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent class="flex items-center justify-between gap-3 p-3.5">
-            <div>
-              <p class="text-xs font-medium text-muted-foreground">Davom ettiriladi</p>
-              <p class="mt-1 text-2xl font-semibold text-sky-700 dark:text-sky-300">{{ summary.active }}</p>
-            </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-300">
-              <Clock3 class="h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent class="flex items-center justify-between gap-3 p-3.5">
-            <div>
-              <p class="text-xs font-medium text-muted-foreground">Tekshiruv kerak</p>
-              <p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">{{ summary.review }}</p>
-            </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300">
-              <AlertCircle class="h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent class="flex items-center justify-between gap-3 p-3.5">
-            <div>
-              <p class="text-xs font-medium text-muted-foreground">Yakunlangan</p>
-              <p class="mt-1 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{{ summary.completed }}</p>
-            </div>
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300">
-              <CheckCircle2 class="h-4 w-4" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card class="border-primary/20">
-        <CardContent class="p-0">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-4 px-4 py-3 text-left"
-            :aria-expanded="isGuideExpanded"
-            @click="isGuideExpanded = !isGuideExpanded"
-          >
-            <span class="flex min-w-0 items-center gap-3">
-              <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <BookOpenCheck class="h-4 w-4" />
-              </span>
-              <span class="min-w-0">
-                <span class="block text-sm font-semibold">Metodika va ish jarayoni</span>
-                <span class="mt-0.5 block truncate text-xs text-muted-foreground">
-                  Instrument tanlashdan individual reja qoralamasigacha bo‘lgan tartib
-                </span>
-              </span>
-            </span>
-
-            <span class="flex shrink-0 items-center gap-2">
-              <span class="hidden rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground sm:inline-flex">
-                {{ assessmentChildren.length }} bola · {{ coverage.regions }} hudud
-              </span>
-              <span class="hidden rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground lg:inline-flex">
-                O‘rtacha jarayon {{ coverage.averageProgress }}%
-              </span>
-              <ChevronDown
-                :class="cn('h-4 w-4 text-muted-foreground transition-transform', isGuideExpanded ? 'rotate-180' : '')"
+          <div class="flex flex-wrap items-center gap-2">
+            <FilterPopover
+              v-model:open="isFilterOpen"
+              :active-count="activeFilterCount"
+              panel-class="xl:w-80"
+            >
+              <FilterSelect
+                v-model="instrumentFilter"
+                label="Instrument"
+                :options="['KID', 'RCDI-2000']"
+                :searchable="false"
               />
-            </span>
-          </button>
-
-          <div v-if="isGuideExpanded" class="border-t border-border p-3 sm:p-4">
-            <div class="grid gap-3 xl:grid-cols-4">
-              <div
-                v-for="instrument in assessmentInstruments"
-                :key="instrument"
-                class="rounded-xl border border-border bg-muted/20 p-3.5"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold">{{ instrument }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">{{ instrumentCatalog[instrument].ageRange }}</p>
-                  </div>
-                  <span class="rounded-full border border-primary/20 bg-primary/[0.06] px-2 py-0.5 text-[10px] font-semibold text-primary">
-                    {{ instrument === 'KID' ? coverage.kid : coverage.rcdi }} ta baholash
-                  </span>
+              <FilterSelect
+                v-model="regionFilter"
+                label="Hudud"
+                :options="regionOptions"
+              />
+              <template #footer>
+                <div class="flex justify-end gap-2 border-t border-border pt-3">
+                  <Button variant="outline" size="sm" :disabled="!activeFilterCount" @click="clearFilters">
+                    Tozalash
+                  </Button>
+                  <Button size="sm" @click="isFilterOpen = false">Qo‘llash</Button>
                 </div>
-
-                <div class="mt-3 grid grid-cols-2 gap-2">
-                  <div class="rounded-lg bg-background px-2.5 py-2 ring-1 ring-foreground/8">
-                    <p class="text-[10px] uppercase text-muted-foreground">Faol savollar</p>
-                    <p class="mt-1 text-sm font-semibold">{{ assessmentQuestionBank[instrument].length }} ta</p>
-                  </div>
-                  <div class="rounded-lg bg-background px-2.5 py-2 ring-1 ring-foreground/8">
-                    <p class="text-[10px] uppercase text-muted-foreground">Rivojlanish sohalari</p>
-                    <p class="mt-1 text-sm font-semibold">{{ instrumentCatalog[instrument].domains.length }} ta</p>
-                  </div>
-                </div>
-
-                <div class="mt-3 flex flex-wrap gap-1.5">
-                  <span
-                    v-for="domain in instrumentCatalog[instrument].domains"
-                    :key="domain"
-                    class="rounded-md bg-background px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-foreground/8"
-                  >
-                    {{ domainCatalog[domain].shortLabel }}
-                  </span>
-                </div>
-              </div>
-
-              <div class="rounded-xl border border-border bg-muted/20 p-3.5 xl:col-span-2">
-                <div class="flex items-center gap-2">
-                  <Workflow class="h-4 w-4 text-primary" />
-                  <p class="text-sm font-semibold">Baholashning 4 bosqichi</p>
-                </div>
-                <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                  <div
-                    v-for="(step, index) in assessmentSteps"
-                    :key="step.title"
-                    class="flex gap-2.5 rounded-lg bg-background p-2.5 ring-1 ring-foreground/8"
-                  >
-                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                      {{ index + 1 }}
-                    </span>
-                    <span>
-                      <span class="block text-xs font-semibold">{{ step.title }}</span>
-                      <span class="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{{ step.description }}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3 flex items-start gap-2.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs leading-5 text-sky-800 dark:border-sky-800 dark:bg-sky-950/35 dark:text-sky-200">
-              <Info class="mt-0.5 h-4 w-4 shrink-0" />
-              <p>
-                <strong>Javoblarni hisoblash:</strong> “Yaqinda boshladi” va “Avvaldan bajaradi” ko‘nikma mavjud deb olinadi;
-                “Hali bajarmaydi” rivojlantiriladigan ko‘nikma sifatida profil va reja maqsadlariga ta’sir qiladi.
-                Muddatidan oldin tug‘ilgan bolalarda 24 oygacha tuzatilgan yosh ham alohida ko‘rsatiladi.
-              </p>
-            </div>
+              </template>
+            </FilterPopover>
+            <Button variant="outline" size="sm" class="h-7 gap-1.5" :disabled="!filteredRecords.length" @click="downloadCsv">
+              <Download class="h-4 w-4" />
+              <span>Yuklab olish</span>
+            </Button>
+            <Button size="sm" class="h-7 gap-1.5" @click="openCreateDialog">
+              <Plus class="h-4 w-4" />
+              <span>Yangi baholash</span>
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card class="flex min-h-[28rem] min-w-0 flex-1 flex-col xl:flex-none">
-        <CardContent class="flex min-h-0 min-w-0 flex-1 flex-col p-0">
-          <div class="border-b border-border px-3 py-3 sm:px-4">
-            <div class="flex min-w-0 gap-1 overflow-x-auto pb-1">
-              <button
-                v-for="status in statusOptions"
-                :key="status.value || 'all'"
-                type="button"
-                :class="cn(
-                  'inline-flex h-8 shrink-0 items-center gap-2 rounded-lg px-3 text-xs font-medium transition-colors',
-                  statusFilter === status.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/55 text-muted-foreground hover:bg-muted hover:text-foreground',
-                )"
-                @click="statusFilter = status.value"
-              >
-                {{ status.label }}
-                <span
-                  :class="cn(
-                    'rounded-full px-1.5 py-0.5 text-[10px]',
-                    statusFilter === status.value ? 'bg-white/18 text-white' : 'bg-background text-foreground',
-                  )"
-                >
-                  {{ statusCount(status.value) }}
-                </span>
-              </button>
-            </div>
+      <StatusTabs
+        :tabs="assessmentStatusTabs"
+        :selected-values="selectedAssessmentStatuses"
+        :show-indicator="false"
+        item-key-prefix="ei-assessment-status"
+        @select="handleAssessmentStatusSelect"
+      />
 
-            <div class="mt-2.5 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
-              <div class="relative w-full lg:max-w-sm">
-                <Search class="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input v-model="searchQuery" class="pl-9" placeholder="Bola, JSHSHIR yoki baholash raqami" />
-              </div>
-
-              <div class="flex flex-wrap items-center gap-2">
-                <FilterPopover
-                  v-model:open="isFilterOpen"
-                  :active-count="activeFilterCount"
-                  panel-class="xl:w-80"
-                >
-                  <FilterSelect
-                    v-model="instrumentFilter"
-                    label="Instrument"
-                    :options="['KID', 'RCDI-2000']"
-                    :searchable="false"
-                  />
-                  <FilterSelect
-                    v-model="regionFilter"
-                    label="Hudud"
-                    :options="regionOptions"
-                  />
-                  <template #footer>
-                    <div class="flex justify-end gap-2 border-t border-border pt-3">
-                      <Button variant="outline" size="sm" :disabled="!activeFilterCount" @click="clearFilters">
-                        Tozalash
-                      </Button>
-                      <Button size="sm" @click="isFilterOpen = false">Qo‘llash</Button>
-                    </div>
-                  </template>
-                </FilterPopover>
-                <Button variant="outline" size="sm" class="gap-2" :disabled="!filteredRecords.length" @click="downloadCsv">
-                  <Download class="h-4 w-4" />
-                  <span class="hidden sm:inline">Yuklab olish</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-
+      <div class="flex min-h-[22rem] min-w-0 w-full max-w-full overflow-hidden rounded-lg border border-border bg-card xl:min-h-0 xl:flex-1">
+        <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
           <div class="grid gap-3 p-3 lg:hidden">
-            <button
-              v-for="record in filteredRecords"
+            <article
+              v-for="record in paginatedRecords"
               :key="record.id"
-              type="button"
-              class="rounded-xl border border-border bg-background p-4 text-left transition-colors hover:border-primary/35 hover:bg-muted/20"
-              @click="openRecord(record)"
+              class="rounded-lg border border-border bg-background p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <p class="truncate text-sm font-semibold">{{ getAssessmentChild(record.childId)?.fullName }}</p>
-                  <p class="mt-1 text-xs text-muted-foreground">{{ record.id }} · {{ formatDate(record.assessmentDate) }}</p>
+                  <p class="truncate text-sm font-semibold">{{ record.id }}</p>
+                  <p class="mt-1 text-xs text-muted-foreground">{{ formatDate(record.assessmentDate) }}</p>
                 </div>
-                <span :class="cn('shrink-0 rounded-full border px-2 py-1 text-[11px] font-medium', statusClasses(record.status))">
-                  {{ record.status }}
-                </span>
+                <div class="flex shrink-0 items-center gap-2">
+                  <span :class="cn('rounded-full border px-2 py-1 text-[11px] font-medium', statusClasses(record.status))">
+                    {{ record.status }}
+                  </span>
+                  <DropdownMenuRoot>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="outline" size="sm" class="h-8 w-8 rounded-md p-0" aria-label="Amallar">
+                        <MoreHorizontal class="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuContent
+                        side="bottom"
+                        align="end"
+                        :side-offset="6"
+                        class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                      >
+                        <DropdownMenuItem
+                          class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                          @select.prevent="openRecord(record)"
+                        >
+                          <ArrowRight class="h-4 w-4" />
+                          <span>{{ recordActionLabel(record) }}</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuRoot>
+                </div>
               </div>
               <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
                 <div>
-                  <p class="text-muted-foreground">Instrument</p>
+                  <p class="text-muted-foreground">Xizmatdan foydalanuvchi</p>
+                  <p class="mt-1 truncate font-medium">{{ getAssessmentChild(record.childId)?.fullName }}</p>
+                  <p class="mt-0.5 truncate text-[11px] text-muted-foreground">JSHSHIR: {{ getAssessmentChild(record.childId)?.pinfl }}</p>
+                </div>
+                <div>
+                  <p class="text-muted-foreground">So‘rovnoma</p>
                   <p class="mt-1 font-medium">{{ record.instrument }}</p>
+                </div>
+                <div>
+                  <p class="text-muted-foreground">Xronologik yosh</p>
+                  <p class="mt-1 font-medium">{{ childChronologicalAgeForRecord(record) }}</p>
                 </div>
                 <div>
                   <p class="text-muted-foreground">Tuzatilgan yosh</p>
                   <p class="mt-1 font-medium">{{ childAgeForRecord(record) }}</p>
-                </div>
-                <div>
-                  <p class="text-muted-foreground">Hudud</p>
-                  <p class="mt-1 truncate font-medium">{{ getAssessmentChild(record.childId)?.region }}</p>
-                  <p class="mt-0.5 truncate text-[11px] text-muted-foreground">{{ getAssessmentChild(record.childId)?.district }}</p>
-                </div>
-                <div>
-                  <p class="text-muted-foreground">Respondent / mutaxassis</p>
-                  <p class="mt-1 font-medium">{{ record.informant }}</p>
-                  <p class="mt-0.5 truncate text-[11px] text-muted-foreground">{{ record.assessor }}</p>
                 </div>
               </div>
               <div class="mt-3">
@@ -1126,7 +1016,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
                 </span>
                 <strong>Umumiy {{ recordAverageScore(record) }}%</strong>
               </div>
-            </button>
+            </article>
 
             <div v-if="!filteredRecords.length" class="py-12 text-center">
               <FileQuestion class="mx-auto h-8 w-8 text-muted-foreground/50" />
@@ -1139,44 +1029,40 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
             <table class="w-full min-w-[76rem] text-sm">
               <thead class="sticky top-0 z-10 bg-muted/75 text-xs font-semibold text-muted-foreground backdrop-blur">
                 <tr>
-                  <th class="border-b border-border px-4 py-2.5 text-left">Bola</th>
-                  <th class="border-b border-border px-4 py-2.5 text-left">Hudud</th>
-                  <th class="border-b border-border px-4 py-2.5 text-left">Baholash</th>
-                  <th class="border-b border-border px-4 py-2.5 text-left">Yoshi</th>
+                  <th class="border-b border-border px-4 py-2.5 text-left">Hujjat</th>
+                  <th class="border-b border-border px-4 py-2.5 text-left">Xizmatdan foydalanuvchi</th>
+                  <th class="border-b border-border px-4 py-2.5 text-left">So‘rovnoma</th>
+                  <th class="border-b border-border px-4 py-2.5 text-left">Yosh</th>
                   <th class="border-b border-border px-4 py-2.5 text-left">Jarayon</th>
                   <th class="border-b border-border px-4 py-2.5 text-left">Natija</th>
-                  <th class="border-b border-border px-4 py-2.5 text-left">Holati</th>
-                  <th class="border-b border-border px-4 py-2.5 text-right">Amal</th>
+                  <th class="border-b border-border px-4 py-2.5 text-left">Holat</th>
+                  <th class="border-b border-border px-4 py-2.5 text-center">Amallar</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="record in filteredRecords"
+                  v-for="record in paginatedRecords"
                   :key="record.id"
                   class="border-b border-border last:border-b-0 hover:bg-muted/25"
                 >
-                  <td class="max-w-72 px-4 py-3">
+                  <td class="px-4 py-3 align-top">
+                    <p class="font-semibold">{{ record.id }}</p>
+                    <p class="mt-1 text-xs text-muted-foreground">{{ formatDate(record.assessmentDate) }}</p>
+                  </td>
+                  <td class="max-w-72 px-4 py-3 align-top">
                     <p class="truncate font-semibold">{{ getAssessmentChild(record.childId)?.fullName }}</p>
                     <p class="mt-1 truncate text-xs text-muted-foreground">
-                      {{ getAssessmentChild(record.childId)?.pinfl }} · {{ getAssessmentChild(record.childId)?.applicationNumber }}
+                      JSHSHIR: {{ getAssessmentChild(record.childId)?.pinfl }}
                     </p>
                   </td>
-                  <td class="max-w-52 px-4 py-3">
-                    <p class="truncate font-medium">{{ getAssessmentChild(record.childId)?.region }}</p>
-                    <p class="mt-1 truncate text-xs text-muted-foreground">{{ getAssessmentChild(record.childId)?.district }}</p>
-                  </td>
-                  <td class="px-4 py-3">
+                  <td class="px-4 py-3 align-top">
                     <p class="font-medium">{{ record.instrument }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">{{ record.id }} · {{ formatDate(record.assessmentDate) }}</p>
-                    <p class="mt-1 max-w-52 truncate text-[11px] text-muted-foreground" :title="`${record.informant} · ${record.assessor}`">
-                      {{ record.informant }} · {{ record.assessor }}
-                    </p>
                   </td>
-                  <td class="px-4 py-3">
-                    <p class="font-medium">{{ childAgeForRecord(record) }}</p>
-                    <p class="mt-1 text-xs text-muted-foreground">Xronologik: {{ childChronologicalAgeForRecord(record) }}</p>
+                  <td class="px-4 py-3 align-top">
+                    <p class="font-medium">Xronologik: {{ childChronologicalAgeForRecord(record) }}</p>
+                    <p class="mt-1 text-xs text-muted-foreground">Tuzatilgan: {{ childAgeForRecord(record) }}</p>
                   </td>
-                  <td class="min-w-40 px-4 py-3">
+                  <td class="min-w-40 px-4 py-3 align-top">
                     <div class="mb-1.5 flex items-center justify-between text-xs">
                       <span>{{ getAssessmentProgress(record).answered }}/{{ getAssessmentProgress(record).total }}</span>
                       <span class="text-muted-foreground">{{ getAssessmentProgress(record).percent }}%</span>
@@ -1188,7 +1074,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
                       />
                     </div>
                   </td>
-                  <td class="px-4 py-3">
+                  <td class="px-4 py-3 align-top">
                     <template v-if="recordResult(record)">
                       <p class="font-medium">{{ recordResult(record)?.label }}</p>
                       <p class="mt-1 text-xs text-muted-foreground">
@@ -1197,32 +1083,36 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
                     </template>
                     <span v-else class="text-muted-foreground">—</span>
                   </td>
-                  <td class="px-4 py-3">
+                  <td class="px-4 py-3 align-top">
                     <span :class="cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-medium', statusClasses(record.status))">
                       {{ record.status }}
                     </span>
                   </td>
-                  <td class="px-4 py-3">
-                    <div class="flex justify-end">
-                      <Button
-                        :variant="record.status === 'Yakunlangan' ? 'outline' : 'default'"
-                        size="sm"
-                        class="min-w-[7.5rem] gap-1.5"
-                        @click="openRecord(record)"
-                      >
-                        <template v-if="record.status === 'Yakunlangan'">
-                          Natija
-                          <ArrowRight class="h-3.5 w-3.5" />
-                        </template>
-                        <template v-else-if="record.status === 'Tekshiruv kerak'">
-                          Tekshirish
-                          <AlertCircle class="h-3.5 w-3.5" />
-                        </template>
-                        <template v-else>
-                          {{ record.status === 'Boshlanmagan' ? 'Boshlash' : 'Davom etish' }}
-                          <ArrowRight class="h-3.5 w-3.5" />
-                        </template>
-                      </Button>
+                  <td class="px-4 py-3 align-top">
+                    <div class="flex justify-center">
+                      <DropdownMenuRoot>
+                        <DropdownMenuTrigger as-child>
+                          <Button variant="outline" size="sm" class="h-8 w-8 rounded-md p-0" aria-label="Amallar">
+                            <MoreHorizontal class="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuContent
+                            side="bottom"
+                            align="end"
+                            :side-offset="6"
+                            class="z-50 min-w-44 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                          >
+                            <DropdownMenuItem
+                              class="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none hover:bg-muted"
+                              @select.prevent="openRecord(record)"
+                            >
+                              <ArrowRight class="h-4 w-4" />
+                              <span>{{ recordActionLabel(record) }}</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuRoot>
                     </div>
                   </td>
                 </tr>
@@ -1237,13 +1127,98 @@ onBeforeUnmount(() => window.removeEventListener('keydown', handleGlobalKeydown)
             </table>
           </div>
 
-          <div class="flex items-center justify-between border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
-            <span>{{ filteredRecords.length }} ta yozuv</span>
-            <span>Ma’lumotlar oxirgi baholash sanasi bo‘yicha tartiblangan</span>
+          <div class="flex flex-col gap-3 border-t border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-2 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Qatorlar soni</span>
+                <DropdownMenuRoot @update:open="setRowsPerPageOpen($event)">
+                  <DropdownMenuTrigger as-child>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      :class="isRowsPerPageOpen ? 'h-8 gap-1.5 rounded-md border-ring bg-accent/40 px-2.5 text-sm ring-2 ring-ring/20' : 'h-8 gap-1.5 rounded-md px-2.5 text-sm'"
+                    >
+                      <span>{{ selectedRowsPerPage }}</span>
+                      <ChevronRight class="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      align="start"
+                      :side-offset="6"
+                      class="z-50 w-[var(--reka-dropdown-menu-trigger-width)] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg outline-none"
+                    >
+                      <DropdownMenuItem
+                        v-for="option in rowsPerPageOptions"
+                        :key="option"
+                        class="cursor-pointer rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted"
+                        @select.prevent="setRowsPerPage(option)"
+                      >
+                        <span :class="option === selectedRowsPerPage ? 'font-semibold text-foreground' : 'text-foreground'">
+                          {{ option }}
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-muted-foreground">Sahifada:</span>
+                <span class="font-medium text-foreground">{{ paginationSummary }}</span>
+              </div>
+            </div>
+
+            <div class="inline-flex h-9 w-full items-center justify-between gap-1 rounded-lg border border-border bg-background p-0.5 min-[480px]:w-auto min-[480px]:justify-start">
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0"
+                :disabled="currentPage === 1"
+                aria-label="Birinchi sahifa"
+                @click="goToPage(1)"
+              >
+                <ChevronsLeft class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0"
+                :disabled="currentPage === 1"
+                aria-label="Oldingi sahifa"
+                @click="goToPage(currentPage - 1)"
+              >
+                <ChevronLeft class="h-5 w-5" />
+              </Button>
+              <div class="mx-1 flex h-7 min-w-14 items-center justify-center text-sm font-semibold text-foreground">
+                {{ currentPageSummary }}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0"
+                :disabled="currentPage === totalPages"
+                aria-label="Keyingi sahifa"
+                @click="goToPage(currentPage + 1)"
+              >
+                <ChevronRight class="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 rounded-md p-0"
+                :disabled="currentPage === totalPages"
+                aria-label="Oxirgi sahifa"
+                @click="goToPage(totalPages)"
+              >
+                <ChevronsRight class="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </template>
+        </div>
+      </div>
+    </SectionBlock>
 
     <template v-else-if="mode === 'edit'">
       <template v-if="selectedRecord && selectedChild && currentQuestion">
