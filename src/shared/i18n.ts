@@ -123,6 +123,7 @@ const translationKeys: Record<string, string> = {
   'Tashkilot turlari': 'page.organizationTypes',
   'Tadbirkorlar arizalari': 'nav.entrepreneurApplications',
   "Subsidiyalar / To'lovlar": 'nav.subsidiesPayments',
+  "To'lovlar hisobi": 'page.ei.financePayments',
   "To'lovlar": 'module.payments',
   "Toifa guruhlari": 'page.categoryGroups',
   "To'liq nomi": 'common.fullName',
@@ -848,8 +849,8 @@ const translations: Record<string, TranslationMap> = {
     i18n: 'page.ei.financeSubsidyRequests',
   },
   'page.ei.financePayments': {
-    en: 'Subsidies / Payments',
-    ru: 'Субсидии / Платежи',
+    en: 'Payment calculation',
+    ru: 'Расчет платежей',
     i18n: 'page.ei.financePayments',
   },
   'page.iptk.dashboard': {

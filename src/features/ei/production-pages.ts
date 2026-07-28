@@ -3,6 +3,11 @@ import {
   normalizeQuestionnaireTranslations,
   type QuestionnaireTranslations,
 } from "./questionnaire-languages";
+import {
+  assessmentAnswerScoringRules,
+  assessmentDomainReferences,
+  assessmentResultCriteria,
+} from "./assessment-calculation-reference";
 
 export type EiProductionValue =
   string | number | boolean | QuestionnaireTranslations;
@@ -172,6 +177,85 @@ export const eiProductionPageConfigs: EiProductionPageConfig[] = [
       },
     ],
     filterKeys: ["fullName", "status"],
+  },
+  {
+    key: "development-domains",
+    title: "Rivojlanish sohalari",
+    description:
+      "KID va RCDI-2000 natijalari hisoblanadigan rivojlanish sohalari.",
+    route: "/apps/ei/info/development-domains",
+    section: "Ma’lumotnomalar",
+    kind: "reference",
+    fields: [
+      { key: "orderNumber", label: "T/r", kind: "number" },
+      {
+        key: "instrument",
+        label: "So‘rovnoma",
+        options: ["KID", "RCDI-2000"],
+      },
+      { key: "code", label: "Soha kodi" },
+      { key: "fullName", label: "Soha nomi", secondaryKey: "shortName" },
+      {
+        key: "state",
+        label: "Holati",
+        kind: "status",
+        options: activeOptions,
+      },
+    ],
+    filterKeys: ["instrument", "state"],
+  },
+  {
+    key: "answer-scoring",
+    title: "Javoblarni baholash",
+    description:
+      "So‘rovnoma javoblarini xom ball va ko‘nikma natijasiga o‘tkazish qoidalari.",
+    route: "/apps/ei/info/answer-scoring",
+    section: "Ma’lumotnomalar",
+    kind: "reference",
+    fields: [
+      {
+        key: "instrument",
+        label: "So‘rovnoma",
+        options: ["KID", "RCDI-2000"],
+      },
+      { key: "code", label: "Javob kodi" },
+      { key: "fullName", label: "Javob" },
+      { key: "score", label: "Ball", kind: "number" },
+      { key: "skillResult", label: "Ko‘nikma natijasi" },
+      {
+        key: "state",
+        label: "Holati",
+        kind: "status",
+        options: activeOptions,
+      },
+    ],
+    filterKeys: ["instrument", "skillResult", "state"],
+  },
+  {
+    key: "result-criteria",
+    title: "Natija mezonlari",
+    description:
+      "Rivojlanish yoshidagi kechikishni yakuniy natija darajasiga o‘tkazish chegaralari.",
+    route: "/apps/ei/info/result-criteria",
+    section: "Ma’lumotnomalar",
+    kind: "reference",
+    fields: [
+      {
+        key: "instrument",
+        label: "So‘rovnoma",
+        options: ["KID", "RCDI-2000"],
+      },
+      { key: "level", label: "Natija darajasi" },
+      { key: "delayRange", label: "Kechikish oralig‘i" },
+      { key: "version", label: "Versiya" },
+      {
+        key: "methodologyStatus",
+        label: "Metodika holati",
+        kind: "status",
+        options: ["Loyiha", "Tasdiqlangan"],
+      },
+    ],
+    filterKeys: ["instrument", "level", "methodologyStatus"],
   },
   {
     key: "employees",
@@ -518,6 +602,34 @@ const records: Record<string, EiProductionRecord[]> = {
       status: "Faol",
     },
   ],
+  "development-domains": assessmentDomainReferences.map((domain, index) => ({
+    id: index + 1,
+    orderNumber: domain.orderNumber,
+    instrument: domain.instrument,
+    code: domain.code,
+    fullName: domain.fullName,
+    shortName: domain.shortName,
+    state: "Faol",
+  })),
+  "answer-scoring": assessmentAnswerScoringRules.map((rule, index) => ({
+    id: index + 1,
+    instrument: rule.instrument,
+    code: rule.code,
+    fullName: rule.fullName,
+    score: rule.score,
+    skillResult: rule.skillResult,
+    state: "Faol",
+  })),
+  "result-criteria": assessmentResultCriteria.map((criterion, index) => ({
+    id: index + 1,
+    instrument: criterion.instrument,
+    level: criterion.level,
+    delayRange: criterion.maxDelayMonths === undefined
+      ? `${criterion.minDelayMonths} oy va undan ko‘p`
+      : `${criterion.minDelayMonths}–${criterion.maxDelayMonths} oy`,
+    version: criterion.version,
+    methodologyStatus: criterion.status,
+  })),
   employees: [
     {
       id: 1,

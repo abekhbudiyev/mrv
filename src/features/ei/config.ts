@@ -108,10 +108,10 @@ export const eiPages: MuruvvatPageDefinition[] = [
   },
   {
     key: 'finance-payments',
-    title: "Subsidiyalar / To'lovlar",
-    description: 'Vaucher asosida qoplab beriladigan subsidiya va to‘lovlar hisobi.',
+    title: "To'lovlar hisobi",
+    description: 'Davomat va hisoblanadigan xizmat soatlari asosida shakllangan to‘lovlar hisobi.',
     route: '/apps/ei/finance/payments',
-    breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "Subsidiyalar / To'lovlar"],
+    breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "To'lovlar hisobi"],
   },
   {
     key: 'providers-applications-report',
@@ -175,6 +175,24 @@ export const eiMenu: MuruvvatMenuItem[] = [
         title: 'So‘rovnoma shablonlari',
         route: '/apps/ei/info/questionnaires',
         icon: ScrollText,
+      },
+      {
+        id: 'development-domains',
+        title: 'Rivojlanish sohalari',
+        route: '/apps/ei/info/development-domains',
+        icon: Activity,
+      },
+      {
+        id: 'answer-scoring',
+        title: 'Javoblarni baholash',
+        route: '/apps/ei/info/answer-scoring',
+        icon: FileCheck2,
+      },
+      {
+        id: 'result-criteria',
+        title: 'Natija mezonlari',
+        route: '/apps/ei/info/result-criteria',
+        icon: BarChart3,
       },
       {
         id: 'employees',
@@ -308,7 +326,7 @@ export const eiMenu: MuruvvatMenuItem[] = [
       },
       {
         id: 'finance-payments',
-        title: "Subsidiyalar / To'lovlar",
+        title: "To'lovlar hisobi",
         route: '/apps/ei/finance/payments',
         icon: CreditCard,
       },

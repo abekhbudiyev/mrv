@@ -563,6 +563,10 @@ const selectedAttendanceDay = ref(toInputDate())
 const selectedAttendanceListTab = ref<AttendanceListTab>('all')
 const attendanceViewMode = ref<AttendanceViewMode>('calendar')
 const attendanceScopeLevel = ref<AttendanceScopeLevel>('republic')
+const selectedPaymentMonth = ref(toInputDate().slice(0, 7))
+const selectedPaymentRegion = ref('')
+const selectedPaymentProvider = ref('')
+const paymentScopeLevel = ref<PaymentScopeLevel>('republic')
 const childApplicationViewMode = ref<ChildApplicationViewMode>('sections')
 const selectedChildApplicationDetailTab = ref<ChildApplicationDetailTab>('main')
 const selectedProviderApplicationDetailTab = ref<ProviderApplicationDetailTab>('main')
@@ -682,11 +686,53 @@ type AttendanceTimesheetRow = {
   late: number
   issues: number
 }
+type PaymentScopeLevel = AttendanceScopeLevel
+type PaymentEntry = {
+  day: number
+  hours: number
+  billableHours: number
+  excludedHours: number
+  amount: number
+}
+type PaymentMetrics = {
+  plannedHours: number
+  actualHours: number
+  billableHours: number
+  excludedHours: number
+  amount: number
+  beneficiaries: number
+  providers: number
+}
+type PaymentRow = {
+  key: string
+  label: string
+  meta: string
+  region: string
+  provider: string
+  tin: string
+  records: AttendanceRecord[]
+  entries: Record<number, PaymentEntry>
+  rate: number
+  plannedHours: number
+  actualHours: number
+  billableHours: number
+  excludedHours: number
+  amount: number
+  beneficiaries: number
+  providers: number
+}
 const attendanceScopeOptions: Array<{ value: AttendanceScopeLevel; label: string }> = [
   { value: 'republic', label: 'Respublika' },
   { value: 'region', label: 'Hudud' },
   { value: 'provider', label: 'Tadbirkor' },
 ]
+const paymentHourlyRates: Record<string, number> = {
+  '309845672': 125_000,
+  '302471895': 140_000,
+  '614923780': 120_000,
+  '301582746': 130_000,
+  '305914628': 135_000,
+}
 
 function toInputDate(value = new Date()) {
   const year = value.getFullYear()
@@ -833,6 +879,7 @@ const usesChildrenApplicationsTable = computed(() => (
 ))
 const isServiceAttendancePage = computed(() => props.pageKey === 'service-attendance')
 const isServiceAttendanceDayPage = computed(() => props.pageKey === 'service-attendance-day')
+const isFinancePaymentsPage = computed(() => props.pageKey === 'finance-payments')
 const pageRecords = computed(() => {
   if (props.pageKey === 'dashboard') {
     return getEiDashboardRecords()
@@ -1321,6 +1368,142 @@ const attendanceTimesheetDayTotals = computed(() => Object.fromEntries(
       .reduce((total, record) => total + record.hours, 0),
   ]),
 ) as Record<number, number>)
+const paymentRegionOptions = computed(() => (
+  [...new Set(attendanceRecords.map((record) => record.region))]
+    .sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+))
+const paymentProviderOptions = computed(() => (
+  [...new Set(
+    attendanceRecords
+      .filter((record) => !selectedPaymentRegion.value || record.region === selectedPaymentRegion.value)
+      .map((record) => record.provider),
+  )].sort((left, right) => left.localeCompare(right, 'uz-UZ'))
+))
+const paymentScopeLabel = computed(() => {
+  if (paymentScopeLevel.value === 'provider') {
+    return selectedPaymentProvider.value || 'Tadbirkor tanlanmagan'
+  }
+
+  if (paymentScopeLevel.value === 'region') {
+    return selectedPaymentRegion.value || 'Hudud tanlanmagan'
+  }
+
+  return 'O‘zbekiston Respublikasi'
+})
+const paymentFirstColumnLabel = computed(() => {
+  if (paymentScopeLevel.value === 'republic') {
+    return 'Hudud'
+  }
+
+  if (paymentScopeLevel.value === 'region') {
+    return 'Tadbirkor'
+  }
+
+  return 'Xizmatdan foydalanuvchi'
+})
+const paymentTableTitle = computed(() => {
+  if (paymentScopeLevel.value === 'republic') {
+    return 'Respublika bo‘yicha to‘lovlar hisobi'
+  }
+
+  if (paymentScopeLevel.value === 'region') {
+    return `${selectedPaymentRegion.value || 'Hudud'} bo‘yicha to‘lovlar hisobi`
+  }
+
+  return `${selectedPaymentProvider.value || 'Tadbirkor'} bo‘yicha to‘lovlar hisobi`
+})
+const filteredPaymentRecords = computed(() => (
+  attendanceRecords.filter((record) => (
+    record.date.startsWith(selectedPaymentMonth.value)
+    && isPaymentRecordInScope(record)
+  ))
+))
+const paymentMonthDays = computed(() => {
+  const { year, month } = parseAttendanceMonth(selectedPaymentMonth.value)
+  const daysInMonth = new Date(year, month, 0).getDate()
+
+  return Array.from({ length: daysInMonth }, (_, index) => index + 1)
+})
+const paymentRows = computed(() => {
+  const rows = new globalThis.Map<string, {
+    key: string
+    label: string
+    meta: string
+    region: string
+    provider: string
+    tin: string
+    records: AttendanceRecord[]
+  }>()
+
+  filteredPaymentRecords.value.forEach((record) => {
+    const key = paymentScopeLevel.value === 'republic'
+      ? record.region
+      : paymentScopeLevel.value === 'region'
+        ? record.tin
+        : `${record.childPinfl}-${record.tin}`
+    const existing = rows.get(key)
+
+    if (existing) {
+      existing.records.push(record)
+      return
+    }
+
+    rows.set(key, {
+      key,
+      label: paymentScopeLevel.value === 'republic'
+        ? record.region
+        : paymentScopeLevel.value === 'region'
+          ? record.provider
+          : formatName(record.childName),
+      meta: paymentScopeLevel.value === 'provider'
+        ? `JSHSHIR: ${record.childPinfl}`
+        : '',
+      region: record.region,
+      provider: record.provider,
+      tin: record.tin,
+      records: [record],
+    })
+  })
+
+  return [...rows.values()]
+    .map((row): PaymentRow => {
+      const recordsByDay = new globalThis.Map<number, AttendanceRecord[]>()
+      row.records.forEach((record) => {
+        const day = Number(record.date.slice(-2))
+        recordsByDay.set(day, [...(recordsByDay.get(day) ?? []), record])
+      })
+
+      if (paymentScopeLevel.value === 'republic') {
+        const providerCount = new Set(row.records.map((record) => record.tin)).size
+        const beneficiaryCount = new Set(row.records.map((record) => record.childPinfl)).size
+        row.meta = `${providerCount} ta tadbirkor · ${beneficiaryCount} ta bola`
+      } else if (paymentScopeLevel.value === 'region') {
+        row.meta = `STIR: ${row.tin}`
+      }
+
+      const rates = [...new Set(row.records.map((record) => getPaymentHourlyRate(record.tin)))]
+
+      return {
+        ...row,
+        entries: Object.fromEntries([...recordsByDay.entries()].map(([day, records]) => [
+          day,
+          buildPaymentEntry(day, records),
+        ])) as Record<number, PaymentEntry>,
+        rate: rates.length === 1 ? rates[0] ?? 0 : 0,
+        ...buildPaymentMetrics(row.records),
+      }
+    })
+    .sort((left, right) => left.label.localeCompare(right.label, 'uz-UZ'))
+})
+const paymentSummary = computed(() => buildPaymentMetrics(filteredPaymentRecords.value))
+const paymentDayTotals = computed(() => Object.fromEntries(
+  paymentMonthDays.value.map((day) => [
+    day,
+    filteredPaymentRecords.value
+      .filter((record) => Number(record.date.slice(-2)) === day)
+      .reduce((total, record) => total + getPaymentAmount(record), 0),
+  ]),
+) as Record<number, number>)
 const attendanceDayRouteDate = computed(() => {
   const date = Array.isArray(route.params.date) ? route.params.date[0] : route.params.date
 
@@ -1501,6 +1684,22 @@ watch(selectedAttendanceProvider, (provider) => {
 watch(selectedAttendanceMonth, (month) => {
   if (!selectedAttendanceDay.value.startsWith(month)) {
     selectedAttendanceDay.value = `${month}-01`
+  }
+})
+
+watch(selectedPaymentRegion, (region) => {
+  if (!region && paymentScopeLevel.value !== 'republic') {
+    paymentScopeLevel.value = 'republic'
+  }
+
+  if (!paymentProviderOptions.value.includes(selectedPaymentProvider.value)) {
+    selectedPaymentProvider.value = ''
+  }
+})
+
+watch(selectedPaymentProvider, (provider) => {
+  if (!provider && paymentScopeLevel.value === 'provider') {
+    paymentScopeLevel.value = selectedPaymentRegion.value ? 'region' : 'republic'
   }
 })
 
@@ -2042,6 +2241,143 @@ function getAttendanceDayClass(day: { planned: number; absent: number; issues: n
   return 'border-border bg-background hover:bg-muted/40'
 }
 
+function getPaymentHourlyRate(tin: string) {
+  return paymentHourlyRates[tin] ?? 125_000
+}
+
+function getPaymentAmount(record: AttendanceRecord) {
+  return record.calculationStatus === 'Hisoblanadi'
+    ? record.hours * getPaymentHourlyRate(record.tin)
+    : 0
+}
+
+function buildPaymentMetrics(records: AttendanceRecord[]): PaymentMetrics {
+  const plannedHours = records.reduce((total, record) => total + getAttendancePlannedHours(record), 0)
+  const actualHours = records.reduce((total, record) => total + record.hours, 0)
+  const billableHours = records
+    .filter((record) => record.calculationStatus === 'Hisoblanadi')
+    .reduce((total, record) => total + record.hours, 0)
+
+  return {
+    plannedHours,
+    actualHours,
+    billableHours,
+    excludedHours: Math.max(0, actualHours - billableHours),
+    amount: records.reduce((total, record) => total + getPaymentAmount(record), 0),
+    beneficiaries: new Set(records.map((record) => record.childPinfl)).size,
+    providers: new Set(records.map((record) => record.tin)).size,
+  }
+}
+
+function buildPaymentEntry(day: number, records: AttendanceRecord[]): PaymentEntry {
+  const metrics = buildPaymentMetrics(records)
+
+  return {
+    day,
+    hours: metrics.actualHours,
+    billableHours: metrics.billableHours,
+    excludedHours: metrics.excludedHours,
+    amount: metrics.amount,
+  }
+}
+
+function isPaymentRecordInScope(record: AttendanceRecord) {
+  if (paymentScopeLevel.value === 'republic') {
+    return true
+  }
+
+  if (record.region !== selectedPaymentRegion.value) {
+    return false
+  }
+
+  return paymentScopeLevel.value !== 'provider'
+    || record.provider === selectedPaymentProvider.value
+}
+
+function setPaymentScopeLevel(level: PaymentScopeLevel) {
+  paymentScopeLevel.value = level
+
+  if (level === 'republic') {
+    selectedPaymentRegion.value = ''
+    selectedPaymentProvider.value = ''
+    return
+  }
+
+  if (!selectedPaymentRegion.value) {
+    selectedPaymentRegion.value = paymentRegionOptions.value[0] ?? ''
+  }
+
+  if (level === 'region') {
+    selectedPaymentProvider.value = ''
+    return
+  }
+
+  if (!selectedPaymentProvider.value) {
+    selectedPaymentProvider.value = paymentProviderOptions.value[0] ?? ''
+  }
+}
+
+function drillDownPaymentRow(row: PaymentRow) {
+  if (paymentScopeLevel.value === 'republic') {
+    selectedPaymentRegion.value = row.region
+    selectedPaymentProvider.value = ''
+    paymentScopeLevel.value = 'region'
+    return
+  }
+
+  if (paymentScopeLevel.value === 'region') {
+    selectedPaymentProvider.value = row.provider
+    paymentScopeLevel.value = 'provider'
+  }
+}
+
+function goBackPaymentScope() {
+  if (paymentScopeLevel.value === 'provider') {
+    selectedPaymentProvider.value = ''
+    paymentScopeLevel.value = 'region'
+    return
+  }
+
+  selectedPaymentRegion.value = ''
+  paymentScopeLevel.value = 'republic'
+}
+
+function shiftPaymentMonth(offset: number) {
+  selectedPaymentMonth.value = getAttendanceMonthKey(selectedPaymentMonth.value, offset)
+}
+
+function getPaymentCellClass(entry?: PaymentEntry) {
+  if (!entry) {
+    return 'bg-background text-muted-foreground'
+  }
+
+  if (entry.excludedHours > 0 && entry.amount === 0) {
+    return 'bg-red-50 text-red-700 dark:bg-red-950/25 dark:text-red-300'
+  }
+
+  if (entry.excludedHours > 0) {
+    return 'bg-amber-50 text-amber-700 dark:bg-amber-950/25 dark:text-amber-300'
+  }
+
+  return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/25 dark:text-emerald-300'
+}
+
+function formatPaymentCurrency(value: number) {
+  return `${Math.round(value).toLocaleString('uz-UZ')} so‘m`
+}
+
+function formatCompactPayment(value: number) {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toLocaleString('uz-UZ', { maximumFractionDigits: 1 })} mln`
+  }
+
+  if (value >= 1_000) {
+    return `${Math.round(value / 1_000).toLocaleString('uz-UZ')} ming`
+  }
+
+  return value.toLocaleString('uz-UZ')
+}
+
 function formatName(value: string) {
   return value.toLocaleUpperCase('uz-UZ')
 }
@@ -2513,6 +2849,57 @@ async function downloadProviderApplicationReportAsExcel() {
     xlsx.utils.book_append_sheet(workbook, worksheet, 'Hisobot')
     const reportScope = selectedProviderApplicationReportRegion.value || 'respublika'
     xlsx.writeFile(workbook, `ei-xizmat-korsatuvchilar-arizalari-${reportScope}-${toInputDate()}.xlsx`, { compression: true })
+  }
+  finally {
+    isExportingRecords.value = false
+  }
+}
+
+async function downloadPaymentCalculationAsExcel() {
+  if (isExportingRecords.value || paymentRows.value.length === 0) {
+    return
+  }
+
+  isExportingRecords.value = true
+
+  try {
+    const xlsx = await import('xlsx')
+    const exportRows = paymentRows.value.map((row) => {
+      const result: Record<string, string | number> = {
+        [paymentFirstColumnLabel.value]: row.label,
+        'Qo‘shimcha ma’lumot': row.meta,
+      }
+
+      paymentMonthDays.value.forEach((day) => {
+        result[String(day)] = row.entries[day]?.amount ?? 0
+      })
+
+      result['Reja soat'] = formatAttendanceHours(row.plannedHours)
+      result['Fakt soat'] = formatAttendanceHours(row.actualHours)
+      result['Hisoblanadigan soat'] = formatAttendanceHours(row.billableHours)
+      result['Bir soatlik tarif'] = row.rate || 'Turli tariflar'
+      result['Hisobga olinmagan soat'] = formatAttendanceHours(row.excludedHours)
+      result['Hisoblangan to‘lov'] = row.amount
+
+      return result
+    })
+    const worksheet = xlsx.utils.json_to_sheet(exportRows)
+    worksheet['!cols'] = Object.keys(exportRows[0] ?? {}).map((key, index) => ({
+      wch: index < 2 ? 30 : Math.max(10, key.length + 2),
+    }))
+
+    const workbook = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'To‘lovlar hisobi')
+    const scope = paymentScopeLevel.value === 'republic'
+      ? 'respublika'
+      : paymentScopeLevel.value === 'region'
+        ? selectedPaymentRegion.value
+        : selectedPaymentProvider.value
+    xlsx.writeFile(
+      workbook,
+      `ei-tolovlar-hisobi-${scope || 'barchasi'}-${selectedPaymentMonth.value}.xlsx`,
+      { compression: true },
+    )
   }
   finally {
     isExportingRecords.value = false
@@ -4608,6 +4995,292 @@ function isDateWithinRange(value: string, startDate: string, endDate: string) {
                 </td>
                 <td class="border-t border-border px-2 text-center text-amber-700">
                   {{ attendanceSummary.issues }}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </SectionBlock>
+
+    <SectionBlock
+      v-else-if="isFinancePaymentsPage"
+      class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-visible"
+      content-class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col space-y-4 overflow-visible p-5"
+      title=""
+      description=""
+    >
+      <div class="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
+        <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Table2 class="h-5 w-5 text-primary" />
+            </div>
+            <div class="inline-flex h-10 items-center gap-1 rounded-lg border border-border bg-background p-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-8 p-0"
+                @click="shiftPaymentMonth(-1)"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </Button>
+              <input
+                v-model="selectedPaymentMonth"
+                type="month"
+                class="h-8 w-36 border-0 bg-transparent px-2 text-sm font-medium text-foreground outline-none"
+              >
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                class="h-8 w-8 p-0"
+                @click="shiftPaymentMonth(1)"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="h-9 gap-2"
+            :disabled="isExportingRecords || paymentRows.length === 0"
+            @click="downloadPaymentCalculationAsExcel"
+          >
+            <Download class="h-4 w-4" />
+            Yuklab olish
+          </Button>
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-border pt-3 xl:flex-row xl:items-end xl:justify-between">
+          <div class="flex min-w-0 items-center gap-3">
+            <Button
+              v-if="paymentScopeLevel !== 'republic'"
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="h-8 w-8 shrink-0 p-0"
+              @click="goBackPaymentScope"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </Button>
+            <div class="min-w-0">
+              <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Ko‘rish darajasi
+              </p>
+              <p class="mt-1 truncate text-sm font-semibold text-foreground">
+                {{ paymentScopeLabel }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="inline-flex h-10 w-full items-center rounded-lg border border-border bg-background p-0.5 sm:w-auto">
+              <Button
+                v-for="scope in attendanceScopeOptions"
+                :key="`payment-${scope.value}`"
+                type="button"
+                variant="ghost"
+                size="sm"
+                :class="paymentScopeLevel === scope.value ? 'h-8 flex-1 bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:flex-none' : 'h-8 flex-1 sm:flex-none'"
+                @click="setPaymentScopeLevel(scope.value)"
+              >
+                {{ scope.label }}
+              </Button>
+            </div>
+
+            <div
+              v-if="paymentScopeLevel !== 'republic'"
+              class="min-w-56"
+            >
+              <FilterSelect
+                v-model="selectedPaymentRegion"
+                label="Hudud"
+                all-label="Respublika"
+                :options="paymentRegionOptions"
+              />
+            </div>
+
+            <div
+              v-if="paymentScopeLevel === 'provider'"
+              class="min-w-64"
+            >
+              <FilterSelect
+                v-model="selectedPaymentProvider"
+                label="Tadbirkor"
+                all-label="Barcha tadbirkorlar"
+                :options="paymentProviderOptions"
+                :disabled="!selectedPaymentRegion"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overflow-hidden rounded-lg border border-border bg-card">
+        <div class="flex flex-col gap-3 border-b border-border bg-muted/25 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p class="text-sm font-semibold text-foreground">
+              {{ paymentTableTitle }}
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+              {{ paymentSummary.providers }} ta tadbirkor · {{ paymentSummary.beneficiaries }} ta bola · {{ formatAttendanceHours(paymentSummary.billableHours) }} hisoblanadigan soat
+            </p>
+          </div>
+          <div class="text-left lg:text-right">
+            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Hisoblangan to‘lov
+            </p>
+            <p class="mt-1 text-lg font-semibold text-primary">
+              {{ formatPaymentCurrency(paymentSummary.amount) }}
+            </p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-max border-separate border-spacing-0 text-sm">
+            <thead class="bg-muted/45 text-muted-foreground">
+              <tr>
+                <th class="sticky left-0 z-30 min-w-72 border-b border-r border-border bg-muted px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide">
+                  {{ paymentFirstColumnLabel }}
+                </th>
+                <th
+                  v-for="day in paymentMonthDays"
+                  :key="`payment-head-${day}`"
+                  class="h-12 min-w-20 border-b border-r border-border px-1 text-center text-xs font-semibold"
+                >
+                  {{ day }}
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Reja
+                </th>
+                <th class="min-w-20 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Fakt
+                </th>
+                <th class="min-w-28 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Hisoblanadi
+                </th>
+                <th class="min-w-32 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Tarif
+                </th>
+                <th class="min-w-32 border-b border-r border-border bg-muted px-2 text-center text-xs font-semibold uppercase tracking-wide">
+                  Hisobga olinmagan
+                </th>
+                <th class="min-w-40 border-b border-border bg-muted px-3 text-right text-xs font-semibold uppercase tracking-wide">
+                  Hisoblangan to‘lov
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="paymentRows.length === 0">
+                <td
+                  :colspan="paymentMonthDays.length + 7"
+                  class="px-6 py-16 text-center text-sm text-muted-foreground"
+                >
+                  Tanlangan oy va kesim bo‘yicha hisoblangan to‘lov topilmadi.
+                </td>
+              </tr>
+              <tr
+                v-for="row in paymentRows"
+                :key="row.key"
+                class="group"
+              >
+                <td class="sticky left-0 z-20 border-b border-r border-border bg-card px-4 py-3 group-hover:bg-muted/20">
+                  <button
+                    v-if="paymentScopeLevel !== 'provider'"
+                    type="button"
+                    class="flex w-full items-center justify-between gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    :title="`${row.label} bo‘yicha hisobni ko‘rish`"
+                    @click="drillDownPaymentRow(row)"
+                  >
+                    <span class="min-w-0">
+                      <span class="block truncate font-medium text-foreground">{{ row.label }}</span>
+                      <span class="mt-1 block text-xs text-muted-foreground">{{ row.meta }}</span>
+                    </span>
+                    <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div v-else>
+                    <p class="font-medium text-foreground">
+                      {{ row.label }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      {{ row.meta }}
+                    </p>
+                  </div>
+                </td>
+                <td
+                  v-for="day in paymentMonthDays"
+                  :key="`${row.key}-${day}`"
+                  :class="cn('border-b border-r border-border p-1 text-center', getPaymentCellClass(row.entries[day]))"
+                >
+                  <div
+                    v-if="row.entries[day]"
+                    class="flex h-10 min-w-16 flex-col items-center justify-center rounded text-xs font-semibold"
+                    :title="`${formatAttendanceHours(row.entries[day].billableHours)} hisoblanadi; ${formatPaymentCurrency(row.entries[day].amount)}`"
+                  >
+                    <span>{{ row.entries[day].amount > 0 ? formatCompactPayment(row.entries[day].amount) : '—' }}</span>
+                    <span class="text-[10px] font-medium opacity-75">
+                      {{ formatAttendanceHours(row.entries[day].billableHours) }}
+                    </span>
+                  </div>
+                  <span
+                    v-else
+                    class="text-muted-foreground/35"
+                  >·</span>
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-medium text-foreground">
+                  {{ formatAttendanceHours(row.plannedHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-medium text-foreground">
+                  {{ formatAttendanceHours(row.actualHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-semibold text-foreground">
+                  {{ formatAttendanceHours(row.billableHours) }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center text-foreground">
+                  {{ row.rate ? formatPaymentCurrency(row.rate) : 'Turli tariflar' }}
+                </td>
+                <td class="border-b border-r border-border bg-muted/20 px-2 text-center font-medium text-amber-700">
+                  {{ formatAttendanceHours(row.excludedHours) }}
+                </td>
+                <td class="border-b border-border bg-muted/20 px-3 text-right font-semibold text-foreground">
+                  {{ formatPaymentCurrency(row.amount) }}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot v-if="paymentRows.length > 0">
+              <tr class="bg-muted/50 font-semibold text-foreground">
+                <td class="sticky left-0 z-20 border-r border-t border-border bg-muted px-4 py-3 text-left">
+                  Jami
+                </td>
+                <td
+                  v-for="day in paymentMonthDays"
+                  :key="`payment-total-${day}`"
+                  class="border-r border-t border-border px-1 py-3 text-center text-xs"
+                >
+                  {{ (paymentDayTotals[day] ?? 0) > 0 ? formatCompactPayment(paymentDayTotals[day] ?? 0) : '—' }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(paymentSummary.plannedHours) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(paymentSummary.actualHours) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center">
+                  {{ formatAttendanceHours(paymentSummary.billableHours) }}
+                </td>
+                <td class="border-r border-t border-border px-2 text-center text-muted-foreground">
+                  —
+                </td>
+                <td class="border-r border-t border-border px-2 text-center text-amber-700">
+                  {{ formatAttendanceHours(paymentSummary.excludedHours) }}
+                </td>
+                <td class="border-t border-border px-3 text-right text-primary">
+                  {{ formatPaymentCurrency(paymentSummary.amount) }}
                 </td>
               </tr>
             </tfoot>

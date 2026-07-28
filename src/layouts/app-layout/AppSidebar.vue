@@ -115,7 +115,7 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/ei/service/attendance': 'nav.attendance',
   '/apps/ei/service/terminated': 'nav.terminatedServices',
   '/apps/ei/finance/subsidy-requests': 'nav.subsidyRequests',
-  '/apps/ei/finance/payments': 'nav.subsidiesPayments',
+  '/apps/ei/finance/payments': 'page.ei.financePayments',
   '/apps/ei/reports/providers-applications': 'page.ei.providersApplicationsReport',
 }
 

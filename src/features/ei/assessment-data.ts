@@ -6,6 +6,11 @@ import type {
 } from "./assessment-question-bank";
 import { questionnaireAnswerOptions } from "./questionnaire-answer-options";
 import type { AssessmentAnswer } from "./questionnaire-answer-options";
+import {
+  assessmentDomainReferences,
+  getAssessmentAnswerScore,
+  getAssessmentResultLevel,
+} from "./assessment-calculation-reference";
 
 export { assessmentQuestionBank };
 export type {
@@ -67,17 +72,15 @@ export const domainCatalog: Record<
     label: string;
     shortLabel: string;
   }
-> = {
-  cognitive: { label: "Bilish jarayonlari", shortLabel: "Bilish" },
-  motor: { label: "Harakat rivojlanishi", shortLabel: "Harakat" },
-  language: { label: "Nutq va muloqot", shortLabel: "Nutq" },
-  selfCare: { label: "O‘ziga xizmat", shortLabel: "O‘ziga xizmat" },
-  social: { label: "Ijtimoiy rivojlanish", shortLabel: "Ijtimoiy" },
-  grossMotor: { label: "Yirik motorika", shortLabel: "Yirik motorika" },
-  fineMotor: { label: "Mayda motorika", shortLabel: "Mayda motorika" },
-  expressiveLanguage: { label: "Faol nutq", shortLabel: "Faol nutq" },
-  receptiveLanguage: { label: "Nutqni tushunish", shortLabel: "Tushunish" },
-};
+> = Object.fromEntries(
+  assessmentDomainReferences.map((domain) => [
+    domain.code,
+    {
+      label: domain.fullName,
+      shortLabel: domain.shortName,
+    },
+  ]),
+) as Record<DevelopmentDomain, { label: string; shortLabel: string }>;
 
 export const instrumentCatalog: Record<
   AssessmentInstrument,
@@ -858,9 +861,15 @@ export function calculateDomainResults(
         question.domain === domain ||
         question.additionalDomains?.includes(domain),
     );
-    const achieved = domainQuestions.filter((question) =>
-      [1, 2].includes(record.answers[question.id] ?? 0),
-    ).length;
+    const achieved = domainQuestions.reduce(
+      (total, question) =>
+        total
+        + getAssessmentAnswerScore(
+          record.instrument,
+          record.answers[question.id],
+        ),
+      0,
+    );
     const score = domainQuestions.length
       ? Math.round((achieved / domainQuestions.length) * 100)
       : 0;
@@ -873,14 +882,7 @@ export function calculateDomainResults(
       0,
       Math.round((referenceAgeMonths - developmentAgeMonths) * 10) / 10,
     );
-    const watchThreshold = record.instrument === "KID" ? 1.5 : 3;
-    const priorityThreshold = record.instrument === "KID" ? 3 : 6;
-    const level =
-      delayMonths >= priorityThreshold
-        ? "Ustuvor"
-        : delayMonths >= watchThreshold
-          ? "Kuzatuv"
-          : "Yoshiga mos";
+    const level = getAssessmentResultLevel(record.instrument, delayMonths);
 
     return {
       domain,

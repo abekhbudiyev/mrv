@@ -765,11 +765,11 @@ export const routes: RouteRecordRaw[] = [
           pageKey: 'finance-payments',
         },
         meta: {
-          title: "Subsidiyalar / To'lovlar",
+          title: "To'lovlar hisobi",
           requiresAuth: true,
           moduleKey: 'ei',
           moduleTitle: 'Erta aralashuv moduli',
-          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "Subsidiyalar / To'lovlar"],
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Moliyalashtirish', "To'lovlar hisobi"],
         },
       },
       {

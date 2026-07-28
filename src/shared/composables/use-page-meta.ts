@@ -92,6 +92,7 @@ const breadcrumbI18nKeys: Record<string, string> = {
   'Moliyalashtirish': 'nav.finance',
   'Buyurtmanomalar': 'nav.subsidyRequests',
   "Subsidiyalar / To'lovlar": 'nav.subsidiesPayments',
+  "To'lovlar hisobi": 'page.ei.financePayments',
   'Kirish': 'page.login',
   'Modullar': 'nav.modules',
   'Muruvvat': 'module.muruvvat',

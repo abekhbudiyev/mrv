@@ -120,6 +120,9 @@ const activeFilterCount = computed(
 const canViewRecord = computed(
   () => pageConfig.value.kind !== "reference" && pageConfig.value.canView,
 );
+const hasRowActions = computed(
+  () => Boolean(canViewRecord.value || pageConfig.value.canEdit),
+);
 
 function getSearchableValue(value: EiProductionValue) {
   return typeof value === "object"
@@ -1009,7 +1012,10 @@ function downloadCsv() {
                   </p>
                 </div>
               </div>
-              <div class="flex justify-end gap-2 border-t border-border pt-3">
+              <div
+                v-if="hasRowActions"
+                class="flex justify-end gap-2 border-t border-border pt-3"
+              >
                 <Button
                   v-if="canViewRecord"
                   variant="outline"
@@ -1054,6 +1060,7 @@ function downloadCsv() {
                     {{ field.label }}
                   </th>
                   <th
+                    v-if="hasRowActions"
                     class="h-10 w-24 whitespace-nowrap rounded-tr-lg border-b border-border px-2 text-left align-middle text-sm font-medium text-foreground"
                   >
                     Amallar
@@ -1112,7 +1119,10 @@ function downloadCsv() {
                       </p>
                     </div>
                   </td>
-                  <td class="border-b border-border p-2 align-middle">
+                  <td
+                    v-if="hasRowActions"
+                    class="border-b border-border p-2 align-middle"
+                  >
                     <DropdownMenuRoot>
                       <DropdownMenuTrigger as-child>
                         <Button
@@ -1155,7 +1165,7 @@ function downloadCsv() {
                 </tr>
                 <tr v-if="!paginatedRecords.length">
                   <td
-                    :colspan="visibleFields.length + 1"
+                    :colspan="visibleFields.length + (hasRowActions ? 1 : 0)"
                     class="px-6 py-16 text-center text-muted-foreground"
                   >
                     Ma’lumot topilmadi
