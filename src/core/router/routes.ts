@@ -19,6 +19,7 @@ const IPTKApplicationsListPage = () => import('@/features/iptk/pages/IPTKApplica
 const MuruvvatPage = () => import('@/features/muruvvat/pages/MuruvvatPage.vue')
 const SnavPage = () => import('@/features/snav/pages/SnavPage.vue')
 const EIPage = () => import('@/features/ei/pages/EIPage.vue')
+const EntrepreneurRatingPage = () => import('@/features/ei/pages/EntrepreneurRatingPage.vue')
 const ErrorPage = () => import('@/features/errors/pages/ErrorPage.vue')
 
 export const routes: RouteRecordRaw[] = [
@@ -594,6 +595,19 @@ export const routes: RouteRecordRaw[] = [
           moduleKey: 'ei',
           moduleTitle: 'Erta aralashuv moduli',
           breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Reyestr'],
+        },
+      },
+      {
+        path: 'apps/ei/providers/rating',
+        sensitive: true,
+        name: 'ei-providers-rating',
+        component: EntrepreneurRatingPage,
+        meta: {
+          title: 'Tadbirkorlar reytingi',
+          requiresAuth: true,
+          moduleKey: 'ei',
+          moduleTitle: 'Erta aralashuv moduli',
+          breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Tadbirkorlar reytingi'],
         },
       },
       {
