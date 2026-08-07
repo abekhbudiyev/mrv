@@ -381,7 +381,7 @@ function exportCsv() {
   if (isRegionOverview.value) {
     const header = ['O‘rin', 'Hudud', 'Tadbirkorlar soni', 'Faol tadbirkorlar', 'O‘rtacha reyting', 'Hisoblangan soatlar', 'Jami soatlar', 'Davomati mavjud bolalar', 'Jami bolalar', 'Hisoblangan mablag‘ (so‘m)', 'Jami mablag‘ (so‘m)']
     const rows = regionRatings.value.map((region, index) => [orderedRank(index, regionRatings.value.length), region.name, region.entrepreneurCount, region.activeCount, region.score.toFixed(2), region.serviceHours, region.totalServiceHours, region.attendedChildren, region.children, region.amount, region.totalAmount])
-    const csv = [header, ...rows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n')
+    const csv = [header, ...rows].map(row => row.map(value => `"${String(value).split('"').join('""')}"`).join(',')).join('\n')
     const link = document.createElement('a')
     link.href = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }))
     link.download = 'hududlar-reytingi.csv'
@@ -392,7 +392,7 @@ function exportCsv() {
 
   const header = ['O‘rin', 'Tadbirkor', 'STIR', 'Reyestrga kiritilgan sana', 'Hudud', 'Tuman', 'Reyting', 'Hisoblangan soatlar', 'Jami soatlar', 'Davomati mavjud bolalar', 'Jami bolalar', 'Hisoblangan mablag‘ (so‘m)', 'Jami mablag‘ (so‘m)', 'Holati']
   const rows = filteredEntrepreneurs.value.map((item, index) => [orderedRank(index, filteredEntrepreneurs.value.length), item.name, item.tin, registryDateFor(item.id), item.region, item.district, item.score, item.serviceHours, totalHoursFor(item), attendedChildrenFor(item), item.children, calculatedAmount(item), totalAmountFor(item), item.status])
-  const csv = [header, ...rows].map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n')
+  const csv = [header, ...rows].map(row => row.map(value => `"${String(value).split('"').join('""')}"`).join(',')).join('\n')
   const link = document.createElement('a')
   link.href = URL.createObjectURL(new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8' }))
   link.download = 'tadbirkorlar-reytingi.csv'
