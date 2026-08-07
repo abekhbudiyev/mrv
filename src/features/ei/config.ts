@@ -14,6 +14,7 @@ import {
   ScrollText,
   Store,
   TicketCheck,
+  Trophy,
   UserCheck,
   UserX,
 } from 'lucide-vue-next'
@@ -49,6 +50,13 @@ export const eiPages: MuruvvatPageDefinition[] = [
     description: 'Erta aralashuv xizmatini ko‘rsatish huquqiga ega elektron reyestrdagi nodavlat tashkilotlar.',
     route: '/apps/ei/providers/registry',
     breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', 'Xizmat ko‘rsatuvchilar', 'Reyestr'],
+  },
+  {
+    key: 'providers-rating',
+    title: 'Tadbirkorlar reytingi',
+    description: 'Xizmat ko‘rsatuvchi tadbirkorlarni respublika va hududlar kesimida baholash.',
+    route: '/apps/ei/providers/rating',
+    breadcrumb: ['Ilovalar', 'Erta aralashuv moduli', "Xizmat ko'rsatuvchilar", 'Tadbirkorlar reytingi'],
   },
   {
     key: 'children-questionnaires',
@@ -230,6 +238,12 @@ export const eiMenu: MuruvvatMenuItem[] = [
         title: 'Reyestr',
         route: '/apps/ei/providers/registry',
         icon: ListChecks,
+      },
+      {
+        id: 'providers-rating',
+        title: 'Tadbirkorlar reytingi',
+        route: '/apps/ei/providers/rating',
+        icon: Trophy,
       },
     ],
   },

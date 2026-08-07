@@ -107,6 +107,7 @@ const sidebarRouteI18nKeys: Record<string, string> = {
   '/apps/ei/providers/applications': 'nav.applications',
   '/apps/ei/providers/conclusions': 'nav.conclusions',
   '/apps/ei/providers/registry': 'nav.registry',
+  '/apps/ei/providers/rating': 'Tadbirkorlar reytingi',
   '/apps/ei/children/applications': 'nav.applications',
   '/apps/ei/children/vouchers': 'nav.vouchers',
   '/apps/ei/children/orders': 'nav.orders',
