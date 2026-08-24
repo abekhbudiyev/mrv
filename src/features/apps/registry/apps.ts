@@ -13,10 +13,21 @@ import {
   UserCog,
   Users,
   Waves,
+  BusFront,
 } from 'lucide-vue-next'
 import type { AppModule } from '../types'
 
 export const appModules: AppModule[] = [
+  {
+    id: 'transport-benefits',
+    title: 'Transport imtiyozlari',
+    description: 'Kontingent, moslik, global limit, chipta eventlari va oylik qoplash uchun yagona modul.',
+    route: '/apps/transport-benefits',
+    icon: BusFront,
+    enabled: true,
+    permission: 'transport-benefits.view',
+    hasInternalNavigation: true,
+  },
   {
     id: 'iptk',
     title: 'IPTK',

@@ -6,6 +6,8 @@ export interface CurrentUser {
   fullName: string
   role: string
   permissions: PermissionKey[]
+  organizationId?: string
+  signatureRef?: string
 }
 
 export interface LoginPayload {

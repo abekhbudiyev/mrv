@@ -14,6 +14,8 @@ export type PermissionKey =
   | 'muruvvat.view'
   | 'snav.view'
   | 'ei.view'
+  | 'transport-benefits.view'
+  | 'transport-benefits.return-review'
 
 export interface RoleDefinition {
   id: string

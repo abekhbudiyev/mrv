@@ -21,6 +21,7 @@ const SnavPage = () => import('@/features/snav/pages/SnavPage.vue')
 const EIPage = () => import('@/features/ei/pages/EIPage.vue')
 const EntrepreneurRatingPage = () => import('@/features/ei/pages/EntrepreneurRatingPage.vue')
 const ErrorPage = () => import('@/features/errors/pages/ErrorPage.vue')
+const TransportBenefitsPage = () => import('@/features/transport-benefits/pages/TransportBenefitsPage.vue')
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -918,6 +919,153 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'apps/EI/service/removed',
         redirect: '/apps/ei/service/terminated',
+      },
+      {
+        path: 'apps/transport-benefits',
+        name: 'transport-benefits-dashboard',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'dashboard' },
+        meta: {
+          title: 'Transport imtiyozlari',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Dashboard'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/contingents',
+        name: 'transport-benefits-contingents',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'contingents' },
+        meta: {
+          title: 'Kontingent',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Kontingent'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/eligibility',
+        name: 'transport-benefits-eligibility',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'eligibility' },
+        meta: {
+          title: 'Moslik va rezerv',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Moslik va rezerv'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/ticket-events',
+        name: 'transport-benefits-ticket-events',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'ticket-events' },
+        meta: {
+          title: 'Chipta eventlari',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Chipta eventlari'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/settlements',
+        name: 'transport-benefits-settlements',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'settlements' },
+        meta: {
+          title: 'Hisob-kitob',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Hisob-kitob'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/references',
+        redirect: '/apps/transport-benefits/references/categories',
+      },
+      {
+        path: 'apps/transport-benefits/references/categories',
+        name: 'transport-benefits-reference-categories',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'reference-categories' },
+        meta: {
+          title: 'Toifalar va huquqiy asoslar',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Toifalar va huquqiy asoslar'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/references/policies',
+        name: 'transport-benefits-reference-policies',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'reference-policies' },
+        meta: {
+          title: 'Imtiyoz siyosatlari',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Imtiyoz siyosatlari'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/references/transport',
+        name: 'transport-benefits-reference-transport',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'reference-transport' },
+        meta: {
+          title: 'Transport va tariflar',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Transport va tariflar'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/references/organizations',
+        name: 'transport-benefits-reference-organizations',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'reference-organizations' },
+        meta: {
+          title: 'Tashkilotlar',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Tashkilotlar'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/references/system-codes',
+        name: 'transport-benefits-reference-system-codes',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'reference-system-codes' },
+        meta: {
+          title: 'Tizim kodlari',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Ma’lumotnomalar', 'Tizim kodlari'],
+        },
+      },
+      {
+        path: 'apps/transport-benefits/integrations',
+        name: 'transport-benefits-integrations',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'integrations' },
+        meta: {
+          title: 'API va arxitektura',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'API va arxitektura'],
+        },
       },
       {
         path: 'apps/dashboard',
