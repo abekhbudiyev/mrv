@@ -20,6 +20,7 @@ import {
   FileCheck2,
   Landmark,
   Layers3,
+  ListChecks,
   Network,
   Plane,
   Plus,
@@ -65,12 +66,12 @@ import { Input } from '@/shared/ui/shadcn/input'
 
 type ContingentEventType = 'RIGHT_GRANTED' | 'RIGHT_CORRECTED' | 'RIGHT_REVOKED' | 'RIGHT_REINSTATED'
 type ContingentEventStatus = 'Qo‘llandi' | 'Tekshiruvda' | 'Xatolik'
-type TicketEventType = 'ISSUED' | 'RETURNED' | 'VOIDED' | 'RESCHEDULED' | 'TRAVELLED' | 'NO_SHOW'
+type TicketEventType = 'ISSUED' | 'RETURNED' | 'CARRIER_CANCELLED' | 'VOIDED' | 'RESCHEDULED' | 'TRAVELLED' | 'NO_SHOW'
 type TicketEventStatus = 'Qabul qilindi' | 'Qayta ishlanmoqda' | 'Rad etildi'
 type TransportMode = 'RAIL' | 'AIR' | 'BUS'
 type SettlementStage = 'DRAFT' | 'VALIDATING' | 'READY_TO_SUBMIT' | 'CLAIM_CREATED'
 type ClaimStatus = 'SUBMITTED' | 'PARTIALLY_ACCEPTED' | 'ACCEPTED' | 'REJECTED' | 'ADJUSTMENT_REQUIRED' | 'CLOSED'
-type PaymentStatus = 'CREATED' | 'SUBMITTED' | 'ACCEPTED' | 'REJECTED' | 'PAYMENT_ORDER_CREATED' | 'PROCESSING' | 'PARTIALLY_PAID' | 'PAID' | 'FAILED' | 'RETRYING' | 'REVERSED' | 'RECONCILED'
+type FinanceHandoffStatus = 'NOT_READY' | 'CREATED' | 'QUEUED' | 'SUBMITTED' | 'ACKNOWLEDGED' | 'REJECTED' | 'RETRYING'
 type FeedbackTone = 'success' | 'error' | 'info'
 type ReservationStatus = 'HELD' | 'CONSUMED' | 'RESTORE_REVIEW' | 'RELEASED' | 'RESTORED'
 type EntitlementLegState = 'AVAILABLE' | 'HELD' | 'CONSUMED' | 'RESTORE_REVIEW' | 'RESTORED'
@@ -119,7 +120,7 @@ interface TicketEvent {
   carrier: string
   transportMode: TransportMode
   eventType: TicketEventType
-  ticketState: 'ISSUED' | 'TRAVELLED' | 'RETURNED' | 'RETURN_DEADLINE_EXPIRED' | 'NO_SHOW' | 'EXCHANGED' | 'VOID'
+  ticketState: 'DRAFT' | 'ISSUED' | 'TRAVELLED' | 'RETURN_PENDING' | 'RETURNED' | 'RETURN_DEADLINE_EXPIRED' | 'CARRIER_CANCELLED' | 'NO_SHOW' | 'EXCHANGED' | 'VOID' | 'ERROR' | 'RECONCILIATION'
   passenger: string
   passengerRole: 'BENEFICIARY' | 'COMPANION'
   benefitSnapshot: string
@@ -157,8 +158,8 @@ interface Settlement {
   claimId?: string
   claimVersion?: number
   claimStatus?: ClaimStatus
-  paymentId?: string
-  paymentStatus?: PaymentStatus
+  financeHandoffId?: string
+  financeHandoffStatus?: FinanceHandoffStatus
   period: string
   carrier: string
   transportMode: TransportMode
@@ -271,6 +272,7 @@ const canDecideReturnReview = computed(() => Boolean(returnReviewAuthority.value
 const page = computed(() => getTransportBenefitsPage(props.pageKey) ?? getTransportBenefitsPage('dashboard')!)
 const isDashboard = computed(() => props.pageKey === 'dashboard')
 const isContingents = computed(() => props.pageKey === 'contingents')
+const isMvpPlan = computed(() => props.pageKey === 'mvp-plan')
 const isEligibility = computed(() => props.pageKey === 'eligibility')
 const isTicketEvents = computed(() => props.pageKey === 'ticket-events')
 const isSettlements = computed(() => props.pageKey === 'settlements')
@@ -1026,10 +1028,10 @@ function runEligibilityCheck() {
     recentDecisions.value.unshift(decision)
     eligibilityLoading.value = false
     showFeedback(isEligible ? 'success' : 'info', isEligible
-      ? (decision.reservationId ? 'Huquq tasdiqlandi va limit atomar rezerv qilindi.' : 'Huquq tasdiqlandi, limit sarflanmadi.')
+      ? (decision.reservationId ? 'Sandbox simulyatsiyasi: demo ledgerda rezerv yaratildi; bu production huquqi emas.' : 'Sandbox simulyatsiyasi: ELIGIBLE, demo ledger o‘zgarmadi.')
       : requiresManualDocument
-        ? 'YAMIHda huquq topilmadi — tasdiqlovchi hujjat qabul qilinishi mumkin.'
-        : 'Ushbu safar uchun imtiyoz tasdiqlanmadi.')
+        ? 'Sandbox simulyatsiyasi: authoritative huquq topilmadi, manual case kontrakti ko‘rsatildi.'
+        : 'Sandbox simulyatsiyasi: ushbu safar uchun imtiyoz tasdiqlanmadi.')
   }, 650)
 }
 
@@ -1413,6 +1415,7 @@ function ticketLedgerEffect(eventType: TicketEventType, qualifyingReturn: boolea
   if (eventType === 'TRAVELLED') return 'RIGHT=UNCHANGED(CONSUMED) · TICKET=TRAVELLED'
   if (eventType === 'RETURNED' && deadlineExpired) return 'RIGHT=UNCHANGED(CONSUMED reason=DEEMED_PROVIDED) · TICKET=RETURN_DEADLINE_EXPIRED'
   if (eventType === 'RETURNED') return qualifyingReturn ? 'RIGHT=RESTORE_REVIEW(from CONSUMED) · TICKET=RETURNED' : 'RIGHT=NO_AUTO_RESTORE(CONSUMED) · TICKET=RETURNED'
+  if (eventType === 'CARRIER_CANCELLED') return 'RIGHT=CONSUMED_PENDING_D03_REVIEW · TICKET=CARRIER_CANCELLED'
   if (eventType === 'RESCHEDULED') return 'RIGHT=UNCHANGED(CONSUMED) · OLD=EXCHANGED · NEW=ISSUED'
   if (eventType === 'VOIDED') return 'RIGHT=PENDING_D03 · TICKET=VOIDED'
   return 'RIGHT=PENDING_D03 · TICKET=NO_SHOW'
@@ -1423,6 +1426,7 @@ function ticketSettlementAction(eventType: TicketEventType, deadlineExpired: boo
   if (eventType === 'TRAVELLED') return 'SETTLEMENT_BASIS_PENDING_D03'
   if (eventType === 'RETURNED' && deadlineExpired) return 'EXCLUDE_OR_DEEMED_PROVIDED_PENDING_D03'
   if (eventType === 'RETURNED') return qualifyingReturn ? 'EXCLUDE_PENDING_RETURN_REVIEW' : 'PENDING_D03_VOLUNTARY_RETURN_DECISION'
+  if (eventType === 'CARRIER_CANCELLED') return 'EXCLUDE_OR_RECONCILE_PENDING_D03'
   if (eventType === 'RESCHEDULED') return 'RESCHEDULE_CHAIN_DEDUPLICATION'
   if (eventType === 'VOIDED') return 'EXCLUDE_OR_RECONCILE_PENDING_D03'
   return 'NO_SHOW_OR_DEEMED_PROVIDED_PENDING_D03'
@@ -1432,6 +1436,7 @@ function ticketStateForEvent(eventType: TicketEventType, deadlineExpired: boolea
   if (eventType === 'ISSUED') return 'ISSUED'
   if (eventType === 'TRAVELLED') return 'TRAVELLED'
   if (eventType === 'RETURNED') return deadlineExpired ? 'RETURN_DEADLINE_EXPIRED' : 'RETURNED'
+  if (eventType === 'CARRIER_CANCELLED') return 'CARRIER_CANCELLED'
   if (eventType === 'RESCHEDULED') return 'ISSUED'
   if (eventType === 'VOIDED') return 'VOID'
   return 'NO_SHOW'
@@ -1656,7 +1661,11 @@ function submitTicketEvent() {
     paymentChannel: 'MONTHLY_CLAIM',
     ledgerEffect: ticketLedgerEffect(ticketDraft.value.eventType, qualifyingReturn, deadlineExpired),
     settlementAction: ticketSettlementAction(ticketDraft.value.eventType, deadlineExpired, qualifyingReturn),
-    reason: deadlineExpired ? `${ticketDraft.value.reason.trim()} · DEADLINE_EXPIRED · deemed_provided=true` : ticketDraft.value.reason.trim() || undefined,
+    reason: ticketDraft.value.eventType === 'CARRIER_CANCELLED'
+      ? 'CARRIER_CANCELLED · settlement/restore decision PENDING_D03'
+      : deadlineExpired
+        ? `${ticketDraft.value.reason.trim()} · DEADLINE_EXPIRED · deemed_provided=true`
+        : ticketDraft.value.reason.trim() || undefined,
     serviceCancelledAt: qualifyingReturn ? formatInputDate(ticketDraft.value.serviceCancelledAt) : undefined,
     returnedAt: ticketDraft.value.eventType === 'RETURNED' ? ticketDraft.value.returnedAt.replace('T', ' ') : undefined,
     returnDeadline: qualifyingReturn ? `${formatInputDate(computedReturnDeadline.value)} · ${returnWindowPolicy.version} · server-derived` : undefined,
@@ -1693,7 +1702,7 @@ function submitTicketEvent() {
       bundle.legs[reservationAuthorization.legType] = 'RESTORE_REVIEW'
     }
   }
-  if (!reservationAuthorization.companionLink && ['RETURNED', 'VOIDED', 'NO_SHOW'].includes(ticketDraft.value.eventType)) {
+  if (!reservationAuthorization.companionLink && ['RETURNED', 'CARRIER_CANCELLED', 'VOIDED', 'NO_SHOW'].includes(ticketDraft.value.eventType)) {
     invalidateCompanionSlot(ticketDraft.value.reservationId.trim())
   }
   if (!reservationAuthorization.companionLink && ticketDraft.value.eventType === 'RESCHEDULED') {
@@ -1759,46 +1768,38 @@ function decideReturnReview(event: TicketEvent, decision: 'APPROVED' | 'REJECTED
   event.ledgerEffect = approved
     ? 'RIGHT=RESTORED(reason=VERIFIED_NONUSE_REVIEW_APPROVED) · TICKET=RETURNED'
     : 'RIGHT=UNCHANGED(CONSUMED reason=RETURN_REVIEW_REJECTED) · TICKET=RETURNED'
-  event.settlementAction = approved ? 'EXCLUDE_CONFIRMED_AFTER_RETURN_REVIEW' : 'SETTLEMENT_BASIS_RETAINED_AFTER_REVIEW'
+  event.settlementAction = approved ? 'EXCLUDE_CONFIRMED_AFTER_RETURN_REVIEW' : 'SETTLEMENT_DECISION_PENDING_D03'
   event.status = 'Qabul qilindi'
   showFeedback(approved ? 'success' : 'info', approved
     ? 'Vakolatli review tasdiqlandi: limit endi atomar RESTORED qilindi va audit reference yozildi.'
-    : 'Return review rad etildi: huquq CONSUMED bo‘lib qoldi va settlement basis saqlandi.')
+    : 'Return review rad etildi: huquq CONSUMED bo‘lib qoldi; claimability D-03 metodikasigacha aniqlanmaydi.')
 }
 
 const settlements = ref<Settlement[]>([
   {
     id: 'SET-2026-10-UTY',
-    settlementStage: 'CLAIM_CREATED',
-    claimId: 'CLM-2026-10-UTY',
-    claimVersion: 1,
-    claimStatus: 'ACCEPTED',
-    paymentId: 'PAY-CLM-2026-10-UTY-v1',
-    paymentStatus: 'PROCESSING',
+    settlementStage: 'VALIDATING',
+    financeHandoffStatus: 'NOT_READY',
     period: 'Oktabr 2026',
     carrier: 'O‘zbekiston temir yo‘llari',
     transportMode: 'RAIL',
     lines: 1842,
     requestedAmount: 1842600000,
-    acceptedAmount: 1819400000,
+    acceptedAmount: 0,
     deadline: '10.11.2026',
     submittedAt: '06.11.2026 14:30 · ERI',
     paymentDueAt: '20.11.2026 · 10 ish kuni',
   },
   {
     id: 'SET-2026-10-HY',
-    settlementStage: 'CLAIM_CREATED',
-    claimId: 'CLM-2026-10-HY',
-    claimVersion: 2,
-    claimStatus: 'PARTIALLY_ACCEPTED',
-    paymentId: 'PAY-CLM-2026-10-HY-v2',
-    paymentStatus: 'CREATED',
+    settlementStage: 'VALIDATING',
+    financeHandoffStatus: 'NOT_READY',
     period: 'Oktabr 2026',
     carrier: 'Uzbekistan Airways',
     transportMode: 'AIR',
     lines: 628,
     requestedAmount: 986400000,
-    acceptedAmount: 942600000,
+    acceptedAmount: 0,
     deadline: '10.11.2026',
     submittedAt: '09.11.2026 09:15 · ERI',
     paymentDueAt: '23.11.2026 · 10 ish kuni',
@@ -1806,6 +1807,7 @@ const settlements = ref<Settlement[]>([
   {
     id: 'SET-2026-10-AV',
     settlementStage: 'VALIDATING',
+    financeHandoffStatus: 'NOT_READY',
     period: 'Oktabr 2026',
     carrier: 'Hududiy avtovokzallar',
     transportMode: 'BUS',
@@ -1822,7 +1824,6 @@ const filteredSettlements = computed(() => settlementStatusFilter.value === 'Bar
   ? settlements.value
   : settlements.value.filter((settlement) => (settlement.claimStatus ?? settlement.settlementStage) === settlementStatusFilter.value))
 const totalRequested = computed(() => settlements.value.reduce((sum, item) => sum + item.requestedAmount, 0))
-const totalAccepted = computed(() => settlements.value.reduce((sum, item) => sum + item.acceptedAmount, 0))
 
 function createSettlementDraft() {
   if (settlements.value.some((item) => item.id === 'SET-2026-11-DRAFT')) {
@@ -1849,15 +1850,15 @@ const apiDefinitions: ApiDefinition[] = [
   {
     id: 'contingent',
     method: 'POST',
-    endpoint: '/v1/contingent-events',
+    endpoint: '/v1/beneficiary-events',
     title: 'Kontingent eventlari',
     description: 'Barcha manba idoralar, toifalar va huquq o‘zgarishlari uchun bitta kontrakt.',
     consumers: '6 ta manba tashkilot',
-    variants: ['RIGHT_GRANTED', 'RIGHT_CORRECTED', 'RIGHT_REVOKED', 'RIGHT_REINSTATED'],
+    variants: ['RIGHT_GRANTED', 'RIGHT_CORRECTED', 'RIGHT_REVOKED', 'RIGHT_REINSTATED', '/v1/beneficiary-snapshots/batches'],
     sample: `{
   "event_id": "01JX...",
   "event_type": "RIGHT_GRANTED",
-  "source": { "organization_code": "DEFENCE_MINISTRY", "record_version": 4 },
+  "source_record": { "id": "DEF-88421", "version": 4 },
   "person": { "pinfl": "**************" },
   "right": {
     "technical_profile_code": "C09",
@@ -1869,11 +1870,11 @@ const apiDefinitions: ApiDefinition[] = [
   {
     id: 'eligibility',
     method: 'POST',
-    endpoint: '/v1/eligibility/check-and-reserve',
+    endpoint: '/v1/entitlements/check-and-reserve',
     title: 'Moslik va rezerv qarori',
     description: 'Rail, air va bus uchun bir xil request; farq transport_mode va policy orqali boshqariladi.',
     consumers: 'Barcha tashuvchilar va kassalar',
-    variants: ['CHECK_ONLY', 'CHECK_AND_RESERVE', 'MANUAL_AUTHORIZATION'],
+    variants: ['/v1/eligibility/check', '/v1/entitlements/check-and-reserve', 'MANUAL_AUTHORIZATION'],
     sample: `{
   "intent": "CHECK_AND_RESERVE",
   "applicant": { "role": "BENEFICIARY" },
@@ -1899,11 +1900,11 @@ const apiDefinitions: ApiDefinition[] = [
   {
     id: 'ticket',
     method: 'POST',
-    endpoint: '/v1/ticket-events',
-    title: 'Chipta lifecycle eventlari',
-    description: 'Har bir chipta holati va barcha transport turlari yagona event envelope’da.',
+    endpoint: '/v1/tickets/issue',
+    title: 'Chipta issue va lifecycle family',
+    description: 'Barcha transportlar uchun umumiy schema; rezervni commit qiluvchi issue va keyingi eventlar invariantiga ko‘ra ajratilgan.',
     consumers: 'Temir yo‘l, aviakompaniya va avtovokzallar',
-    variants: ['ISSUED', 'RETURNED', 'VOIDED', 'RESCHEDULED', 'TRAVELLED', 'NO_SHOW'],
+    variants: ['/v1/tickets/{ticket_id}/events', '/v1/ticket-events/batches', '/v1/travel-evidence'],
     sample: `{
   "event_id": "TEV-9431",
   "event_type": "ISSUED",
@@ -1929,11 +1930,11 @@ const apiDefinitions: ApiDefinition[] = [
   {
     id: 'settlement',
     method: 'POST',
-    endpoint: '/v1/settlement-batches',
-    title: 'Oylik hisob-kitob',
-    description: 'Barcha tashuvchilar uchun yagona batch, line, claim va payment-status modeli.',
+    endpoint: '/v1/settlements',
+    title: 'Reyestr, immutable claim va moliya handoff',
+    description: 'Barcha tashuvchilar uchun yagona settlement aggregate; line, attachment, submit va claim handoff aniq action endpointlarida.',
     consumers: 'Tashuvchilar, Agentlik va moliya AT',
-    variants: ['DRAFT', 'SUBMIT', 'CORRECT', 'PAYMENT_STATUS'],
+    variants: ['/v1/settlements/{id}/lines/batch', '/v1/settlements/{id}/attachments', '/v1/settlements/{id}/submit', '/v1/claims/{claim_id}/payment-submit'],
     sample: `{
   "period": "2026-10",
   "carrier_id": "UTY",
@@ -1947,12 +1948,14 @@ const apiDefinitions: ApiDefinition[] = [
   "lines": [
     {
       "ticket_id": "UTY-78394510",
-      "settlement_basis": "PENDING_D03",
-      "actual_amount": 248000,
-      "preferential_amount": 0
+      "settlement_basis": "<approved_settlement_basis_code>",
+      "actual_amount_minor": 24800000,
+      "preferential_amount_minor": 0,
+      "currency": "UZS",
+      "currency_exponent": 2
     }
   ],
-  "payment_channel": "MONTHLY_CLAIM"
+  "handoff_boundary": "FINANCE_SYSTEM_ACK"
 }`,
   },
   {
@@ -2029,8 +2032,8 @@ const architectureModules = [
   {
     icon: WalletCards,
     title: 'Settlement',
-    description: 'Oylik reyestr, claim versiyasi va payment status.',
-    owns: 'settlement · claim · payment_event',
+    description: 'Oylik reyestr, immutable claim va tashqi moliya ATiga idempotent handoff. Bank transferi tashqi tizimda.',
+    owns: 'settlement · claim · finance_handoff',
   },
   {
     icon: Activity,
@@ -2050,13 +2053,106 @@ const decisionGates = [
   { id: 'D-07', label: 'Oylik va Social Card real-time kanal chegarasi' },
 ]
 
+const mvpInScope = [
+  'Versiyalangan ma’lumotnoma va policylar, D-01…D-06 runtime gate’lari',
+  '6 manbadan snapshot/delta kontingent, identity resolution va huquq tarixi',
+  'Eligibility, atomar global ledger, rezerv, hamroh va manual fallback',
+  'Chipta issue/lifecycle, dalillar, qaytarish review va reconciliation',
+  'Oylik reyestr, line-level tekshiruv, ERI va immutable claim versiyasi',
+  'Qabul qilingan claimni moliya ATiga idempotent handoff va ACK/NACK',
+]
+
+const mvpOutOfScope = [
+  'Bank hisobida pul o‘tkazmasini bajarish va treasury/bank reconciliation',
+  'PAYMENT_ORDER_CREATED/PROCESSING/PAID/REVERSED post-payment webhook va monitoring UI',
+  '2027-01-01 Social Card real-time payment kanalini productionda faollashtirish',
+  'Tashuvchi inventari, joy tanlash va oddiy tijoriy tarif engine’i',
+]
+
+const mvpRoleStreams = [
+  {
+    code: 'LEGAL_PRODUCT_OWNER',
+    role: 'Huquqiy va mahsulot egasi',
+    responsibility: 'Normativ talqin, scope, D-gate ownerlari va policy release’ini tasdiqlaydi.',
+    deliverable: 'D-01…D-06 imzolangan qarorlari · REQ traceability · acceptance sign-off',
+  },
+  {
+    code: 'REFERENCE_STEWARD + APPROVER',
+    role: 'Ma’lumotnoma stewardi va tasdiqlovchi',
+    responsibility: 'Katalog/policy revisionlarini maker-checker tartibida tayyorlaydi va ERI bilan publish qiladi.',
+    deliverable: 'Effective-dated revision · ownership/relation · approval/audit',
+  },
+  {
+    code: 'SOURCE_PUBLISHER + REGISTRY_OPERATOR',
+    role: 'Manba idora va registr operatori',
+    responsibility: 'Snapshot/delta yuboradi; ACK/NACK, quarantine, conflict va data-quality holatlarini boshqaradi.',
+    deliverable: 'Authoritative huquq tarixi · high-water mark · reconciliation',
+  },
+  {
+    code: 'CARRIER_ELIGIBILITY + ISSUER',
+    role: 'Tashuvchi kassasi va issuer',
+    responsibility: 'Minimal PII bilan moslik/rezerv so‘raydi; o‘z chiptasi issue va lifecycle eventlarini yuboradi.',
+    deliverable: 'Reservation commit · ticket/segment · evidence va lost-ACK recovery',
+  },
+  {
+    code: 'CASE_REVIEWER',
+    role: 'Manual va qaytarish revieweri',
+    responsibility: 'Hujjat case’i, bir martalik authorization va qualifying nonuse bo‘yicha vakolatli qaror beradi.',
+    deliverable: 'ERI/auditli decision · token hash · restore yoki fail-closed natija',
+  },
+  {
+    code: 'CARRIER_FINANCE',
+    role: 'Tashuvchi moliyachisi',
+    responsibility: 'O‘z reyestri, qatorlari va normativ ilovalarini tayyorlab ERI bilan yuboradi.',
+    deliverable: 'Settlement batch · evidence completeness · correction/resubmit',
+  },
+  {
+    code: 'AGENCY_FINANCE_CHECKER + APPROVER',
+    role: 'Agentlik moliya tekshiruvchisi va tasdiqlovchi',
+    responsibility: 'Line validation/reconciliationni maker-checker usulida yakunlab immutable claim yaratadi.',
+    deliverable: 'Accepted claim version · payload hash · moliya handoff authorization',
+  },
+  {
+    code: 'INTEGRATION_OPS + SRE + SECURITY',
+    role: 'Integratsiya, ekspluatatsiya va xavfsizlik',
+    responsibility: 'Client/certifikat, queue, outbox/inbox, SLA, monitoring, DR va PII nazoratini yuritadi.',
+    deliverable: 'mTLS/OIDC · SLO dashboard · runbook · backup/restore evidence',
+  },
+  {
+    code: 'AUDITOR + INSPECTOR',
+    role: 'Auditor va nazorat organi',
+    responsibility: 'Read-only dalil paketlari, normativ snapshot va WORM audit izini tekshiradi.',
+    deliverable: 'Evidence export · appeal/reconciliation trace · access audit',
+  },
+]
+
+const mvpPhases = [
+  { id: 'P0', period: '2–3 kun', title: 'Contract va gate freeze', owner: 'Legal/Product + Architect', exit: 'OpenAPI/event schema, D-owner, threat model va scope sign-off' },
+  { id: 'P1', period: '1-hafta', title: 'Platforma va master-data', owner: 'Backend + DevOps + Security', exit: 'DB migration, IAM, audit/outbox va approved-effective reference API' },
+  { id: 'P2', period: '1–2-hafta', title: 'Kontingent registri', owner: 'Backend + Data + Source teams', exit: 'Snapshot/delta, bitemporal rights, quarantine va source certification' },
+  { id: 'P3', period: '2–3-hafta', title: 'Eligibility va global ledger', owner: 'Backend + Policy + Carrier teams', exit: 'Atomic reserve, TTL/release, companion/manual va concurrency testlari' },
+  { id: 'P4', period: '3–4-hafta', title: 'Chipta va review', owner: 'Backend + Frontend + QA', exit: 'Issue/lifecycle, evidence, return/reschedule va reconciliation E2E' },
+  { id: 'P5', period: '4–5-hafta', title: 'Reyestr, claim va handoff', owner: 'Finance + Backend + Integration', exit: 'Immutable claim, ERI, maker-checker va moliya AT ACK/NACK' },
+  { id: 'P6', period: '5–6-hafta', title: 'Hardening va pilot', owner: 'QA + SRE + Security + Business', exit: 'Load/security/DR, carrier certification va go-live sign-off' },
+]
+
+const mvpAcceptanceGates = [
+  'Har bir write command: Idempotency-Key + organization scope + append-only audit + outbox',
+  'Huquq, ledger, rezerv, ticket, claim va handoff alohida typed aggregate/state-machine',
+  '100 parallel rezerv so‘rovida bir entitlement leg faqat bir marta HELD/CONSUMED',
+  'D-gate ochiq policy productionda PUBLISHED bo‘lmaydi; UI demo natijasi production fakt emas',
+  'Claim faqat tasdiqlangan settlement_basis va tekshirilgan ticket line’dan tuziladi',
+  'Handoff claim_id + version + payload_hash + accepted_amountga aynan bog‘lanadi',
+  'Role/org isolation, PII log scan, contract/integration/E2E va restore drill o‘tadi',
+]
+
 const reportingScopes = [
   'Faol/nofaol kontingent va huquqiy asos',
   'Yil kesimida foydalanilgan/foydalanilmagan limit',
   'Transport turi va tashuvchi kesimi',
   'ISSUED, TRAVELLED, RETURNED va RESCHEDULED chipta holatlari',
-  'Amaldagi, imtiyozli, hisoblangan, qabul qilingan va to‘langan summa',
-  'Bir haftalik qaytarish hamda 10 ish kunlik to‘lov SLA',
+  'Amaldagi, imtiyozli, hisoblangan, qabul qilingan summa va handoff holati',
+  'Bir haftalik qaytarish hamda hujjatlar kelgach 10 ish kunlik normativ SLA',
   'Manual case, missing evidence, dublikat va rezerv konfliktlari',
 ]
 
@@ -2067,7 +2163,7 @@ const auditEvidenceFields = [
   'before_hash · after_hash · payload_hash',
   'policy/rule version · reason code',
   'manual reviewer/approver chain',
-  'ticket · claim · payment · reconciliation ID',
+  'ticket · claim · finance_handoff · reconciliation ID',
 ]
 
 const referenceFamilyByPageKey: Record<string, ReferenceCatalogFamily> = {
@@ -2106,7 +2202,7 @@ const filteredReferenceEntries = computed(() => {
       entry.legalBasis ?? '',
       entry.owner ?? '',
       ...Object.entries(entry.attributes ?? {}).flatMap(([key, value]) => [key, value]),
-    ].some((value) => value.toLocaleLowerCase().includes(query))
+    ].some((value) => String(value).toLocaleLowerCase().includes(query))
     const matchesKind = referenceKindFilter.value === 'ALL' || entry.kind === referenceKindFilter.value
     const matchesStatus = referenceStatusFilter.value === 'ALL' || entry.status === referenceStatusFilter.value
     return matchesQuery && matchesKind && matchesStatus
@@ -2144,6 +2240,12 @@ function referenceKindLabel(kind: ReferenceEntry['kind']) {
   return kind === 'NORMATIVE_REFERENCE' ? 'Normativ mazmun' : 'Texnik konfiguratsiya'
 }
 
+function formatReferenceAttribute(value: unknown) {
+  if (Array.isArray(value)) return value.join(', ')
+  if (value && typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
 function selectReferenceCatalog(id: string) {
   selectedReferenceCatalogId.value = id
   referenceEntrySearch.value = ''
@@ -2156,14 +2258,14 @@ const pipelineSteps = computed(() => [
   { title: 'Moslik', value: '1 426', caption: 'target demo', icon: ShieldCheck, route: '/apps/transport-benefits/eligibility', tone: 'primary' },
   { title: 'Rezerv', value: '319', caption: 'target demo', icon: Zap, route: '/apps/transport-benefits/eligibility', tone: 'warning' },
   { title: 'Chiptalar', value: '1 107', caption: 'target demo', icon: TicketCheck, route: '/apps/transport-benefits/ticket-events', tone: 'primary' },
-  { title: 'Claim nomzodi', value: '3,47 mlrd', caption: 'D-03 sandbox', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'success' },
+  { title: 'Claim → handoff', value: 'BLOCKED', caption: 'D-03 fail-closed', icon: CircleDollarSign, route: '/apps/transport-benefits/settlements', tone: 'warning' },
 ])
 
 const dashboardMetrics = computed(() => [
   { label: 'Faol kontingent · demo', value: '24 812', delta: '6 rasmiy manba', icon: UsersRound, bars: [42, 56, 48, 64, 62, 74, 81] },
   { label: 'API so‘rovlari · demo', value: '3 284', delta: 'go-live ssenariysi', icon: Activity, bars: [38, 45, 62, 54, 72, 68, 88] },
   { label: 'Faol rezervlar · demo', value: '319', delta: 'atomar global ledger', icon: Clock3, bars: [71, 62, 78, 57, 69, 51, 45] },
-  { label: 'Claim nomzodi · demo', value: '3,47 mlrd', delta: 'D-03 sandbox target', icon: Banknote, bars: [32, 41, 46, 55, 61, 72, 84] },
+  { label: 'Claimga handoff · target', value: '0', delta: 'D-03 ochiq · fail-closed', icon: Banknote, bars: [8, 8, 8, 8, 8, 8, 8] },
 ])
 
 function transportLabel(mode: TransportMode) {
@@ -2190,10 +2292,10 @@ function ticketStatusClass(status: TicketEventStatus) {
   return 'border-destructive/20 bg-destructive/10 text-destructive'
 }
 
-function settlementStatusClass(status?: ClaimStatus | PaymentStatus | SettlementStage) {
-  if (status === 'ACCEPTED' || status === 'PAID' || status === 'RECONCILED' || status === 'CLOSED') return 'border-primary/20 bg-primary/10 text-primary'
-  if (status === 'VALIDATING' || status === 'PROCESSING' || status === 'SUBMITTED' || status === 'PAYMENT_ORDER_CREATED') return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300'
-  if (status === 'PARTIALLY_ACCEPTED' || status === 'PARTIALLY_PAID' || status === 'RETRYING') return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+function settlementStatusClass(status?: ClaimStatus | FinanceHandoffStatus | SettlementStage) {
+  if (status === 'ACCEPTED' || status === 'ACKNOWLEDGED' || status === 'CLOSED') return 'border-primary/20 bg-primary/10 text-primary'
+  if (status === 'VALIDATING' || status === 'QUEUED' || status === 'SUBMITTED') return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+  if (status === 'PARTIALLY_ACCEPTED' || status === 'RETRYING' || status === 'CREATED') return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
   return 'border-border bg-muted text-muted-foreground'
 }
 
@@ -2217,6 +2319,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
     RIGHT_REINSTATED: 'Huquq tiklandi',
     ISSUED: 'Chipta berildi',
     RETURNED: 'Qaytarildi',
+    CARRIER_CANCELLED: 'Tashuvchi bekor qildi',
     VOIDED: 'Bekor qilindi',
     RESCHEDULED: 'Boshqa sanaga ko‘chirildi',
     TRAVELLED: 'Foydalanildi',
@@ -2237,7 +2340,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="flex shrink-0 items-center gap-2">
           <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">
             <Boxes class="h-3.5 w-3.5" />
-            VMQ-440 konseptual MVP · D-01…D-07 OPEN
+            MVP target · moliya ATiga handoffgacha · D-01…D-06 OPEN
           </span>
         </div>
       </div>
@@ -2270,7 +2373,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div>
             <p class="text-sm font-semibold text-foreground">Normativ asos — VMQ-440</p>
             <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
-              Tartib 2026-yil 1-oktabrdan. Qarorda yopiq “11 toifa” katalogi yo‘q; C01–C11 faqat texnik normalizatsiya, source ownership va subtoifalar D-01 orqali tasdiqlanadi.
+              Tartib 2026-yil 1-oktabrdan. Qarorda yopiq “11 toifa” katalogi yo‘q; C01–C11 faqat texnik normalizatsiya. Bu ekran backendga ulanmagan prototip: D-01…D-06 yopilmaguncha natijalar production huquqi yoki qoplash asosi emas.
             </p>
           </div>
         </div>
@@ -2315,7 +2418,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
             <div class="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5">
               <div>
                 <h2 class="text-sm font-semibold text-foreground">MVP operatsion oqimi</h2>
-                <p class="mt-0.5 text-xs text-muted-foreground">Bitta huquqning kontingentdan qoplashgacha bo‘lgan yo‘li</p>
+                <p class="mt-0.5 text-xs text-muted-foreground">Kontingentdan immutable claim va moliya ATiga handoffgacha</p>
               </div>
               <RouterLink
                 to="/apps/transport-benefits/integrations"
@@ -2361,7 +2464,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <div class="min-w-0">
                   <p class="text-sm font-medium text-foreground">Umumlashtirish prinsipi</p>
                   <p class="mt-1 text-xs leading-5 text-muted-foreground">
-                    Tashkilot, toifa, transport yoki event uchun yangi endpoint va jadval ochilmaydi. Farqlar klassifikator, policy va event_type orqali boshqariladi; huquq, ledger, chipta va claim esa o‘z invariantini saqlaydi.
+                    Bir xil biznes operatsiyalar tashkilot, toifa yoki transport bo‘yicha ko‘paytirilmaydi: umumiy contract family, klassifikator va policy ishlaydi. Biroq huquq, ledger, rezerv, chipta, claim va handoff alohida typed aggregate hamda invariantlarga ega.
                   </p>
                 </div>
               </div>
@@ -2397,7 +2500,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   <ShieldCheck class="h-4 w-4 text-primary" />
                   <div>
                     <p class="text-sm font-medium">Eligibility API</p>
-                    <p class="text-xs text-muted-foreground">check-and-reserve · sandbox</p>
+                    <p class="text-xs text-muted-foreground">check + atomic reserve · target contract</p>
                   </div>
                 </div>
                 <span class="text-xs font-medium text-primary">MVP</span>
@@ -2417,10 +2520,10 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   <Landmark class="h-4 w-4 text-amber-600" />
                   <div>
                     <p class="text-sm font-medium">Moliya adapteri</p>
-                    <p class="text-xs text-muted-foreground">Sandbox rejimi</p>
+                    <p class="text-xs text-muted-foreground">Immutable claim handoff · target</p>
                   </div>
                 </div>
-                <span class="text-xs font-medium text-amber-700 dark:text-amber-300">Test</span>
+                <span class="text-xs font-medium text-amber-700 dark:text-amber-300">MVP boundary</span>
               </div>
             </div>
           </section>
@@ -2430,7 +2533,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p class="font-mono text-xs font-semibold text-primary">01.10.2026</p>
             <p class="mt-1 text-sm font-semibold">VMQ-440 yadro ishga tushishi</p>
-            <p class="mt-1 text-xs leading-5 text-muted-foreground">YAMIH, 6 manba integratsiyasi, check-and-reserve, ticket event va Social Card carrier sertifikatsiyasi.</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">YAMIH, 6 manba integratsiyasi, atomic reserve va chipta lifecycle. Social Card production kanali MVPdan tashqarida.</p>
           </div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
             <p class="font-mono text-xs font-semibold text-primary">10.11.2026</p>
@@ -2448,7 +2551,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5">
             <div>
               <h2 class="text-sm font-semibold text-foreground">So‘nggi kontingent eventlari</h2>
-              <p class="mt-0.5 text-xs text-muted-foreground">Barcha tashkilotlar uchun bitta kanonik oqim</p>
+              <p class="mt-0.5 text-xs text-muted-foreground">Barcha manbalar uchun bitta kanonik contract family · demo dataset</p>
             </div>
             <RouterLink to="/apps/transport-benefits/contingents" class="text-xs font-medium text-primary hover:underline">Barchasini ko‘rish</RouterLink>
           </div>
@@ -2483,6 +2586,92 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 
       </template>
 
+      <template v-else-if="isMvpPlan">
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(19rem,0.6fr)]">
+          <section class="rounded-xl border border-primary/20 bg-primary/[0.045] p-5 shadow-sm">
+            <div class="flex items-start gap-3">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><ListChecks class="h-5 w-5" /></div>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-primary">MVP-1 chegarasi</p>
+                <h2 class="mt-1 text-lg font-semibold">Kontingentdan moliya ATiga ishonchli handoffgacha</h2>
+                <p class="mt-2 max-w-4xl text-xs leading-5 text-muted-foreground">Markaziy modul reyestrni tekshiradi, ERI bilan imzolangan immutable claim versiyasini yaratadi va aynan shu versiyani moliya ATiga idempotent yuboradi. Bankdagi pul harakati tashqi moliya/bank tizimining javobgarligi.</p>
+              </div>
+            </div>
+            <div class="mt-4 grid gap-2 sm:grid-cols-2">
+              <div v-for="item in mvpInScope" :key="item" class="flex items-start gap-2 rounded-lg border border-primary/15 bg-background/80 p-3 text-xs leading-5">
+                <CheckCircle2 class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>{{ item }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-5 shadow-sm">
+            <div class="flex items-center gap-2"><AlertTriangle class="h-4 w-4 text-amber-700 dark:text-amber-300" /><h2 class="text-sm font-semibold">MVP-1 tarkibida emas</h2></div>
+            <div class="mt-3 space-y-2">
+              <div v-for="item in mvpOutOfScope" :key="item" class="rounded-lg border border-amber-500/20 bg-background/70 p-3 text-xs leading-5 text-muted-foreground">{{ item }}</div>
+            </div>
+            <div class="mt-4 rounded-lg border border-border bg-background/70 p-3 text-xs leading-5">
+              <strong class="text-foreground">Muhim:</strong>
+              <span class="text-muted-foreground"> finance handoff texnik ACK/NACKda tugaydi; post-payment status kontrakti faqat keyingi bosqich uchun hujjatlashtiriladi, runtime listener va 2027 Social Card faollashtirilmaydi.</span>
+            </div>
+          </section>
+        </div>
+
+        <section class="rounded-xl border border-border bg-card shadow-sm">
+          <div class="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div><h2 class="text-sm font-semibold">Rollar kesimidagi ish oqimlari</h2><p class="mt-1 text-xs text-muted-foreground">UI permissionlari token claimidan, barcha command vakolatlari esa backenddagi RBAC + organization/purpose ABAC’dan tekshiriladi.</p></div>
+            <span class="rounded-md border border-primary/20 bg-primary/10 px-2.5 py-1.5 font-mono text-[11px] text-primary">maker-checker · least privilege · no cross-org PII</span>
+          </div>
+          <div class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+            <article v-for="stream in mvpRoleStreams" :key="stream.code" class="rounded-lg border border-border bg-background p-4">
+              <p class="font-mono text-[10px] font-semibold text-primary">{{ stream.code }}</p>
+              <h3 class="mt-1 text-sm font-semibold">{{ stream.role }}</h3>
+              <p class="mt-2 text-xs leading-5 text-muted-foreground">{{ stream.responsibility }}</p>
+              <div class="mt-3 border-t border-border pt-3"><p class="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Natija</p><p class="mt-1 text-xs leading-5">{{ stream.deliverable }}</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="rounded-xl border border-border bg-card shadow-sm">
+          <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 class="text-sm font-semibold">AI agent bajaradigan ketma-ket roadmap</h2><p class="mt-1 text-xs text-muted-foreground">Har phase avvalgisining contract va migration natijasiga bog‘liq; ochiq D-gate uydirma qoida bilan aylanib o‘tilmaydi.</p></div>
+            <RouterLink to="/apps/transport-benefits/integrations" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">Servis arxitekturasi <ArrowRight class="h-3.5 w-3.5" /></RouterLink>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[980px] text-left text-sm">
+              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Phase</th><th class="px-4 py-2.5 font-medium">Davomiylik</th><th class="px-4 py-2.5 font-medium">Ish paketi</th><th class="px-4 py-2.5 font-medium">Mas’ul oqim</th><th class="px-4 py-2.5 font-medium">Exit criteria</th></tr></thead>
+              <tbody class="divide-y divide-border">
+                <tr v-for="phase in mvpPhases" :key="phase.id" class="hover:bg-muted/30">
+                  <td class="px-4 py-3"><span class="rounded-md border border-primary/20 bg-primary/10 px-2 py-1 font-mono text-xs font-semibold text-primary">{{ phase.id }}</span></td>
+                  <td class="px-4 py-3 text-xs">{{ phase.period }}</td>
+                  <td class="px-4 py-3 font-medium">{{ phase.title }}</td>
+                  <td class="px-4 py-3 text-xs text-muted-foreground">{{ phase.owner }}</td>
+                  <td class="px-4 py-3 text-xs leading-5">{{ phase.exit }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
+          <section class="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><h2 class="text-sm font-semibold">MVP qabul gate’lari</h2></div>
+            <div class="mt-3 grid gap-2 sm:grid-cols-2">
+              <div v-for="gate in mvpAcceptanceGates" :key="gate" class="flex items-start gap-2 rounded-lg border border-border bg-muted/25 p-3 text-xs leading-5">
+                <BadgeCheck class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" /><span>{{ gate }}</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div class="flex items-center gap-2"><Database class="h-4 w-4 text-primary" /><h2 class="text-sm font-semibold">AI agent uchun kanonik topshiriq</h2></div>
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">To‘liq backend schema, OpenAPI, state-machine, role/permission, test matrix, DevOps va Definition of Done repo ichidagi hujjatda beriladi.</p>
+            <div class="mt-3 rounded-lg border border-border bg-muted/35 p-3 font-mono text-[11px] leading-5">docs/vmq-440-mvp-ai-agent-implementation-plan.md</div>
+            <div class="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.045] p-3 text-xs leading-5 text-muted-foreground"><strong class="text-foreground">Stop condition:</strong> D-01…D-06dan biriga bog‘liq normativ qiymat tasdiqlanmagan bo‘lsa agent production policy yaratmaydi; capability fail-closed qoladi.</div>
+          </section>
+        </div>
+      </template>
+
       <template v-else-if="isContingents">
         <div class="rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2491,13 +2680,13 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <Code2 class="h-4.5 w-4.5" />
               </div>
               <div class="min-w-0">
-                <p class="text-sm font-medium text-foreground">POST <span class="font-mono text-primary">/v1/contingent-events</span></p>
-                <p class="mt-0.5 text-xs text-muted-foreground">6 rasmiy manba uchun yagona endpoint · toifa/source ownership D-01 tasdig‘ida</p>
+                <p class="text-sm font-medium text-foreground">POST <span class="font-mono text-primary">/v1/beneficiary-events</span></p>
+                <p class="mt-0.5 text-xs text-muted-foreground">6 rasmiy manba uchun yagona delta envelope · snapshot batch shu resource familyda · D-01 fail-closed</p>
               </div>
             </div>
             <Button @click="isContingentDialogOpen = true">
               <Plus class="h-4 w-4" />
-              Event yuborish
+              Sandbox event
             </Button>
           </div>
         </div>
@@ -2601,8 +2790,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="flex items-center gap-3">
             <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
             <div>
-              <p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/eligibility/check-and-reserve</span></p>
-              <p class="mt-0.5 text-xs text-muted-foreground">Bitta endpoint · barcha toifa va transportlar · CHECK_ONLY yoki CHECK_AND_RESERVE</p>
+              <p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/entitlements/check-and-reserve</span></p>
+              <p class="mt-0.5 text-xs text-muted-foreground">Barcha toifa va transportlar uchun bitta atomic command; read-only tekshiruv <span class="font-mono">/v1/eligibility/check</span></p>
             </div>
           </div>
         </div>
@@ -2703,15 +2892,15 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
               <Button type="submit" class="w-full" :disabled="eligibilityLoading">
                 <RefreshCw v-if="eligibilityLoading" class="h-4 w-4 animate-spin" />
                 <ShieldCheck v-else class="h-4 w-4" />
-                {{ eligibilityLoading ? 'Tekshirilmoqda...' : 'Moslikni tekshirish' }}
+                {{ eligibilityLoading ? 'Simulyatsiya...' : 'Sandboxda tekshirish' }}
               </Button>
             </form>
           </section>
 
           <section class="rounded-xl border border-border bg-card shadow-sm">
             <div class="border-b border-border px-4 py-3.5">
-              <h2 class="text-sm font-semibold">Qaror natijasi</h2>
-              <p class="mt-0.5 text-xs text-muted-foreground">Server policy va ledger holati asosida hisoblaydi.</p>
+              <h2 class="text-sm font-semibold">Target qaror kontrakti · sandbox</h2>
+              <p class="mt-0.5 text-xs text-muted-foreground">Hozir browser demo policy ishlaydi; productionda server faqat PUBLISHED policy, authoritative snapshot va atomar DB ledger bilan hisoblaydi.</p>
             </div>
             <div v-if="eligibilityLoading" class="flex min-h-[25rem] flex-col items-center justify-center gap-3 p-8 text-center">
               <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -2738,7 +2927,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                     </div>
                     <div>
                       <p class="text-xs font-medium text-muted-foreground">{{ eligibilityResult.id }}</p>
-                      <h3 class="mt-1 text-lg font-semibold">{{ eligibilityResult.result === 'ELIGIBLE' ? 'Imtiyoz tasdiqlandi' : eligibilityResult.result === 'MANUAL_DOCUMENT_REQUIRED' ? 'Tasdiqlovchi hujjat talab qilinadi' : 'Ushbu safar uchun huquq tasdiqlanmadi' }}</h3>
+                      <h3 class="mt-1 text-lg font-semibold">{{ eligibilityResult.result === 'ELIGIBLE' ? 'Sandbox natijasi: ELIGIBLE' : eligibilityResult.result === 'MANUAL_DOCUMENT_REQUIRED' ? 'Sandbox: tasdiqlovchi hujjat talab qilinadi' : 'Sandbox: huquq tasdiqlanmadi' }}</h3>
                       <p class="mt-1 text-sm text-muted-foreground">{{ eligibilityResult.person }} · {{ eligibilityResult.pinfl }}</p>
                     </div>
                   </div>
@@ -2863,8 +3052,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
           <div class="flex items-center gap-3">
             <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
             <div>
-              <p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/ticket-events</span></p>
-              <p class="mt-0.5 text-xs text-muted-foreground">Barcha tashuvchi, transport va lifecycle holatlari uchun yagona event API</p>
+              <p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/tickets/issue</span> · <span class="font-mono text-primary">/v1/tickets/{ticket_id}/events</span></p>
+              <p class="mt-0.5 text-xs text-muted-foreground">Bitta umumiy ticket schema; rezervni atomar commit qiluvchi issue va keyingi lifecycle commandlari invariantiga ko‘ra ajratilgan</p>
             </div>
           </div>
         </div>
@@ -2872,7 +3061,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <section class="rounded-xl border border-border bg-card shadow-sm">
           <div class="border-b border-border px-4 py-3.5">
             <h2 class="text-sm font-semibold">Chipta eventini yuborish</h2>
-            <p class="mt-0.5 text-xs text-muted-foreground">Event turi payload orqali beriladi; alohida issue/return endpointlari yo‘q. ISSUED demo: <span class="font-mono">RSV-HELD-DEMO-001 · 30202012345670</span>.</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">ISSUED rezervni commit qiladi; keyingi RETURNED/CARRIER_CANCELLED/VOIDED/RESCHEDULED/TRAVELLED/NO_SHOW bir xil versioned event envelope’dan foydalanadi. Demo: <span class="font-mono">RSV-HELD-DEMO-001 · 30202012345670</span>.</p>
           </div>
           <form class="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4" @submit.prevent="submitTicketEvent">
             <label class="space-y-1.5"><span class="text-xs font-medium">Chipta ID</span><Input v-model="ticketDraft.ticketId" placeholder="UTY-78394510" /></label>
@@ -2936,7 +3125,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="flex flex-col gap-3 rounded-xl border border-primary/15 bg-primary/[0.045] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-3">
             <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Code2 class="h-4.5 w-4.5" /></div>
-            <div><p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/settlement-batches</span></p><p class="mt-0.5 text-xs text-muted-foreground">Barcha tashuvchilar uchun yagona batch, line va claim modeli</p></div>
+            <div><p class="text-sm font-medium">POST <span class="font-mono text-primary">/v1/settlements</span></p><p class="mt-0.5 text-xs text-muted-foreground">Yagona settlement aggregate · lines/batch · attachments · submit · immutable claim handoff</p></div>
           </div>
           <Button @click="createSettlementDraft"><Plus class="h-4 w-4" />Yangi davr drafti</Button>
         </div>
@@ -2944,18 +3133,18 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Reyestr qatorlari</p><p class="mt-1 text-2xl font-semibold">6 636</p><p class="mt-1 text-xs text-primary">3 transport turi</p></div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Claim candidate · sandbox</p><p class="mt-1 text-2xl font-semibold">{{ (totalRequested / 1_000_000_000).toFixed(2) }} mlrd</p><p class="mt-1 text-xs text-muted-foreground">D-03 metodikasi kutilmoqda</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Accepted target · demo</p><p class="mt-1 text-2xl font-semibold text-primary">{{ (totalAccepted / 1_000_000_000).toFixed(2) }} mlrd</p><p class="mt-1 text-xs text-muted-foreground">{{ Math.round(totalAccepted / totalRequested * 100) }}% target ssenariy</p></div>
+          <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 shadow-sm"><p class="text-xs text-muted-foreground">Handoffga tayyor</p><p class="mt-1 text-2xl font-semibold text-amber-700 dark:text-amber-300">0</p><p class="mt-1 text-xs text-muted-foreground">D-03 ochiq · fail-closed</p></div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><p class="text-xs text-muted-foreground">Birinchi reyestr muddati</p><p class="mt-1 text-2xl font-semibold">10.11.2026</p><p class="mt-1 text-xs text-amber-700 dark:text-amber-300">Oktabr 2026 target ssenariysi</p></div>
         </div>
 
         <section class="rounded-xl border border-border bg-card shadow-sm">
           <div class="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 class="text-sm font-semibold">Oylik settlementlar</h2><p class="mt-0.5 text-xs text-muted-foreground">Claim eligibility so‘rovlari emas, yaroqli chipta qatorlaridan hisoblanadi.</p></div>
+            <div><h2 class="text-sm font-semibold">Oylik reyestr va claim candidate’lar</h2><p class="mt-0.5 text-xs text-muted-foreground">Hisob eligibility so‘rovlari sonidan emas, tasdiqlangan settlement_basisli yaroqli chipta qatorlaridan tuziladi. Hozirgi qatorlar demo va PRE-CLAIM.</p></div>
             <select v-model="settlementStatusFilter" :class="fieldClass" class="w-auto min-w-48"><option>Barchasi</option><option value="DRAFT">Settlement · DRAFT</option><option value="VALIDATING">Settlement · VALIDATING</option><option value="SUBMITTED">Claim · SUBMITTED</option><option value="PARTIALLY_ACCEPTED">Claim · PARTIALLY_ACCEPTED</option><option value="ACCEPTED">Claim · ACCEPTED</option></select>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full min-w-[1640px] text-left text-sm">
-              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Settlement / davr</th><th class="px-4 py-2.5 font-medium">Claim / immutable versiya</th><th class="px-4 py-2.5 font-medium">Tashuvchi</th><th class="px-4 py-2.5 font-medium">Qatorlar</th><th class="px-4 py-2.5 text-right font-medium">Talab / qabul</th><th class="px-4 py-2.5 font-medium">Reyestr muddati</th><th class="px-4 py-2.5 font-medium">Imzolangan hujjat kelgan</th><th class="px-4 py-2.5 font-medium">To‘lov SLA</th><th class="px-4 py-2.5 font-medium">Claim holati</th><th class="px-4 py-2.5 font-medium">Payment / holati</th></tr></thead>
+              <thead class="bg-muted/45 text-xs text-muted-foreground"><tr><th class="px-4 py-2.5 font-medium">Settlement / davr</th><th class="px-4 py-2.5 font-medium">Claim / immutable versiya</th><th class="px-4 py-2.5 font-medium">Tashuvchi</th><th class="px-4 py-2.5 font-medium">Qatorlar</th><th class="px-4 py-2.5 text-right font-medium">Talab / qabul</th><th class="px-4 py-2.5 font-medium">Reyestr muddati</th><th class="px-4 py-2.5 font-medium">Imzolangan hujjat kelgan</th><th class="px-4 py-2.5 font-medium">Normativ 10 ish kuni</th><th class="px-4 py-2.5 font-medium">Claim holati</th><th class="px-4 py-2.5 font-medium">Moliya ATiga handoff</th></tr></thead>
               <tbody class="divide-y divide-border">
                 <tr v-for="settlement in filteredSettlements" :key="settlement.id" class="hover:bg-muted/30">
                   <td class="px-4 py-3"><p class="font-mono text-xs font-medium">{{ settlement.id }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ settlement.period }}</p><span :class="['mt-1 inline-flex rounded border px-1.5 py-0.5 font-mono text-[10px]', settlementStatusClass(settlement.settlementStage)]">{{ settlement.settlementStage }}</span></td>
@@ -2967,7 +3156,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                   <td class="px-4 py-3 text-xs">{{ settlement.submittedAt ?? '—' }}</td>
                   <td class="px-4 py-3 text-xs">{{ settlement.paymentDueAt ?? '—' }}</td>
                   <td class="px-4 py-3"><span v-if="settlement.claimStatus" :class="['rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.claimStatus)]">{{ settlement.claimStatus }}</span><span v-else class="text-xs text-muted-foreground">PRE-CLAIM · settlement tekshiruvi</span></td>
-                  <td class="px-4 py-3"><template v-if="settlement.paymentId && settlement.paymentStatus"><p class="font-mono text-[11px]">{{ settlement.paymentId }}</p><span :class="['mt-1 inline-flex rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.paymentStatus)]">{{ settlement.paymentStatus }}</span></template><p v-else class="text-xs text-muted-foreground">Payment yaratilmagan · bu status emas</p></td>
+                  <td class="px-4 py-3"><template v-if="settlement.financeHandoffId"><p class="font-mono text-[11px]">{{ settlement.financeHandoffId }}</p><span :class="['mt-1 inline-flex rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.financeHandoffStatus)]">{{ settlement.financeHandoffStatus }}</span></template><span v-else :class="['inline-flex rounded-md border px-2 py-1 font-mono text-xs font-medium', settlementStatusClass(settlement.financeHandoffStatus)]">{{ settlement.financeHandoffStatus ?? 'NOT_READY' }}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -2977,7 +3166,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <div class="grid gap-4 lg:grid-cols-3">
           <div class="rounded-xl border border-amber-500/25 bg-amber-500/[0.045] p-4 shadow-sm"><div class="flex items-center gap-2"><FileCheck2 class="h-4 w-4 text-amber-700 dark:text-amber-300" /><p class="text-sm font-semibold">1. Reyestr tekshiruvi · D-03</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Qator faqat chipta segmenti + normativ hujjat + tasdiqlangan transport-spetsifik settlement_basis bilan claimable. Eligibility so‘rovlari soni hisob asosi emas.</p></div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><BadgeCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">2. Imzolangan claim</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Har bir correction yangi o‘zgarmas claim versiyasini yaratadi; oldingi versiya saqlanadi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Landmark class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">3. Alohida payment state-machine</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Payment aynan qabul qilingan claim_id + immutable versiya va summaga bog‘lanadi. 10 ish kuni reyestr deadline’dan emas, imzolangan hujjatlar kelgan vaqtdan hisoblanadi.</p></div>
+          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Landmark class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">3. Moliya ATiga handoff</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Handoff aynan qabul qilingan claim_id + immutable versiya + payload_hash + summaga bog‘lanadi. Modul bank transferini bajarmaydi; tashqi ACK/NACKni saqlaydi. 10 ish kuni hujjatlar rasmiy kelgan vaqtdan hisoblanadi.</p></div>
         </div>
       </template>
 
@@ -3079,12 +3268,12 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 </thead>
                 <tbody class="divide-y divide-border">
                   <tr v-for="entry in filteredReferenceEntries" :key="`${selectedReferenceCatalog.code}:${entry.code}`" class="align-top hover:bg-muted/30">
-                    <td class="px-4 py-3"><p class="font-mono text-xs font-semibold text-foreground">{{ entry.code }}</p><p class="mt-1 font-mono text-[10px] text-muted-foreground">version={{ entry.version }}</p><span v-if="entry.gateId" class="mt-1.5 inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-700 dark:text-amber-300">{{ entry.gateId }}</span></td>
-                    <td class="max-w-[24rem] px-4 py-3"><p class="font-medium text-foreground">{{ entry.name }}</p><p v-if="entry.description" class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.description }}</p><div v-if="entry.attributes" class="mt-2 flex flex-wrap gap-1"><span v-for="(value, key) in entry.attributes" :key="key" class="rounded border border-border bg-muted/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">{{ key }}={{ value }}</span></div></td>
+                    <td class="px-4 py-3"><p class="font-mono text-xs font-semibold text-foreground">{{ entry.code }}</p><p class="mt-1 font-mono text-[10px] text-muted-foreground">version={{ entry.version }}</p><p v-if="entry.sourceRevision" class="mt-1 max-w-[13rem] truncate font-mono text-[9px] text-muted-foreground">source={{ entry.sourceRevision }}</p><span v-if="entry.gateIds?.length || entry.gateId" class="mt-1.5 inline-flex rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-700 dark:text-amber-300">{{ entry.gateIds?.join(' · ') ?? entry.gateId }}</span></td>
+                    <td class="max-w-[24rem] px-4 py-3"><p class="font-medium text-foreground">{{ entry.name }}</p><p v-if="entry.description" class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.description }}</p><div v-if="entry.attributes" class="mt-2 flex flex-wrap gap-1"><span v-for="(value, key) in entry.attributes" :key="key" class="rounded border border-border bg-muted/35 px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground">{{ key }}={{ formatReferenceAttribute(value) }}</span></div></td>
                     <td class="px-4 py-3"><span :class="['inline-flex rounded-md border px-2 py-1 text-[10px] font-medium', entry.kind === 'NORMATIVE_REFERENCE' ? 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300' : 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300']">{{ referenceKindLabel(entry.kind) }}</span></td>
                     <td class="max-w-[17rem] px-4 py-3"><p class="text-xs font-medium">{{ entry.legalBasis ?? '—' }}</p><p class="mt-1 text-xs leading-5 text-muted-foreground">{{ entry.owner ?? 'Egalik D-gate/konfiguratsiyada' }}</p></td>
                     <td class="px-4 py-3 font-mono text-[11px]"><p>{{ entry.effectiveFrom ?? '—' }}</p><p class="mt-1 text-muted-foreground">→ {{ entry.effectiveTo ?? 'ochiq' }}</p></td>
-                    <td class="px-4 py-3"><span :class="['inline-flex rounded-md border px-2 py-1 text-xs font-medium', referenceStatusClass(entry.status)]">{{ referenceStatusLabel(entry.status) }}</span></td>
+                    <td class="px-4 py-3"><span :class="['inline-flex rounded-md border px-2 py-1 text-xs font-medium', referenceStatusClass(entry.status)]">{{ referenceStatusLabel(entry.status) }}</span><p v-if="entry.approvalStatus" class="mt-1 font-mono text-[9px] text-muted-foreground">{{ entry.approvalStatus }}</p></td>
                   </tr>
                   <tr v-if="!filteredReferenceEntries.length"><td colspan="6" class="px-4 py-14 text-center text-sm text-muted-foreground">Tanlangan filtrlarga mos yozuv topilmadi.</td></tr>
                 </tbody>
@@ -3097,8 +3286,8 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         </div>
 
         <div class="grid gap-3 lg:grid-cols-3">
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Database class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Bitta saqlash modeli</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Toifa, transport yoki status uchun alohida table yo‘q. Katalog, yozuv va immutable revision umumiy; murakkab benefit_policy ularga ID orqali bog‘lanadi.</p></div>
-          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Boshqariladigan o‘zgarish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground"><span class="font-mono">POST /v1/reference-data/changes</span> yangi revision draftini yaratadi. Normativ yozuv aktivatsiyasi vakolat, ERI, approver va D-gate talab qiladi.</p></div>
+          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Database class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Universal registr + typed domenlar</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Oddiy klassifikatorlar katalog/entry/immutable revisionda umumiy saqlanadi. Policy, provider, bank-account, calendar, huquq, ledger, chipta va claim kuchli invariantli typed schema/jadvallarda yuritiladi.</p></div>
+          <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><ShieldCheck class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Boshqariladigan o‘zgarish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground"><span class="font-mono">POST /v1/reference-data/change-requests</span> yangi revision draftini yaratadi. Normativ yozuv aktivatsiyasi vakolat, ERI, approver va D-gate talab qiladi.</p></div>
           <div class="rounded-xl border border-border bg-card p-4 shadow-sm"><div class="flex items-center gap-2"><Layers3 class="h-4 w-4 text-primary" /><p class="text-sm font-semibold">Tizim bo‘ylab qayta foydalanish</p></div><p class="mt-2 text-xs leading-5 text-muted-foreground">Kontingent, moslik va chipta formalaridagi select/classifier qiymatlari shu registrdan olinadi; demo tranzaksiya yozuvlari master-data hisoblanmaydi.</p></div>
         </div>
       </template>
@@ -3110,7 +3299,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
         <section class="rounded-xl border border-border bg-card shadow-sm">
           <div class="border-b border-border px-4 py-3.5">
             <h2 class="text-sm font-semibold">Umumlashtirilgan tashqi APIlar</h2>
-            <p class="mt-0.5 text-xs text-muted-foreground">Bir domen — bitta API. Tashkilot, toifa, transport va event turi payload orqali farqlanadi.</p>
+            <p class="mt-0.5 text-xs text-muted-foreground">Bir xil biznes amali — bitta kanonik contract family. Tashkilot, toifa va transport payload/policy orqali farqlanadi; boshqa invariantli actionlar alohida endpoint bo‘lishi mumkin.</p>
           </div>
           <div class="grid gap-2 p-4 md:grid-cols-2 xl:grid-cols-5">
             <button
@@ -3138,7 +3327,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
                 <p class="mt-1 text-sm font-medium">{{ selectedApi.consumers }}</p>
               </div>
               <div class="mt-4">
-                <p class="text-xs font-medium text-muted-foreground">Bitta kontraktdagi variantlar</p>
+                <p class="text-xs font-medium text-muted-foreground">Family operatsiyalari va variantlari</p>
                 <div class="mt-2 flex flex-wrap gap-1.5"><span v-for="variant in selectedApi.variants" :key="variant" class="rounded-md border border-border bg-background px-2 py-1 font-mono text-[10px] text-foreground">{{ variant }}</span></div>
               </div>
             </div>

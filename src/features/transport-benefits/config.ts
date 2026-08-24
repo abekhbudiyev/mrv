@@ -3,6 +3,7 @@ import {
   BookOpenCheck,
   Cable,
   LayoutDashboard,
+  ListChecks,
   ShieldCheck,
   TicketCheck,
   UsersRound,
@@ -14,7 +15,7 @@ export const transportBenefitsPages: MuruvvatPageDefinition[] = [
   {
     key: 'dashboard',
     title: 'Transport imtiyozlari',
-    description: 'Kontingentdan to hisob-kitobgacha bo‘lgan yagona operatsion ko‘rinish.',
+    description: 'Kontingentdan immutable claim va moliya ATiga handoffgacha bo‘lgan MVP target ko‘rinishi.',
     route: '/apps/transport-benefits',
     breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Dashboard'],
   },
@@ -24,6 +25,13 @@ export const transportBenefitsPages: MuruvvatPageDefinition[] = [
     description: 'Barcha manba tashkilotlar uchun yagona event modeli va huquqlar registri.',
     route: '/apps/transport-benefits/contingents',
     breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Kontingent'],
+  },
+  {
+    key: 'mvp-plan',
+    title: 'MVP reja va rollar',
+    description: 'To‘lovga yuborish chegarasigacha bo‘lgan scope, rollar, bosqichlar va qabul mezonlari.',
+    route: '/apps/transport-benefits/mvp-plan',
+    breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'MVP reja va rollar'],
   },
   {
     key: 'eligibility',
@@ -41,10 +49,10 @@ export const transportBenefitsPages: MuruvvatPageDefinition[] = [
   },
   {
     key: 'settlements',
-    title: 'Hisob-kitob',
-    description: 'Tashuvchi reyestri, claim va to‘lov holatini bitta moliyaviy konturda yuritish.',
+    title: 'Reyestr va claim',
+    description: 'Tashuvchi reyestrini tekshirish, immutable claim yaratish va moliya ATiga handoffgacha yuritish.',
     route: '/apps/transport-benefits/settlements',
-    breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Hisob-kitob'],
+    breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Reyestr va claim'],
   },
   {
     key: 'reference-categories',
@@ -104,6 +112,12 @@ export const transportBenefitsMenu: MuruvvatMenuItem[] = [
     icon: UsersRound,
   },
   {
+    id: 'mvp-plan',
+    title: 'MVP reja va rollar',
+    route: '/apps/transport-benefits/mvp-plan',
+    icon: ListChecks,
+  },
+  {
     id: 'eligibility',
     title: 'Moslik va rezerv',
     route: '/apps/transport-benefits/eligibility',
@@ -117,7 +131,7 @@ export const transportBenefitsMenu: MuruvvatMenuItem[] = [
   },
   {
     id: 'settlements',
-    title: 'Hisob-kitob',
+    title: 'Reyestr va claim',
     route: '/apps/transport-benefits/settlements',
     icon: WalletCards,
   },

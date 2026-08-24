@@ -947,6 +947,19 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
+        path: 'apps/transport-benefits/mvp-plan',
+        name: 'transport-benefits-mvp-plan',
+        component: TransportBenefitsPage,
+        props: { pageKey: 'mvp-plan' },
+        meta: {
+          title: 'MVP reja va rollar',
+          requiresAuth: true,
+          moduleKey: 'transport-benefits',
+          moduleTitle: 'Transport imtiyozlari',
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'MVP reja va rollar'],
+        },
+      },
+      {
         path: 'apps/transport-benefits/eligibility',
         name: 'transport-benefits-eligibility',
         component: TransportBenefitsPage,
@@ -978,11 +991,11 @@ export const routes: RouteRecordRaw[] = [
         component: TransportBenefitsPage,
         props: { pageKey: 'settlements' },
         meta: {
-          title: 'Hisob-kitob',
+          title: 'Reyestr va claim',
           requiresAuth: true,
           moduleKey: 'transport-benefits',
           moduleTitle: 'Transport imtiyozlari',
-          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Hisob-kitob'],
+          breadcrumb: ['Ilovalar', 'Transport imtiyozlari', 'Reyestr va claim'],
         },
       },
       {
