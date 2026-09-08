@@ -16,7 +16,6 @@ import { cn } from '@/shared/lib/utils'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import PageContainer from '@/shared/components/PageContainer.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import StatusTabs from '@/shared/components/StatusTabs.vue'
 import { useI18n } from '@/shared/i18n'
@@ -8655,11 +8654,6 @@ onUnmounted(() => {
 
 <template>
   <PageContainer v-if="page">
-    <PageHeader
-      :title="page.title"
-      :description="page.description"
-    />
-
     <template v-if="isDashboardPage">
       <div class="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
         <div class="relative flex min-h-[74px] flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-end">
@@ -16247,7 +16241,7 @@ onUnmounted(() => {
 
     <SectionBlock
       v-else
-      :title="page.sectionTitle ?? page.title"
+      :title="page.sectionTitle ?? ''"
       :description="page.sectionDescription"
     >
       <EmptyState

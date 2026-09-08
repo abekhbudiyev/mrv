@@ -17,7 +17,6 @@ import {
   type AssessmentQuestion,
 } from '@/features/muruvvat/assessment'
 import PageContainer from '@/shared/components/PageContainer.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import EmptyState from '@/shared/components/EmptyState.vue'
 import { Button } from '@/shared/ui/shadcn/button'
@@ -3452,11 +3451,6 @@ watch(serviceRecipientLookupResult, () => {
 
 <template>
   <PageContainer v-if="page">
-    <PageHeader
-      :title="page.title"
-      :description="page.description"
-    />
-
     <div class="relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col xl:min-h-0">
       <ConfirmDialog
         :open="Boolean(pendingConfirmation)"

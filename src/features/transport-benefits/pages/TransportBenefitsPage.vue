@@ -38,7 +38,6 @@ import {
   XCircle,
   Zap,
 } from 'lucide-vue-next'
-import { getTransportBenefitsPage } from '@/features/transport-benefits/config'
 import {
   applicantRoleOptions,
   benefitProfileOptions,
@@ -60,7 +59,6 @@ import {
 } from '@/features/transport-benefits/reference-data'
 import { useAuthStore } from '@/stores/auth'
 import PageContainer from '@/shared/components/PageContainer.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Input } from '@/shared/ui/shadcn/input'
 
@@ -269,7 +267,6 @@ const returnReviewAuthority = computed(() => {
 })
 const canDecideReturnReview = computed(() => Boolean(returnReviewAuthority.value))
 
-const page = computed(() => getTransportBenefitsPage(props.pageKey) ?? getTransportBenefitsPage('dashboard')!)
 const isDashboard = computed(() => props.pageKey === 'dashboard')
 const isContingents = computed(() => props.pageKey === 'contingents')
 const isMvpPlan = computed(() => props.pageKey === 'mvp-plan')
@@ -2331,12 +2328,7 @@ function eventTypeLabel(value: ContingentEventType | TicketEventType) {
 <template>
   <PageContainer>
     <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-0.5">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <PageHeader
-          :title="page.title"
-          :description="page.description"
-          show-title
-        />
+      <div class="flex justify-end">
         <div class="flex shrink-0 items-center gap-2">
           <span class="inline-flex h-7 items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2.5 text-xs font-medium text-amber-700 dark:text-amber-300">
             <Boxes class="h-3.5 w-3.5" />

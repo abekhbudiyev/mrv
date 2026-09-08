@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { getAppModule } from '@/features/apps/registry/apps'
 import PageContainer from './PageContainer.vue'
-import PageHeader from './PageHeader.vue'
 import SectionBlock from './SectionBlock.vue'
 import EmptyState from './EmptyState.vue'
 
@@ -15,11 +14,6 @@ const moduleItem = computed(() => getAppModule(props.moduleId))
 
 <template>
   <PageContainer v-if="moduleItem">
-    <PageHeader
-      :title="moduleItem.title"
-      :description="moduleItem.description"
-    />
-
     <SectionBlock
       title="Asosiy ish maydoni"
       description="Kelajakdagi filtrlar, jadvallar, forma bloklari va amallar shu hududga bosqichma-bosqich qo‘shiladi."

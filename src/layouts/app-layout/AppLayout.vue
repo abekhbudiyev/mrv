@@ -84,6 +84,7 @@ watch(showSidebar, (visible) => {
       <AppSidebar
         :collapsed="effectiveSidebarCollapsed"
         @toggle-collapse="toggleSidebarCollapse"
+        @navigate="closeSidebar"
       />
     </template>
 

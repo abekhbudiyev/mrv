@@ -33,6 +33,7 @@ async function handleLogout() {
     <DropdownMenuTrigger as-child>
       <Button
         variant="ghost"
+        aria-label="Foydalanuvchi menyusi"
         :class="cn(
           'h-9 justify-between gap-2 px-1.5 focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-2 sm:px-2',
           isOpen ? 'bg-accent text-foreground' : '',

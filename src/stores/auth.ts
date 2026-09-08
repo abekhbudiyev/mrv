@@ -3,54 +3,10 @@ import { defineStore } from 'pinia'
 import type { CurrentUser, LoginPayload } from '@/core/types/auth'
 import type { PermissionKey } from '@/core/types/permissions'
 import { STORAGE_KEYS } from '@/core/constants/storage'
+import { authenticateDemoModule, createDemoSession, createDemoUser, DEMO_ADMIN_ID, resolveDemoSession } from '@/features/auth/data/demo-accounts'
 
 const DEMO_USERNAME = 'admin'
 const DEMO_PASSWORD = 'aBekhbudiyev.2003'
-
-const mockPermissions: PermissionKey[] = [
-  'apps.view',
-  'iptk.view',
-  'dashboard.view',
-  'citizens.view',
-  'applications.view',
-  'benefits.view',
-  'payments.view',
-  'documents.view',
-  'monitoring.view',
-  'reports.view',
-  'settings.view',
-  'users.view',
-  'muruvvat.view',
-  'snav.view',
-  'ei.view',
-  'transport-benefits.view',
-]
-
-function buildMockUser(username: string): CurrentUser {
-  const normalized = username.trim()
-
-  return {
-    id: 'mock-user',
-    username: normalized,
-    fullName: normalized,
-    role: 'Ichki operator',
-    permissions: mockPermissions,
-  }
-}
-
-function normalizePersistedSession(user: CurrentUser): CurrentUser {
-  if (user.id !== 'mock-user') {
-    return user
-  }
-
-  return {
-    ...user,
-    permissions: Array.from(new Set([
-      ...(user.permissions ?? []),
-      ...mockPermissions,
-    ])),
-  }
-}
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref<CurrentUser | null>(null)
@@ -70,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
     clearPersistedSession()
 
     const storage = remember ? localStorage : sessionStorage
-    storage.setItem(STORAGE_KEYS.authSession, JSON.stringify(currentUser.value))
+    storage.setItem(STORAGE_KEYS.authSession, JSON.stringify(createDemoSession(currentUser.value)))
   }
 
   function restoreSession() {
@@ -83,7 +39,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      currentUser.value = normalizePersistedSession(JSON.parse(session) as CurrentUser)
+      currentUser.value = resolveDemoSession(JSON.parse(session))
+      if (!currentUser.value) clearPersistedSession()
     }
     catch {
       currentUser.value = null
@@ -93,13 +50,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function login(payload: LoginPayload) {
     const username = payload.username.trim()
-    const password = payload.password.trim()
+    const password = payload.password
+    const user = username === DEMO_USERNAME && password === DEMO_PASSWORD
+      ? createDemoUser(DEMO_ADMIN_ID)
+      : authenticateDemoModule(username, password)
 
-    if (username !== DEMO_USERNAME || password !== DEMO_PASSWORD) {
+    if (!user) {
       throw new Error('Login yoki parol noto‘g‘ri.')
     }
 
-    currentUser.value = buildMockUser(username)
+    currentUser.value = user
     persistSession(payload.remember ?? true)
   }
 

@@ -1,19 +1,9 @@
 import { computed, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DEFAULT_AUTH_REDIRECT } from '@/core/constants/app'
+import { resolveAuthorizedRedirect } from '@/core/guards/auth.guard'
 import { useAuthStore } from '@/stores/auth'
+import type { DemoModuleAccount } from '../data/demo-accounts'
 import type { AuthMethod, LoginFormErrors, LoginFormState } from '../types'
-
-const providerCredentials: Record<Exclude<AuthMethod, 'password'>, { username: string, password: string }> = {
-  oneid: {
-    username: 'admin',
-    password: 'aBekhbudiyev.2003',
-  },
-  eimzo: {
-    username: 'admin',
-    password: 'aBekhbudiyev.2003',
-  },
-}
 
 export function useLoginFlow() {
   const router = useRouter()
@@ -65,9 +55,15 @@ export function useLoginFlow() {
   }
 
   function resolveRedirectTarget() {
-    return typeof route.query.redirect === 'string'
-      ? route.query.redirect
-      : DEFAULT_AUTH_REDIRECT
+    return resolveAuthorizedRedirect(router, authStore.currentUser, route.query.redirect)
+  }
+
+  function fillDemoAccount(account: DemoModuleAccount) {
+    clearErrors()
+    selectedMethod.value = 'password'
+    form.username = account.username
+    form.password = account.password
+    isPasswordVisible.value = false
   }
 
   function validatePasswordForm() {
@@ -115,20 +111,9 @@ export function useLoginFlow() {
       return
     }
 
-    isSubmitting.value = true
     clearErrors()
     selectedMethod.value = provider
-
-    try {
-      const credentials = providerCredentials[provider]
-      await finalizeLogin(credentials.username, credentials.password, true)
-    }
-    catch (error) {
-      errors.form = error instanceof Error ? error.message : 'Kirishda xatolik yuz berdi.'
-    }
-    finally {
-      isSubmitting.value = false
-    }
+    errors.form = `${provider === 'oneid' ? 'OneID' : 'E-IMZO'} ushbu frontend demoda ulanmagan. Demo hisobni tanlab login va parol orqali kiring.`
   }
 
   return {
@@ -142,6 +127,7 @@ export function useLoginFlow() {
     selectMethod,
     submitPassword,
     submitProviderLogin,
+    fillDemoAccount,
     togglePasswordVisibility,
   }
 }

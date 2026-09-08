@@ -7,6 +7,8 @@ import eImzoLogo from '@/assets/e-imzo-logo.png'
 import { APP_TITLE } from '@/core/constants/app'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
+import { ref } from 'vue'
+import { demoModuleAccounts, type DemoModuleAccount } from '../data/demo-accounts'
 
 const {
   form,
@@ -18,7 +20,16 @@ const {
   submitPassword,
   submitProviderLogin,
   togglePasswordVisibility,
+  fillDemoAccount,
 } = useLoginFlow()
+
+const demoAccountsOpen = ref(false)
+const selectedDemoTitle = ref('')
+function chooseDemoAccount(account: DemoModuleAccount) {
+  fillDemoAccount(account)
+  selectedDemoTitle.value = account.title
+  demoAccountsOpen.value = false
+}
 
 function handleForgotPassword() {
   errors.form = 'Parolni tiklash uchun tizim administratoriga murojaat qiling.'
@@ -60,6 +71,35 @@ function handleForgotPassword() {
             @forgot-password="handleForgotPassword"
             @clear-error="clearError"
           />
+
+          <section class="rounded-lg border border-border bg-muted/30">
+            <button
+              type="button"
+              class="flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              :aria-expanded="demoAccountsOpen"
+              aria-controls="demo-module-accounts"
+              @click="demoAccountsOpen = !demoAccountsOpen"
+            >
+              <span>Demo hisoblar <span class="ml-1 text-xs font-normal text-muted-foreground">{{ demoModuleAccounts.length }} modul</span></span>
+              <span aria-hidden="true">{{ demoAccountsOpen ? '−' : '+' }}</span>
+            </button>
+            <div v-if="demoAccountsOpen" id="demo-module-accounts" class="border-t border-border">
+              <p class="px-4 py-3 text-xs leading-5 text-muted-foreground">Har bir hisob faqat o‘z modulini ochadi. Login va parolni formaga qo‘yib, Kirish tugmasini bosing. Bular frontend demo hisoblaridir.</p>
+              <ul class="max-h-80 divide-y divide-border overflow-y-auto border-t border-border">
+                <li v-for="account in demoModuleAccounts" :key="account.id" class="space-y-2 px-4 py-3">
+                  <p class="text-sm font-medium">{{ account.title }}</p>
+                  <div class="flex flex-wrap items-end justify-between gap-2">
+                    <dl class="min-w-0 space-y-1 text-xs">
+                      <div><dt class="mr-1 inline text-muted-foreground">Login:</dt><dd class="inline break-all font-mono">{{ account.username }}</dd></div>
+                      <div><dt class="mr-1 inline text-muted-foreground">Parol:</dt><dd class="inline break-all font-mono">{{ account.password }}</dd></div>
+                    </dl>
+                    <Button type="button" variant="outline" class="h-8 shrink-0 px-3 text-xs" :disabled="isSubmitting" :aria-label="`${account.title} hisobini formaga qo‘yish`" @click="chooseDemoAccount(account)">To‘ldirish</Button>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </section>
+          <p v-if="selectedDemoTitle" class="!mt-2 text-xs leading-5 text-muted-foreground" role="status">{{ selectedDemoTitle }} hisobi formaga qo‘yildi. Kirish tugmasini bosing.</p>
 
           <div class="flex items-center gap-3 text-xs text-muted-foreground">
             <div class="h-px flex-1 bg-border" />

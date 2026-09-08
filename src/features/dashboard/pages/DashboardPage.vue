@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import PageContainer from '@/shared/components/PageContainer.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import EmptyState from '@/shared/components/EmptyState.vue'
 </script>
 
 <template>
   <PageContainer>
-    <PageHeader
-      title="Dashboard"
-      description="Umumiy ko‘rsatkichlar, tezkor bloklar va kuzatuv panellari uchun boshlang‘ich sahifa."
-    />
-
     <SectionBlock
       title="Asosiy ko‘rsatkichlar"
       description="KPI kartalari, qisqa statistika va tezkor indikatorlar keyingi bosqichda qo‘shiladi."

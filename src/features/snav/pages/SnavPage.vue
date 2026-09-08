@@ -12,7 +12,6 @@ import {
 } from 'reka-ui'
 import { getSnavPage } from '@/features/snav/config'
 import PageContainer from '@/shared/components/PageContainer.vue'
-import PageHeader from '@/shared/components/PageHeader.vue'
 import SectionBlock from '@/shared/components/SectionBlock.vue'
 import { Button } from '@/shared/ui/shadcn/button'
 import { Card, CardContent } from '@/shared/ui/shadcn/card'
@@ -839,11 +838,6 @@ onBeforeUnmount(() => {
 
 <template>
   <PageContainer class="xl:overflow-y-auto">
-    <PageHeader
-      :title="page.title"
-      :description="page.description"
-    />
-
     <template v-if="isDashboard">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card

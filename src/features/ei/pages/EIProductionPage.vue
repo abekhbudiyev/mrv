@@ -483,16 +483,8 @@ function downloadCsv() {
   <PageContainer>
     <template v-if="pageConfig.kind === 'dashboard'">
       <div
-        class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+        class="flex justify-end"
       >
-        <div>
-          <h1 class="text-xl font-semibold text-foreground">
-            {{ pageConfig.title }}
-          </h1>
-          <p class="mt-1 text-sm text-muted-foreground">
-            {{ pageConfig.description }}
-          </p>
-        </div>
         <div
           class="inline-flex items-center rounded-lg border border-border bg-background p-0.5"
         >
@@ -704,9 +696,6 @@ function downloadCsv() {
                 <h1 class="text-xl font-semibold text-foreground">
                   {{ selectedRecord ? "Yozuvni tahrirlash" : "Yangi yozuv" }}
                 </h1>
-                <p class="mt-1 text-sm text-muted-foreground">
-                  {{ pageConfig.title }}
-                </p>
               </div>
             </div>
             <Button class="gap-2" @click="saveForm">
@@ -716,8 +705,7 @@ function downloadCsv() {
           </div>
 
           <SectionBlock
-            :title="pageConfig.title"
-            :description="pageConfig.description"
+            title=""
           >
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
@@ -767,14 +755,6 @@ function downloadCsv() {
               <ChevronLeft class="h-4 w-4" />
               Ortga
             </Button>
-            <div v-if="pageKey !== 'questionnaires'" class="min-w-0">
-              <h1 class="text-xl font-semibold text-foreground">
-                {{ pageConfig.title }}
-              </h1>
-              <p class="mt-1 text-sm text-muted-foreground">
-                Yozuv tafsilotlari
-              </p>
-            </div>
           </div>
           <Button
             v-if="pageConfig.canEdit && selectedRecord"

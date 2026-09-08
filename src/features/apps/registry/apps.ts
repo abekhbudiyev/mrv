@@ -5,6 +5,7 @@ import {
   FileText,
   FolderOpen,
   HeartHandshake,
+  HeartPulse,
   Baby,
   LayoutGrid,
   Navigation,
@@ -14,10 +15,31 @@ import {
   Users,
   Waves,
   BusFront,
+  Workflow,
 } from 'lucide-vue-next'
 import type { AppModule } from '../types'
 
 export const appModules: AppModule[] = [
+  {
+    id: 'palliative-care',
+    title: 'Bolalar palliativ yordami',
+    description: 'Bola va oilaga yo‘llanmadan statsionar, mobil yordam va keyingi kuzatuvgacha uzluksiz yordamni tashkil etish.',
+    route: '/apps/palliative-care',
+    icon: HeartPulse,
+    enabled: true,
+    permission: 'palliative-care.view',
+    hasInternalNavigation: true,
+  },
+  {
+    id: 'ptpk',
+    title: 'PTPK 2.0',
+    description: 'Psixologik-tibbiy-pedagogik komissiya: bolani aniqlashdan individual reja, parallel xizmatlar va natijaviy monitoringgacha.',
+    route: '/apps/ptpk',
+    icon: Workflow,
+    enabled: true,
+    permission: 'ptpk.view',
+    hasInternalNavigation: true,
+  },
   {
     id: 'transport-benefits',
     title: 'Transport imtiyozlari',

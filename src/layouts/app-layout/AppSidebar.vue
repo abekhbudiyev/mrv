@@ -9,6 +9,8 @@ import { muruvvatMenu } from '@/features/muruvvat/config'
 import { snavMenu } from '@/features/snav/config'
 import { eiMenu } from '@/features/ei/config'
 import { transportBenefitsMenu } from '@/features/transport-benefits/config'
+import { ptpkMenu } from '@/features/ptpk/config'
+import { palliativeMenu, palliativeMenuGroups } from '@/features/palliative-care/config'
 import { useAuthStore } from '@/stores/auth'
 import type { MuruvvatMenuItem } from '@/features/muruvvat/types'
 import { useI18n } from '@/shared/i18n'
@@ -20,6 +22,7 @@ const props = defineProps<{
 
 defineEmits<{
   toggleCollapse: []
+  navigate: []
 }>()
 
 const route = useRoute()
@@ -56,6 +59,14 @@ const currentModuleLabel = computed(() => {
 })
 
 const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
+  if (activeModuleKey.value === 'palliative-care') {
+    return palliativeMenu
+  }
+
+  if (activeModuleKey.value === 'ptpk') {
+    return ptpkMenu
+  }
+
   if (activeModuleKey.value === 'iptk') {
     return iptkMenu
   }
@@ -80,6 +91,14 @@ const moduleNavigation = computed<MuruvvatMenuItem[]>(() => {
 })
 
 const sidebarRouteI18nKeys: Record<string, string> = {
+  '/apps/ptpk': 'nav.dashboard',
+  '/apps/ptpk/cases': 'Case’lar',
+  '/apps/ptpk/triage': 'Triage va baholash',
+  '/apps/ptpk/referrals': 'Xizmat yo‘naltirishlari',
+  '/apps/ptpk/reviews': 'Review va apellyatsiya',
+  '/apps/ptpk/monitoring': 'Monitoring',
+  '/apps/ptpk/process': 'Jarayon modeli',
+  '/apps/ptpk/references': 'Ma’lumotnomalar',
   '/apps/iptk': 'nav.dashboard',
   '/apps/iptk/info/info-1': 'nav.serviceTypes',
   '/apps/iptk/info/info-2': 'nav.diagnoses',
@@ -155,6 +174,10 @@ function isActive(path: string) {
     return true
   }
 
+  if (['/apps/ptpk/cases', '/apps/palliative-care/cases'].includes(path) && route.path.startsWith(`${path}/`)) {
+    return true
+  }
+
   const segmentCount = path.split('/').filter(Boolean).length
 
   return segmentCount > 3 && route.path.startsWith(`${path}/`)
@@ -208,6 +231,8 @@ watch(() => route.path, syncOpenSections, { immediate: true })
   <div class="flex h-full flex-col">
     <RouterLink
       :to="brandHomeRoute"
+      @click="activeModuleKey === 'palliative-care' && $emit('navigate')"
+      :aria-label="activeModuleKey === 'palliative-care' ? t('Bolalar palliativ yordami — bosh sahifa') : undefined"
       :class="cn(
         'flex h-16 items-center',
         collapsed ? 'justify-center px-2' : 'gap-2 px-4',
@@ -234,8 +259,46 @@ watch(() => route.path, syncOpenSections, { immediate: true })
     </RouterLink>
 
     <div class="flex-1 overflow-y-auto p-2">
+      <nav
+        v-if="activeModuleKey === 'palliative-care'"
+        :aria-label="t('Bolalar palliativ yordami bo‘limlari')"
+      >
+        <div
+          v-for="(group, index) in palliativeMenuGroups"
+          :key="group.id"
+          role="group"
+          :aria-label="t(group.title ?? 'Bosh sahifa')"
+          :class="!collapsed && index > 0 ? 'mt-5' : undefined"
+        >
+          <hr v-if="collapsed && index > 0" class="mx-4 my-3 border-sidebar-border" />
+          <p v-if="group.title && !collapsed" class="px-2 pb-2 text-[11px] font-semibold text-muted-foreground">
+            {{ t(group.title) }}
+          </p>
+          <div class="space-y-1">
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.id"
+              :to="item.route"
+              @click="$emit('navigate')"
+              :aria-label="sidebarTitle(item)"
+              :aria-current="isItemActive(item) ? 'page' : undefined"
+              :title="collapsed ? sidebarTitle(item) : undefined"
+              :class="cn(
+                'flex h-8 items-center gap-2 rounded-md text-sm outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/50',
+                collapsed ? 'mx-auto w-8 justify-center p-0' : 'w-full px-2',
+                isItemActive(item)
+                  ? 'bg-sidebar-accent font-medium text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'
+                  : 'text-sidebar-foreground hover:bg-accent hover:text-foreground',
+              )"
+            >
+              <component :is="item.icon" class="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span v-if="!collapsed" class="truncate">{{ sidebarTitle(item) }}</span>
+            </RouterLink>
+          </div>
+        </div>
+      </nav>
       <div
-        v-if="moduleNavigation.length"
+        v-else-if="moduleNavigation.length"
         class="space-y-1"
       >
         <p

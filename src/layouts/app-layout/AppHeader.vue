@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LayoutGrid, Menu, PanelLeft } from 'lucide-vue-next'
+import { ChevronRight, LayoutGrid, Menu, PanelLeft } from 'lucide-vue-next'
 import { RouterLink } from 'vue-router'
 import { usePageMeta } from '@/shared/composables/use-page-meta'
 import { Button } from '@/shared/ui/shadcn/button'
@@ -24,6 +24,7 @@ defineEmits<{
 
 const { title, breadcrumbs } = usePageMeta()
 const currentTitle = computed(() => title.value || 'Ishchi maydon')
+const contextBreadcrumbs = computed(() => breadcrumbs.value.slice(0, -1))
 </script>
 
 <template>
@@ -52,13 +53,18 @@ const currentTitle = computed(() => title.value || 'Ishchi maydon')
         <Menu class="h-5 w-5" />
       </Button>
 
-      <div class="min-w-0 flex-1">
+      <div class="flex min-w-0 flex-1 items-center gap-1.5">
         <PageBreadcrumbs
-          v-if="breadcrumbs.length"
-          class="hidden sm:flex"
-          :items="breadcrumbs"
+          v-if="contextBreadcrumbs.length"
+          class="hidden max-w-[55%] shrink sm:flex"
+          :items="contextBreadcrumbs"
         />
-        <h1 :class="['truncate text-sm font-semibold text-foreground', breadcrumbs.length ? 'sm:hidden' : '']">
+        <ChevronRight
+          v-if="contextBreadcrumbs.length"
+          class="hidden h-3.5 w-3.5 shrink-0 text-muted-foreground/60 sm:block"
+          aria-hidden="true"
+        />
+        <h1 class="min-w-0 line-clamp-2 text-xs font-semibold leading-4 text-foreground sm:line-clamp-none sm:truncate sm:text-sm" :title="currentTitle">
           {{ currentTitle }}
         </h1>
       </div>
